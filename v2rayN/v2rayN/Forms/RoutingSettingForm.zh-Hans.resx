@@ -243,6 +243,12 @@
   <data name="menuImportRulesFromClipboard.Text" xml:space="preserve">
     <value>从剪贴板中导入规则</value>
   </data>
+  <data name="menuImportRulesFromUrl.Size" type="System.Drawing.Size, System.Drawing">
+    <value>184, 22</value>
+  </data>
+  <data name="menuImportRulesFromUrl.Text" xml:space="preserve">
+    <value>从Url中导入规则</value>
+  </data>
   <data name="toolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
     <value>92, 21</value>
   </data>
