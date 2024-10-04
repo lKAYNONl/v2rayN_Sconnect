@@ -32,12 +32,7 @@ namespace v2rayN.Views
                 this.BindCommand(ViewModel, vm => vm.RemoteBackupCmd, v => v.menuRemoteBackup).DisposeWith(disposables);
                 this.BindCommand(ViewModel, vm => vm.RemoteRestoreCmd, v => v.menuRemoteRestore).DisposeWith(disposables);
             });
-        }
-
-        private void MenuRemoteRestore_Click(object sender, RoutedEventArgs e)
-        {
-            throw new NotImplementedException();
-        }
+        }        
 
         private void MenuLocalBackup_Click(object sender, RoutedEventArgs e)
         {
