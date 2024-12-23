@@ -1,4 +1,4 @@
-name: release
+name: release Windows
 
 on:
   push:
@@ -35,18 +35,7 @@ jobs:
         name: v2rayN-windows-arm64
         path: |
           ./v2rayN/v2rayN-windows-arm64.zip
-          
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: v2rayN-linux-64
-        path: |
-          ./v2rayN/v2rayN-linux-64.zip
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: v2rayN-linux-arm64
-        path: |
-          ./v2rayN/v2rayN-linux-arm64.zip
+
+
  
