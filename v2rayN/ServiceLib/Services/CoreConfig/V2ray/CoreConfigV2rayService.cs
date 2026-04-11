@@ -62,6 +62,7 @@ public partial class CoreConfigV2rayService(CoreConfigContext context)
             GenDns();
 
             GenStatistic();
+            ApplyOutboundSendThrough();
 
             var finalRule = BuildFinalRule();
             if (!string.IsNullOrEmpty(finalRule?.balancerTag))
@@ -195,6 +196,7 @@ public partial class CoreConfigV2rayService(CoreConfigContext context)
                 _coreConfig.routing.rules.Add(rule);
             }
 
+            ApplyOutboundSendThrough();
             //ret.Msg =string.Format(ResUI.SuccessfulConfiguration"), node.getSummary());
             ret.Success = true;
             ret.Data = JsonUtils.Serialize(_coreConfig);
@@ -255,6 +257,7 @@ public partial class CoreConfigV2rayService(CoreConfigContext context)
             });
 
             _coreConfig.routing.rules.Add(BuildFinalRule());
+            ApplyOutboundSendThrough();
 
             ret.Msg = string.Format(ResUI.SuccessfulConfiguration, "");
             ret.Success = true;
@@ -375,6 +378,7 @@ public partial class CoreConfigV2rayService(CoreConfigContext context)
 
             //_coreConfig.inbounds.Clear();
 
+            ApplyOutboundSendThrough();
             var configNode = JsonUtils.ParseJson(JsonUtils.Serialize(_coreConfig))!;
             configNode["inbounds"]!.AsArray().Add(new
             {
@@ -403,4 +407,43 @@ public partial class CoreConfigV2rayService(CoreConfigContext context)
     }
 
     #endregion public gen function
+
+    private void ApplyOutboundSendThrough()
+    {
+        var sendThrough = _config.CoreBasicItem.SendThrough?.TrimEx();
+        foreach (var outbound in _coreConfig.outbounds ?? [])
+        {
+            outbound.sendThrough = ShouldApplySendThrough(outbound, sendThrough) ? sendThrough : null;
+        }
+    }
+
+    private static bool ShouldApplySendThrough(Outbounds4Ray outbound, string? sendThrough)
+    {
+        if (sendThrough.IsNullOrEmpty())
+        {
+            return false;
+        }
+
+        if (outbound.protocol is "freedom" or "blackhole" or "dns" or "loopback")
+        {
+            return false;
+        }
+
+        if (outbound.streamSettings?.sockopt?.dialerProxy.IsNullOrEmpty() == false)
+        {
+            return false;
+        }
+
+        var outboundAddress = outbound.settings?.servers?.FirstOrDefault()?.address
+            ?? outbound.settings?.vnext?.FirstOrDefault()?.address
+            ?? outbound.settings?.address?.ToString()
+            ?? string.Empty;
+
+        if (outboundAddress.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return !IPAddress.TryParse(outboundAddress, out var address) || !IPAddress.IsLoopback(address);
+    }
 }
