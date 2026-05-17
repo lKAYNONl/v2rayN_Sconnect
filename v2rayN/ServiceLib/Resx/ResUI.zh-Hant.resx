@@ -1728,4 +1728,7 @@
   <data name="menuExport2InnerUri" xml:space="preserve">
     <value>匯出 v2rayN 內部分享連結至剪貼簿（多選）</value>
   </data>
+  <data name="MsgCheckUpdateHasNewVersion" xml:space="preserve">
+    <value>{0} 有新版本可用：{1}</value>
+  </data>
 </root>

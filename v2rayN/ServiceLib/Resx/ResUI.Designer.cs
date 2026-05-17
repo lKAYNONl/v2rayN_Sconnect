@@ -1888,6 +1888,15 @@ namespace ServiceLib.Resx {
         }
         
         /// <summary>
+        ///   查找类似 {0} has a new version available: {1} 的本地化字符串。
+        /// </summary>
+        public static string MsgCheckUpdateHasNewVersion {
+            get {
+                return ResourceManager.GetString("MsgCheckUpdateHasNewVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Core &apos;{0}&apos; does not support network type &apos;{1}&apos; 的本地化字符串。
         /// </summary>
         public static string MsgCoreNotSupportNetwork {

@@ -37,17 +37,11 @@ public class CheckUpdateViewModel : MyReactiveObject
     {
         CheckUpdateModels.Clear();
 
-        if (RuntimeInformation.ProcessArchitecture != Architecture.X86)
+        foreach (var type in CoreInfoManager.Instance.GetCheckUpdateCoreTypes())
         {
-            CheckUpdateModels.Add(GetCheckUpdateModel(_v2rayN));
-            //Not Windows and under Win10
-            if (!(Utils.IsWindows() && Environment.OSVersion.Version.Major < 10))
-            {
-                CheckUpdateModels.Add(GetCheckUpdateModel(ECoreType.Xray.ToString()));
-                CheckUpdateModels.Add(GetCheckUpdateModel(ECoreType.mihomo.ToString()));
-                CheckUpdateModels.Add(GetCheckUpdateModel(ECoreType.sing_box.ToString()));
-            }
+            CheckUpdateModels.Add(GetCheckUpdateModel(type.ToString()));
         }
+
         CheckUpdateModels.Add(GetCheckUpdateModel(_geo));
     }
 
