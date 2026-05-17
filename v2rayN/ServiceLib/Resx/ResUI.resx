@@ -691,7 +691,7 @@
     <value>Automatically adjust column width after subscription update</value>
   </data>
   <data name="TbSettingsEnableCheckPreReleaseUpdate" xml:space="preserve">
-    <value>Check for pre-release updates</value>
+    <value>Check for pre-release</value>
   </data>
   <data name="TbSettingsException" xml:space="preserve">
     <value>Exception</value>
@@ -1733,5 +1733,8 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   </data>
   <data name="MsgCheckUpdateHasNewVersion" xml:space="preserve">
     <value>{0} has a new version available: {1}</value>
+  </data>
+  <data name="menuCheckOnly" xml:space="preserve">
+    <value>Only Check</value>
   </data>
 </root>

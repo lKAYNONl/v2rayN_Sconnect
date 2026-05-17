@@ -871,6 +871,15 @@ namespace ServiceLib.Resx {
         }
         
         /// <summary>
+        ///   查找类似 Only Check 的本地化字符串。
+        /// </summary>
+        public static string menuCheckOnly {
+            get {
+                return ResourceManager.GetString("menuCheckOnly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Check Update 的本地化字符串。
         /// </summary>
         public static string menuCheckUpdate {
@@ -3934,7 +3943,7 @@ namespace ServiceLib.Resx {
         }
         
         /// <summary>
-        ///   查找类似 Check for pre-release updates 的本地化字符串。
+        ///   查找类似 Check for pre-release 的本地化字符串。
         /// </summary>
         public static string TbSettingsEnableCheckPreReleaseUpdate {
             get {
