@@ -72,7 +72,7 @@ public partial class CoreConfigV2rayService
                     tunInbound.settings.gateway.Add(address6);
                 }
                 tunInbound.settings.dns = [address.Split('/').First()];
-                tunInbound.settings.autoSystemRoutingTable = ["0.0.0.0/0"];             
+                tunInbound.settings.autoSystemRoutingTable = ["0.0.0.0/0"];
                 var bindInterface = _config.CoreBasicItem.BindInterface?.TrimEx();
                 if (!bindInterface.IsNullOrEmpty())
                 {
