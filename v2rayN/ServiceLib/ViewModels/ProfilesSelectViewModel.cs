@@ -72,11 +72,11 @@ public partial class ProfilesSelectViewModel : MyReactiveObject, ICloseable
         // React to ConfigType filter changes
         this.WhenAnyValue(x => x.FilterExclude)
             .Skip(1)
-            .SubscribeAsync(async _ => await RefreshServersBiz());
+            .SubscribeAsync(async _ => await RefreshServers());
 
         this.WhenAnyValue(x => x.FilterConfigTypes)
             .Skip(1)
-            .SubscribeAsync(async _ => await RefreshServersBiz());
+            .SubscribeAsync(async _ => await RefreshServers());
 
         #endregion WhenAnyValue && ReactiveCommand
 
@@ -146,7 +146,13 @@ public partial class ProfilesSelectViewModel : MyReactiveObject, ICloseable
 
     public async Task RefreshServers()
     {
-        await RefreshServersBiz();
+        await Signal.FromAsync(async () =>
+        {
+            await RefreshServersBiz();
+            return RxVoid.Default;
+        })
+           .SubscribeOn(RxSchedulers.MainThreadScheduler)
+           .ToTask();
     }
 
     private async Task RefreshServersBiz()
