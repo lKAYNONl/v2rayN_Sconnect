@@ -170,11 +170,23 @@ public class KillSwitchWindows : IKillSwitchService
             }
         }
 
-        // Split-tunnel bypass: extra programs allowed direct.
-        var i = 0;
-        foreach (var prog in ctx.AllowedPrograms.Where(p => !p.IsNullOrEmpty()))
+        // Split-tunnel bypass: extra programs allowed direct. Created through the
+        // firewall COM API in one loop - a folder can expand to many programs and
+        // New-NetFirewallRule per program is slow and bloats the command line.
+        var programs = ctx.AllowedPrograms.Where(p => !p.IsNullOrEmpty()).Select(PsQuote).ToList();
+        if (programs.Count > 0)
         {
-            sb.AppendLine(NewRule($"BypassApp{i++}", $"-Direction Outbound -Action Allow -Program {PsQuote(prog)}"));
+            sb.AppendLine("  $fw = New-Object -ComObject HNetCfg.FwPolicy2");
+            sb.AppendLine("  $i = 0");
+            sb.AppendLine($"  foreach ($p in @({string.Join(",", programs)})) {{");
+            sb.AppendLine("    $r = New-Object -ComObject HNetCfg.FWRule");
+            sb.AppendLine($"    $r.Name = {PsQuote(RuleGroup + " BypassApp")} + $i; $i++");
+            sb.AppendLine("    $r.ApplicationName = $p");
+            sb.AppendLine("    $r.Direction = 2; $r.Action = 1; $r.Profiles = 2147483647");
+            sb.AppendLine($"    $r.Grouping = {PsQuote(RuleGroup)}");
+            sb.AppendLine("    $r.Enabled = $true");
+            sb.AppendLine("    $fw.Rules.Add($r)");
+            sb.AppendLine("  }");
         }
 
         // Finally: default-deny all other outbound on every profile.

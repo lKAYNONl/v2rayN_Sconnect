@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Net;
 using Avalonia.Controls.Notifications;
+using Avalonia.Controls.Primitives;
+using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
 using DialogHostAvalonia;
 using v2rayN.Desktop.Base;
@@ -22,6 +24,21 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private readonly ObservableCollection<string> _bypassApps = [];
     private readonly ObservableCollection<string> _bypassSubnets = [];
     private bool _loadingSettings;
+
+    // Settings sub-pages, running-programs picker and the rule being edited
+    private enum SettingsPage
+    {
+        Main,
+        Routes,
+        Editor
+    }
+
+    private Action<string>? _onProgramPicked;
+    private List<ProcessPathUtils.RunningProgram> _programs = [];
+    private bool _programsLoading;
+    private RulesItem? _editingRule;
+    private string _editingOutbound = Global.DirectTag;
+    private static readonly HashSet<string> ChipProtocols = new(["http", "tls", "quic", "bittorrent"], StringComparer.OrdinalIgnoreCase);
 
     private static readonly IBrush BrFg = Brush("#E8EBF6");
     private static readonly IBrush BrMuted = Brush("#8B95B4");
@@ -78,7 +95,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnSettingsClose.Click += (_, _) => CloseSettings();
         settingsOverlay.PointerPressed += (_, e) =>
         {
-            if (ReferenceEquals(e.Source, settingsOverlay))
+            // A click outside the panel closes it (not while a rule is being edited).
+            if (ReferenceEquals(e.Source, settingsOverlay) && !ruleEditorPanel.IsVisible)
             {
                 CloseSettings();
             }
@@ -91,6 +109,86 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         txtAddSubnet.AddHandler(KeyDownEvent, (_, e) => OnAddKey(e, txtAddSubnet, _bypassSubnets, NormalizeSubnet), RoutingStrategies.Tunnel);
         tglKill.IsCheckedChanged += (_, _) => OnSettingToggled();
         tglLan.IsCheckedChanged += (_, _) => OnSettingToggled();
+        rbSplitWhitelist.IsCheckedChanged += (_, _) =>
+        {
+            UpdateSplitTexts();
+            OnSettingToggled();
+        };
+
+        // Apps: "+" = pick a running program, folder = every program in a folder.
+        btnPickProgram.Click += (_, _) => OpenProgramPicker(AddBypassApp);
+        btnPickFolder.Click += async (_, _) =>
+        {
+            var folder = await PickFolderAsync();
+            if (folder != null)
+            {
+                AddBypassApp(folder);
+            }
+        };
+
+        // Running-programs picker
+        btnProcClose.Click += (_, _) => CloseProgramPicker();
+        procPickerLayer.PointerPressed += (_, e) =>
+        {
+            if (ReferenceEquals(e.Source, procPickerLayer))
+            {
+                CloseProgramPicker();
+            }
+        };
+        txtProcSearch.TextChanged += (_, _) => FilterPrograms();
+        lstProcesses.Tapped += (_, e) =>
+        {
+            if (IsOnCard(e))
+            {
+                PickSelectedProgram();
+            }
+        };
+        lstProcesses.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Enter)
+            {
+                PickSelectedProgram();
+                e.Handled = true;
+            }
+        };
+
+        // Routes page
+        btnOpenRoutes.Click += async (_, _) => await ShowRoutesAsync();
+        btnRoutesBack.Click += (_, _) => ShowSettingsPage(SettingsPage.Main);
+        btnRouteAdd.Click += (_, _) => OpenRuleEditor(null);
+        lstRoutes.AddHandler(Button.ClickEvent, OnRouteCardClick);
+        if (btnRoutesMenu.Flyout is MenuFlyout routesMenu)
+        {
+            foreach (var item in routesMenu.Items.OfType<MenuItem>())
+            {
+                item.Click += RoutesMenu_Click;
+            }
+        }
+        // Back from the advanced routing editor (a separate window): refresh the cards.
+        Activated += (_, _) =>
+        {
+            if (routesPanel.IsVisible)
+            {
+                _ = ReloadRoutesAsync();
+            }
+        };
+
+        // Rule editor
+        btnRuleBack.Click += (_, _) => ShowSettingsPage(SettingsPage.Routes);
+        btnRuleCancel.Click += (_, _) => ShowSettingsPage(SettingsPage.Routes);
+        btnRuleSave.Click += async (_, _) => await SaveRuleAsync();
+        btnRuleDelete.Click += async (_, _) => await DeleteRuleAsync();
+        btnRuleUp.Click += async (_, _) => await MoveRuleAsync(-1);
+        btnRuleDown.Click += async (_, _) => await MoveRuleAsync(1);
+        btnRulePickProgram.Click += (_, _) => OpenProgramPicker(AppendRuleApp);
+        btnRulePickFolder.Click += async (_, _) =>
+        {
+            var folder = await PickFolderAsync();
+            if (folder != null)
+            {
+                AppendRuleApp(folder);
+            }
+        };
 
         conTheme.Content ??= new ThemeSettingView();
 
@@ -162,6 +260,21 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.SpeedUpDisplay, v => v.txtUp.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.CoreName, v => v.txtCore.Text).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.StatusBarViewModel.EnableTun, v => v.tglTun.IsChecked).DisposeWith(disposables);
+
+            // Routes page
+            this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.RoutingItems, v => v.cmbRoutingSet.ItemsSource).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.StatusBarViewModel.SelectedRouting, v => v.cmbRoutingSet.SelectedItem).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.RoutesViewModel.Rules, v => v.lstRoutes.ItemsSource).DisposeWith(disposables);
+            this.WhenAnyValue(v => v.ViewModel.RoutesViewModel.RuleCount).Subscribe(_ => UpdateRoutesSummary()).DisposeWith(disposables);
+            this.WhenAnyValue(v => v.ViewModel.RoutesViewModel.RoutingName).Subscribe(_ => UpdateRoutesSummary()).DisposeWith(disposables);
+            this.WhenAnyValue(v => v.ViewModel.StatusBarViewModel.SelectedRouting).Subscribe(_ =>
+            {
+                // Another routing set chosen in the Routes page: show its rules.
+                if (routesPanel.IsVisible)
+                {
+                    _ = ReloadRoutesAsync();
+                }
+            }).DisposeWith(disposables);
 
             // Stage: one renderer, refreshed whenever any of its inputs change.
             this.WhenAnyValue(v => v.ViewModel.ConnState).Subscribe(_ => UpdateStage()).DisposeWith(disposables);
@@ -306,13 +419,18 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var on = state == EConnState.On;
         var busy = state is EConnState.Connecting or EConnState.Stopping;
 
+        // Whitelist split tunneling with entries: only the listed apps are tunneled.
+        var ks = _config.KillSwitchItem;
+        var split = ks is { SplitTunnelWhitelist: true }
+                    && (ks.BypassApps?.Count > 0 || ks.BypassSubnets?.Count > 0);
+        var tunnelLabel = split ? "SPLIT TUNNEL" : "PROTECTED";
         txtState.Text = state switch
         {
             EConnState.Connecting => "CONNECTING…",
             EConnState.Stopping => "DISCONNECTING…",
             EConnState.On when !vm.TunActive => "CONNECTED · PROXY ONLY",
-            EConnState.On when vm.NetworkLocked => "PROTECTED · LOCKED",
-            EConnState.On => "PROTECTED",
+            EConnState.On when vm.NetworkLocked => $"{tunnelLabel} · LOCKED",
+            EConnState.On => tunnelLabel,
             _ => "DISCONNECTED",
         };
 
@@ -517,6 +635,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             tglKill.IsChecked = ks.EnableKillSwitch;
             tglLan.IsChecked = ks.AllowLan;
+            rbSplitWhitelist.IsChecked = ks.SplitTunnelWhitelist;
+            rbSplitBypass.IsChecked = !ks.SplitTunnelWhitelist;
+            UpdateSplitTexts();
             _bypassApps.Clear();
             foreach (var app in ks.BypassApps ?? [])
             {
@@ -534,7 +655,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             _loadingSettings = false;
         }
+        ShowSettingsPage(SettingsPage.Main);
         settingsOverlay.IsVisible = true;
+        _ = ReloadRoutesAsync();
     }
 
     private void CloseSettings()
@@ -546,7 +669,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         // Text left in the add boxes counts as added.
         TryAdd(txtAddApp, _bypassApps, NormalizeApp, quiet: true);
         TryAdd(txtAddSubnet, _bypassSubnets, NormalizeSubnet, quiet: true);
+        CloseProgramPicker();
         settingsOverlay.IsVisible = false;
+        ShowSettingsPage(SettingsPage.Main);
         _ = ApplySettingsAsync();
     }
 
@@ -569,12 +694,31 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             await ViewModel.SaveSecureConnectSettings(
                 tglKill.IsChecked == true,
                 tglLan.IsChecked == true,
+                rbSplitWhitelist.IsChecked == true,
                 _bypassApps.ToList(),
                 _bypassSubnets.ToList());
+            UpdateStage();
         }
         catch (Exception ex)
         {
             Logging.SaveLog("SaveSecureConnectSettings", ex);
+        }
+    }
+
+    /// <summary>Split tunneling texts for the selected mode (whitelist / go direct).</summary>
+    private void UpdateSplitTexts()
+    {
+        if (rbSplitWhitelist.IsChecked == true)
+        {
+            txtSplitAppsSub.Text = "Only these apps use the tunnel. A folder covers every program inside it.";
+            txtSplitSubnetsSub.Text = "Only these destinations use the tunnel.";
+            txtSplitHint.Text = "Only the listed apps and subnets go through the tunnel; everything else leaves directly. With both lists empty the whole PC is tunneled.";
+        }
+        else
+        {
+            txtSplitAppsSub.Text = "Routed direct (outside the tunnel). A folder covers every program inside it.";
+            txtSplitSubnetsSub.Text = "Reached directly (outside the tunnel).";
+            txtSplitHint.Text = "Listed apps and subnets egress directly and are permitted through the firewall lock, so they stay reachable while everything else is tunneled.";
         }
     }
 
@@ -642,6 +786,411 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         return $"{ip}/{prefix}";
     }
 
+    private void ShowSettingsPage(SettingsPage page)
+    {
+        settingsPanel.IsVisible = page == SettingsPage.Main;
+        routesPanel.IsVisible = page == SettingsPage.Routes;
+        ruleEditorPanel.IsVisible = page == SettingsPage.Editor;
+    }
+
+    private void AddBypassApp(string value)
+    {
+        var app = NormalizeApp(value);
+        if (!app.IsNullOrEmpty() && !_bypassApps.Contains(app, StringComparer.OrdinalIgnoreCase))
+        {
+            _bypassApps.Add(app);
+        }
+    }
+
+    /// <summary>Folder chooser; returns the folder with a trailing separator ("every program inside").</summary>
+    private async Task<string?> PickFolderAsync()
+    {
+        try
+        {
+            var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "Choose a folder — every program inside it bypasses the tunnel",
+                AllowMultiple = false,
+            });
+            var path = folders.FirstOrDefault()?.TryGetLocalPath();
+            return path.IsNullOrEmpty() ? null : ProcessPathUtils.NormalizeFolder(path);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("PickFolder", ex);
+            return null;
+        }
+    }
+
+    #endregion Settings panel
+
+    #region Running programs picker
+
+    private async void OpenProgramPicker(Action<string> onPicked)
+    {
+        _onProgramPicked = onPicked;
+        _programsLoading = true;
+        _programs = [];
+        txtProcSearch.Text = string.Empty;
+        lstProcesses.ItemsSource = null;
+        txtProcStatus.Text = "Loading…";
+        procPickerLayer.IsVisible = true;
+        txtProcSearch.Focus();
+        try
+        {
+            _programs = await Task.Run(() => ProcessPathUtils.GetRunningPrograms());
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("GetRunningPrograms", ex);
+        }
+        finally
+        {
+            _programsLoading = false;
+        }
+        FilterPrograms();
+    }
+
+    private void FilterPrograms()
+    {
+        if (_programsLoading)
+        {
+            return;
+        }
+        var query = txtProcSearch.Text?.Trim();
+        var list = query.IsNullOrEmpty()
+            ? _programs
+            : _programs.Where(p => p.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
+                                   || p.Path.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+        lstProcesses.ItemsSource = list;
+        txtProcStatus.Text = _programs.Count == 0
+            ? "No running programs could be read."
+            : $"{list.Count} of {_programs.Count} programs";
+    }
+
+    private void PickSelectedProgram()
+    {
+        if (lstProcesses.SelectedItem is not ProcessPathUtils.RunningProgram program)
+        {
+            return;
+        }
+        var onPicked = _onProgramPicked;
+        CloseProgramPicker();
+        onPicked?.Invoke(program.Path);
+    }
+
+    private void CloseProgramPicker()
+    {
+        procPickerLayer.IsVisible = false;
+        _onProgramPicked = null;
+        lstProcesses.ItemsSource = null;
+    }
+
+    #endregion Running programs picker
+
+    #region Routes page
+
+    private async Task ShowRoutesAsync()
+    {
+        await ReloadRoutesAsync();
+        ShowSettingsPage(SettingsPage.Routes);
+    }
+
+    private async Task ReloadRoutesAsync()
+    {
+        if (ViewModel?.RoutesViewModel is not { } routes)
+        {
+            return;
+        }
+        try
+        {
+            await routes.LoadAsync((cmbRoutingSet.SelectedItem as RoutingItem)?.Id);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("LoadRoutes", ex);
+        }
+    }
+
+    private void UpdateRoutesSummary()
+    {
+        if (ViewModel?.RoutesViewModel is not { } routes)
+        {
+            return;
+        }
+        var count = routes.RuleCount;
+        txtRoutesSummary.Text = routes.RoutingName.IsNullOrEmpty()
+            ? "Proxy, bypass or block by domain, IP, app and protocol."
+            : $"{count} {(count == 1 ? "rule" : "rules")} · {routes.RoutingName}";
+        txtRoutesEmpty.IsVisible = count == 0;
+    }
+
+    private async void OnRouteCardClick(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel?.RoutesViewModel is not { } routes
+            || e.Source is not Button { DataContext: RouteRuleModel card } button)
+        {
+            return;
+        }
+        e.Handled = true;
+        try
+        {
+            switch (button.Tag as string)
+            {
+                case "edit":
+                    OpenRuleEditor(card.Id);
+                    break;
+
+                case "copy":
+                    await routes.DuplicateAsync(card.Id);
+                    break;
+
+                case "toggle":
+                    await routes.SetEnabledAsync(card.Id, button is ToggleButton { IsChecked: true });
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("RouteCard", ex);
+        }
+    }
+
+    private async void RoutesMenu_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { Tag: string tag } || ViewModel is not { } vm)
+        {
+            return;
+        }
+        try
+        {
+            switch (tag)
+            {
+                case "preset-russia":
+                    await ApplyPresetAsync(EPresetType.Russia);
+                    break;
+
+                case "preset-iran":
+                    await ApplyPresetAsync(EPresetType.Iran);
+                    break;
+
+                case "preset-default":
+                    await ApplyPresetAsync(EPresetType.Default);
+                    break;
+
+                case "advanced":
+                    if (vm.RoutingSettingCmd is System.Windows.Input.ICommand command && command.CanExecute(null))
+                    {
+                        command.Execute(null);
+                    }
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("RoutesMenu", ex);
+        }
+    }
+
+    private async Task ApplyPresetAsync(EPresetType type)
+    {
+        if (ViewModel == null
+            || await UI.ShowYesNo($"Apply the {type} preset? It switches the routing templates, DNS and geo files to this region (your profiles stay).") != ButtonResult.Yes)
+        {
+            return;
+        }
+        await ViewModel.ApplyRegionalPreset(type);
+        await ViewModel.RoutesViewModel.LoadAsync();
+    }
+
+    #endregion Routes page
+
+    #region Rule editor
+
+    private void OpenRuleEditor(string? id)
+    {
+        if (ViewModel?.RoutesViewModel is not { } routes)
+        {
+            return;
+        }
+        var rule = id.IsNullOrEmpty() ? null : routes.GetRuleCopy(id);
+        var isNew = rule is null;
+        rule ??= new RulesItem { Enabled = true, OutboundTag = Global.DirectTag };
+        _editingRule = rule;
+        _editingOutbound = rule.OutboundTag.IsNullOrEmpty() ? Global.ProxyTag : rule.OutboundTag;
+
+        txtRuleEditorTitle.Text = isNew ? "New rule" : "Edit rule";
+        txtRuleName.Text = rule.Remarks ?? string.Empty;
+        tglRuleEnabled.IsChecked = rule.Enabled;
+        rbRuleDirect.IsChecked = _editingOutbound == Global.DirectTag;
+        rbRuleBlock.IsChecked = _editingOutbound == Global.BlockTag;
+        rbRuleProxy.IsChecked = _editingOutbound != Global.DirectTag && _editingOutbound != Global.BlockTag;
+
+        txtRuleDomains.Text = string.Join(Environment.NewLine, rule.Domain ?? []);
+        txtRuleIps.Text = string.Join(Environment.NewLine, rule.Ip ?? []);
+        txtRuleApps.Text = string.Join(Environment.NewLine, rule.Process ?? []);
+
+        var protocols = rule.Protocol ?? [];
+        tglProtoHttp.IsChecked = protocols.Contains("http", StringComparer.OrdinalIgnoreCase);
+        tglProtoTls.IsChecked = protocols.Contains("tls", StringComparer.OrdinalIgnoreCase);
+        tglProtoQuic.IsChecked = protocols.Contains("quic", StringComparer.OrdinalIgnoreCase);
+        tglProtoBt.IsChecked = protocols.Contains("bittorrent", StringComparer.OrdinalIgnoreCase);
+
+        txtRulePort.Text = rule.Port ?? string.Empty;
+        var network = rule.Network?.Replace(" ", string.Empty).ToLowerInvariant();
+        rbNetTcp.IsChecked = network == "tcp";
+        rbNetUdp.IsChecked = network == "udp";
+        rbNetAny.IsChecked = network is not ("tcp" or "udp");
+
+        btnRuleDelete.IsVisible = !isNew;
+        btnRuleUp.IsVisible = !isNew;
+        btnRuleDown.IsVisible = !isNew;
+        UpdateRulePosition();
+        ShowSettingsPage(SettingsPage.Editor);
+        txtRuleName.Focus();
+    }
+
+    private void UpdateRulePosition()
+    {
+        var routes = ViewModel?.RoutesViewModel;
+        var index = routes?.IndexOf(_editingRule?.Id) ?? -1;
+        var count = routes?.RuleCount ?? 0;
+        txtRulePosition.Text = index >= 0 ? $"#{index + 1} of {count}" : "new rules go on top";
+        btnRuleUp.IsEnabled = index > 0;
+        btnRuleDown.IsEnabled = index >= 0 && index < count - 1;
+    }
+
+    private void AppendRuleApp(string value)
+    {
+        var app = NormalizeApp(value);
+        if (app.IsNullOrEmpty())
+        {
+            return;
+        }
+        var lines = SplitLines(txtRuleApps.Text) ?? [];
+        if (!lines.Contains(app, StringComparer.OrdinalIgnoreCase))
+        {
+            lines.Add(app);
+        }
+        txtRuleApps.Text = string.Join(Environment.NewLine, lines);
+    }
+
+    private static List<string>? SplitLines(string? text)
+    {
+        var lines = (text ?? string.Empty)
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        return lines.Count > 0 ? lines : null;
+    }
+
+    private static bool IsValidPortList(string ports)
+    {
+        foreach (var part in ports.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var range = part.Split('-');
+            if (range.Length > 2 || range.Any(p => !int.TryParse(p, out var n) || n < 0 || n > 65535))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private async Task SaveRuleAsync()
+    {
+        if (ViewModel?.RoutesViewModel is not { } routes || _editingRule is not { } rule)
+        {
+            return;
+        }
+
+        rule.Remarks = txtRuleName.Text?.Trim();
+        rule.Enabled = tglRuleEnabled.IsChecked == true;
+        rule.OutboundTag = rbRuleDirect.IsChecked == true ? Global.DirectTag
+            : rbRuleBlock.IsChecked == true ? Global.BlockTag
+            : _editingOutbound is Global.DirectTag or Global.BlockTag ? Global.ProxyTag
+            : _editingOutbound;
+
+        rule.Domain = SplitLines(txtRuleDomains.Text);
+        rule.Ip = SplitLines(txtRuleIps.Text);
+        rule.Process = SplitLines(txtRuleApps.Text);
+
+        // Chips for the common protocols; any other protocol the rule had is kept.
+        var protocols = (rule.Protocol ?? []).Where(p => !ChipProtocols.Contains(p)).ToList();
+        if (tglProtoHttp.IsChecked == true)
+        {
+            protocols.Add("http");
+        }
+        if (tglProtoTls.IsChecked == true)
+        {
+            protocols.Add("tls");
+        }
+        if (tglProtoQuic.IsChecked == true)
+        {
+            protocols.Add("quic");
+        }
+        if (tglProtoBt.IsChecked == true)
+        {
+            protocols.Add("bittorrent");
+        }
+        rule.Protocol = protocols.Count > 0 ? protocols : null;
+
+        var port = txtRulePort.Text?.Replace(" ", string.Empty);
+        if (!port.IsNullOrEmpty() && !IsValidPortList(port))
+        {
+            _manager?.Show(new Avalonia.Controls.Notifications.Notification(null, "Port: use numbers and ranges, e.g. 443, 1000-2000", NotificationType.Warning));
+            return;
+        }
+        rule.Port = port.IsNullOrEmpty() ? null : port;
+        rule.Network = rbNetTcp.IsChecked == true ? "tcp" : rbNetUdp.IsChecked == true ? "udp" : null;
+
+        if (rule.Domain is null && rule.Ip is null && rule.Process is null && rule.Protocol is null
+            && rule.Port.IsNullOrEmpty() && rule.Network.IsNullOrEmpty() && !(rule.InboundTag?.Count > 0))
+        {
+            _manager?.Show(new Avalonia.Controls.Notifications.Notification(null, "Add at least one condition: a domain, IP, app, protocol or port.", NotificationType.Warning));
+            return;
+        }
+
+        try
+        {
+            await routes.UpsertAsync(rule);
+            ShowSettingsPage(SettingsPage.Routes);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("SaveRule", ex);
+        }
+    }
+
+    private async Task DeleteRuleAsync()
+    {
+        if (ViewModel?.RoutesViewModel is not { } routes || _editingRule is not { } rule || routes.IndexOf(rule.Id) < 0)
+        {
+            return;
+        }
+        var name = rule.Remarks.IsNullOrEmpty() ? "this rule" : $"\"{rule.Remarks}\"";
+        if (await UI.ShowYesNo($"Delete {name}?") != ButtonResult.Yes)
+        {
+            return;
+        }
+        await routes.DeleteAsync(rule.Id);
+        ShowSettingsPage(SettingsPage.Routes);
+    }
+
+    private async Task MoveRuleAsync(int delta)
+    {
+        if (ViewModel?.RoutesViewModel is not { } routes || _editingRule is not { } rule)
+        {
+            return;
+        }
+        await routes.MoveAsync(rule.Id, delta);
+        UpdateRulePosition();
+    }
+
+    #endregion Rule editor
+
+    #region Settings menu
+
     private void MenuAppearance_Click(object? sender, RoutedEventArgs e)
     {
         // Theme / font size / language picker (the former title-bar "⋮" control).
@@ -651,7 +1200,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
     }
 
-    #endregion Settings panel
+    #endregion Settings menu
 
     #region Event
 
@@ -711,9 +1260,27 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private async void MainWindow_KeyDown(object? sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Escape && procPickerLayer.IsVisible)
+        {
+            CloseProgramPicker();
+            e.Handled = true;
+            return;
+        }
         if (e.Key == Key.Escape && settingsOverlay.IsVisible)
         {
-            CloseSettings();
+            // Step back: editor -> routes -> settings -> closed.
+            if (ruleEditorPanel.IsVisible)
+            {
+                ShowSettingsPage(SettingsPage.Routes);
+            }
+            else if (routesPanel.IsVisible)
+            {
+                ShowSettingsPage(SettingsPage.Main);
+            }
+            else
+            {
+                CloseSettings();
+            }
             e.Handled = true;
             return;
         }

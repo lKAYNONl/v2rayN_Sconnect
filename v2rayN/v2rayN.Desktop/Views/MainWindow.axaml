@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+    xmlns:dto="clr-namespace:ServiceLib.Models.Dto;assembly=ServiceLib"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:sys="clr-namespace:System;assembly=netstandard"
@@ -286,6 +287,185 @@
         </Style>
         <Style Selector="ToggleButton.sct.warn:checked /template/ Ellipse#knob">
             <Setter Property="Fill" Value="#F5B83D" />
+        </Style>
+
+        <!-- Small icon buttons (cards, pickers) -->
+        <Style Selector="Button.icon">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="Button.icon Path">
+            <Setter Property="Fill" Value="#8B95B4" />
+        </Style>
+        <Style Selector="Button.icon:pointerover">
+            <Setter Property="Background" Value="#1D2647" />
+        </Style>
+        <Style Selector="Button.icon:pointerover Path">
+            <Setter Property="Fill" Value="#E8EBF6" />
+        </Style>
+
+        <!-- Settings row that opens a page -->
+        <Style Selector="Button.row">
+            <Setter Property="Padding" Value="0,7" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="Button.row Path">
+            <Setter Property="Stroke" Value="#5B648A" />
+        </Style>
+        <Style Selector="Button.row:pointerover Path">
+            <Setter Property="Stroke" Value="#E8EBF6" />
+        </Style>
+
+        <!-- Routes: rule cards -->
+        <Style Selector="Border.card">
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Padding" Value="14,12,10,12" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Background" Value="#161C35" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="TextBlock.act">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#4F8CFF" />
+        </Style>
+        <Style Selector="TextBlock.act.direct">
+            <Setter Property="Foreground" Value="#37D3C2" />
+        </Style>
+        <Style Selector="TextBlock.act.block">
+            <Setter Property="Foreground" Value="#FF5D6C" />
+        </Style>
+
+        <!-- Rule editor: text fields, segmented choices, protocol chips -->
+        <Style Selector="TextBox.field">
+            <Setter Property="FontFamily" Value="avares://v2rayN/Assets/Fonts#IBM Plex Mono" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="9,6" />
+            <Setter Property="Margin" Value="0,6,0,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="#161C35" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#E8EBF6" />
+        </Style>
+        <Style Selector="TextBox.multi">
+            <Setter Property="AcceptsReturn" Value="True" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
+            <Setter Property="MinHeight" Value="64" />
+            <Setter Property="MaxHeight" Value="140" />
+            <Setter Property="VerticalContentAlignment" Value="Top" />
+        </Style>
+        <Style Selector="RadioButton.seg, ToggleButton.chip">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border
+                        Name="segBox"
+                        Padding="12,6"
+                        Background="#161C35"
+                        BorderBrush="#273055"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                        <ContentPresenter
+                            Name="PART_ContentPresenter"
+                            Content="{TemplateBinding Content}"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            Foreground="#8B95B4" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="RadioButton.seg:pointerover /template/ Border#segBox, ToggleButton.chip:pointerover /template/ Border#segBox">
+            <Setter Property="BorderBrush" Value="#5B648A" />
+        </Style>
+        <Style Selector="RadioButton.seg:checked /template/ Border#segBox, ToggleButton.chip:checked /template/ Border#segBox">
+            <Setter Property="Background" Value="#1D2647" />
+            <Setter Property="BorderBrush" Value="#3D63B3" />
+        </Style>
+        <Style Selector="RadioButton.seg:checked /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.chip:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Foreground" Value="#E8EBF6" />
+        </Style>
+        <Style Selector="RadioButton.seg.proxy:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Foreground" Value="#4F8CFF" />
+        </Style>
+        <Style Selector="RadioButton.seg.direct:checked /template/ Border#segBox">
+            <Setter Property="BorderBrush" Value="#319296" />
+        </Style>
+        <Style Selector="RadioButton.seg.direct:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Foreground" Value="#37D3C2" />
+        </Style>
+        <Style Selector="RadioButton.seg.block:checked /template/ Border#segBox">
+            <Setter Property="BorderBrush" Value="#9B3B4A" />
+        </Style>
+        <Style Selector="RadioButton.seg.block:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Foreground" Value="#FF5D6C" />
+        </Style>
+
+        <!-- Panel footer buttons -->
+        <Style Selector="Button.primary">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="#37D3C2" />
+        </Style>
+        <Style Selector="Button.primary TextBlock">
+            <Setter Property="Foreground" Value="#0C1020" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="12.5" />
+        </Style>
+        <Style Selector="Button.primary:pointerover">
+            <Setter Property="Background" Value="#5BE0D2" />
+        </Style>
+        <Style Selector="Button.ghost">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="#161C35" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button.ghost TextBlock">
+            <Setter Property="Foreground" Value="#8B95B4" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12.5" />
+        </Style>
+        <Style Selector="Button.ghost:pointerover">
+            <Setter Property="BorderBrush" Value="#5B648A" />
+        </Style>
+        <Style Selector="Button.ghost:pointerover TextBlock">
+            <Setter Property="Foreground" Value="#E8EBF6" />
+        </Style>
+        <Style Selector="Button.ghost.danger TextBlock">
+            <Setter Property="Foreground" Value="#FF5D6C" />
+        </Style>
+        <Style Selector="Button.sc:disabled">
+            <Setter Property="Opacity" Value="0.4" />
+        </Style>
+
+        <!-- Running programs picker -->
+        <Style Selector="ListBox#lstProcesses">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style Selector="ListBox#lstProcesses ListBoxItem">
+            <Setter Property="Padding" Value="10,7" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="ListBox#lstProcesses ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox#lstProcesses ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#1D2647" />
+        </Style>
+        <Style Selector="ListBox#lstProcesses ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#1D2647" />
         </Style>
     </Window.Styles>
 
@@ -964,6 +1144,7 @@
                 Padding="18"
                 Background="#B8080B18"
                 IsVisible="False">
+                <Panel>
                 <Border
                     x:Name="settingsPanel"
                     MaxWidth="420"
@@ -1033,11 +1214,64 @@
 
                                 <Border Classes="section">
                                     <StackPanel>
-                                        <TextBlock Classes="eyebrow" Text="SPLIT TUNNELING — BYPASS THE TUNNEL" />
-                                        <StackPanel Margin="0,7">
-                                            <TextBlock Classes="label" Text="Apps" />
-                                            <TextBlock Classes="sub" Text="Routed direct (outside the tunnel)." />
+                                        <TextBlock Classes="eyebrow" Text="SPLIT TUNNELING" />
+                                        <StackPanel Margin="0,7,0,2" Orientation="Horizontal">
+                                            <RadioButton
+                                                x:Name="rbSplitWhitelist"
+                                                Classes="seg direct"
+                                                Content="Only listed via tunnel"
+                                                GroupName="splitMode"
+                                                ToolTip.Tip="Whitelist: only the listed apps and subnets go through the tunnel, everything else goes direct" />
+                                            <RadioButton
+                                                x:Name="rbSplitBypass"
+                                                Classes="seg"
+                                                Content="Listed go direct"
+                                                GroupName="splitMode"
+                                                ToolTip.Tip="Bypass: the listed apps and subnets go direct, everything else is tunneled" />
                                         </StackPanel>
+                                        <Grid Margin="0,7" ColumnDefinitions="*,Auto">
+                                            <StackPanel Margin="0,0,12,0">
+                                                <TextBlock Classes="label" Text="Apps" />
+                                                <TextBlock
+                                                    x:Name="txtSplitAppsSub"
+                                                    Classes="sub"
+                                                    Text="Only these apps use the tunnel. A folder covers every program inside it." />
+                                            </StackPanel>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                Orientation="Horizontal"
+                                                Spacing="6">
+                                                <Button
+                                                    x:Name="btnPickProgram"
+                                                    Width="28"
+                                                    Height="28"
+                                                    Classes="sc gear"
+                                                    CornerRadius="8"
+                                                    ToolTip.Tip="Add a running program">
+                                                    <Path
+                                                        Data="M 0 5 H 10 M 5 0 V 10"
+                                                        StrokeLineCap="Round"
+                                                        StrokeThickness="1.6" />
+                                                </Button>
+                                                <Button
+                                                    x:Name="btnPickFolder"
+                                                    Width="28"
+                                                    Height="28"
+                                                    Classes="sc gear"
+                                                    CornerRadius="8"
+                                                    ToolTip.Tip="Add a whole folder">
+                                                    <Viewbox Width="14" Height="14">
+                                                        <Canvas Width="24" Height="24">
+                                                            <Path
+                                                                Data="M 22 19 a 2 2 0 0 1 -2 2 H 4 a 2 2 0 0 1 -2 -2 V 5 a 2 2 0 0 1 2 -2 h 5 l 2 3 h 9 a 2 2 0 0 1 2 2 z"
+                                                                StrokeJoin="Round"
+                                                                StrokeThickness="2" />
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
                                         <ItemsControl x:Name="lstBypassApps" Margin="0,1,0,0">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -1078,6 +1312,11 @@
                                             Margin="0,13,0,8"
                                             Classes="label"
                                             Text="Subnets" />
+                                        <TextBlock
+                                            x:Name="txtSplitSubnetsSub"
+                                            Margin="0,-6,0,8"
+                                            Classes="sub"
+                                            Text="Only these destinations use the tunnel." />
                                         <ItemsControl x:Name="lstBypassSubnets">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -1114,7 +1353,33 @@
                                             Classes="add"
                                             PlaceholderText="+ add subnet — CIDR, e.g. 192.168.0.0/16, Enter" />
 
-                                        <TextBlock Classes="hint" Text="Listed apps and subnets egress directly and are permitted through the firewall lock, so they stay reachable while everything else is tunneled." />
+                                        <TextBlock
+                                            x:Name="txtSplitHint"
+                                            Classes="hint"
+                                            Text="Only the listed apps and subnets go through the tunnel; everything else leaves directly. With both lists empty the whole PC is tunneled." />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Classes="section">
+                                    <StackPanel>
+                                        <TextBlock Classes="eyebrow" Text="ROUTING" />
+                                        <Button x:Name="btnOpenRoutes" Classes="sc row">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <StackPanel Margin="0,0,12,0">
+                                                    <TextBlock Classes="label" Text="Routes" />
+                                                    <TextBlock
+                                                        x:Name="txtRoutesSummary"
+                                                        Classes="sub"
+                                                        Text="Proxy, bypass or block by domain, IP, app and protocol." />
+                                                </StackPanel>
+                                                <Path
+                                                    Grid.Column="1"
+                                                    VerticalAlignment="Center"
+                                                    Data="M 0 0 L 5 5 L 0 10"
+                                                    StrokeLineCap="Round"
+                                                    StrokeThickness="1.6" />
+                                            </Grid>
+                                        </Button>
                                     </StackPanel>
                                 </Border>
 
@@ -1135,6 +1400,534 @@
                                 </Border>
                             </StackPanel>
                         </ScrollViewer>
+                    </DockPanel>
+                </Border>
+
+                <!-- ===== Routes page (NekoBox style) ===== -->
+                <Border
+                    x:Name="routesPanel"
+                    MaxWidth="560"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#11162A"
+                    BorderBrush="#273055"
+                    BorderThickness="1"
+                    BoxShadow="0 24 60 0 #73000000"
+                    ClipToBounds="True"
+                    CornerRadius="14"
+                    IsVisible="False">
+                    <DockPanel>
+                        <Border
+                            Padding="12,12,16,12"
+                            BorderBrush="#273055"
+                            BorderThickness="0,0,0,1"
+                            DockPanel.Dock="Top">
+                            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                                <Button
+                                    x:Name="btnRoutesBack"
+                                    Width="28"
+                                    Height="28"
+                                    Classes="sc gear"
+                                    CornerRadius="8"
+                                    ToolTip.Tip="Back">
+                                    <Path
+                                        Data="M 5 0 L 0 5 L 5 10"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="1.6" />
+                                </Button>
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Margin="12,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="15"
+                                    FontWeight="Bold"
+                                    Foreground="#E8EBF6"
+                                    Text="Routes" />
+                                <ComboBox
+                                    x:Name="cmbRoutingSet"
+                                    Grid.Column="2"
+                                    Width="170"
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Routing set in use">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{ReflectionBinding Remarks}" TextTrimming="CharacterEllipsis" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button
+                                    x:Name="btnRouteAdd"
+                                    Grid.Column="3"
+                                    Width="28"
+                                    Height="28"
+                                    Margin="0,0,6,0"
+                                    Classes="sc gear"
+                                    CornerRadius="8"
+                                    ToolTip.Tip="Add rule">
+                                    <Path
+                                        Data="M 0 5 H 10 M 5 0 V 10"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="1.6" />
+                                </Button>
+                                <Button
+                                    x:Name="btnRoutesMenu"
+                                    Grid.Column="4"
+                                    Width="28"
+                                    Height="28"
+                                    Classes="sc gear"
+                                    CornerRadius="8"
+                                    ToolTip.Tip="Presets and more">
+                                    <Path
+                                        Data="M 0 0 L 0.01 0 M 5 0 L 5.01 0 M 10 0 L 10.01 0"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="2.6" />
+                                    <Button.Flyout>
+                                        <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                            <MenuItem Header="Preset: Russia (bypass RU sites and IPs)" Tag="preset-russia" />
+                                            <MenuItem Header="Preset: Iran" Tag="preset-iran" />
+                                            <MenuItem Header="Preset: Default" Tag="preset-default" />
+                                            <Separator />
+                                            <MenuItem Header="Advanced routing editor…" Tag="advanced" />
+                                        </MenuFlyout>
+                                    </Button.Flyout>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <Border
+                            Margin="14,12,14,4"
+                            Padding="14,11"
+                            Background="#161C35"
+                            BorderBrush="#273055"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            DockPanel.Dock="Top">
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="#8B95B4"
+                                LineHeight="17"
+                                Text="Rules are checked top to bottom — the first match wins. A rule matches when any of its domains, IPs or apps match (and its port, protocol and network, if set)."
+                                TextWrapping="Wrap" />
+                        </Border>
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="14,8,14,6">
+                                <ItemsControl x:Name="lstRoutes">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="dto:RouteRuleModel">
+                                            <Border Classes="card">
+                                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                                                    <TextBlock
+                                                        Grid.Row="0"
+                                                        Grid.Column="0"
+                                                        VerticalAlignment="Center"
+                                                        FontSize="14"
+                                                        FontWeight="Bold"
+                                                        Foreground="#E8EBF6"
+                                                        Text="{Binding Title}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                    <StackPanel
+                                                        Grid.Row="0"
+                                                        Grid.Column="1"
+                                                        Orientation="Horizontal"
+                                                        Spacing="2">
+                                                        <Button
+                                                            Classes="sc icon"
+                                                            Tag="edit"
+                                                            ToolTip.Tip="Edit">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M 3 17.25 V 21 h 3.75 L 17.81 9.94 l -3.75 -3.75 L 3 17.25 z M 20.71 7.04 a 1 1 0 0 0 0 -1.41 l -2.34 -2.34 a 1 1 0 0 0 -1.41 0 l -1.83 1.83 l 3.75 3.75 l 1.83 -1.83 z" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                        </Button>
+                                                        <Button
+                                                            Classes="sc icon"
+                                                            Tag="copy"
+                                                            ToolTip.Tip="Duplicate">
+                                                            <Viewbox Width="16" Height="16">
+                                                                <Canvas Width="24" Height="24">
+                                                                    <Path Data="M 16 1 H 4 c -1.1 0 -2 0.9 -2 2 v 14 h 2 V 3 h 12 V 1 z m 3 4 H 8 c -1.1 0 -2 0.9 -2 2 v 14 c 0 1.1 0.9 2 2 2 h 11 c 1.1 0 2 -0.9 2 -2 V 7 c 0 -1.1 -0.9 -2 -2 -2 z m 0 16 H 8 V 7 h 11 v 14 z" />
+                                                                </Canvas>
+                                                            </Viewbox>
+                                                        </Button>
+                                                    </StackPanel>
+                                                    <TextBlock
+                                                        Grid.Row="1"
+                                                        Grid.Column="0"
+                                                        Margin="0,8,12,0"
+                                                        FontFamily="{StaticResource ScMono}"
+                                                        FontSize="11.5"
+                                                        Foreground="#8B95B4"
+                                                        LineHeight="17"
+                                                        Text="{Binding Summary}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock
+                                                        Grid.Row="2"
+                                                        Grid.Column="0"
+                                                        Margin="0,8,0,0"
+                                                        Classes="act"
+                                                        Classes.block="{Binding IsBlock}"
+                                                        Classes.direct="{Binding IsDirect}"
+                                                        Text="{Binding ActionText}" />
+                                                    <ToggleButton
+                                                        Grid.Row="1"
+                                                        Grid.RowSpan="2"
+                                                        Grid.Column="1"
+                                                        Margin="0,0,4,0"
+                                                        HorizontalAlignment="Right"
+                                                        VerticalAlignment="Bottom"
+                                                        Classes="sct"
+                                                        IsChecked="{Binding Enabled, Mode=OneWay}"
+                                                        Tag="toggle"
+                                                        ToolTip.Tip="Enable / disable" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock
+                                    x:Name="txtRoutesEmpty"
+                                    Margin="0,10,0,14"
+                                    HorizontalAlignment="Center"
+                                    FontSize="12"
+                                    Foreground="#5B648A"
+                                    IsVisible="False"
+                                    Text="No rules yet — add one with +, or pick a preset from the menu next to it." />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+
+                <!-- ===== Rule editor ===== -->
+                <Border
+                    x:Name="ruleEditorPanel"
+                    MaxWidth="520"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#11162A"
+                    BorderBrush="#273055"
+                    BorderThickness="1"
+                    BoxShadow="0 24 60 0 #73000000"
+                    ClipToBounds="True"
+                    CornerRadius="14"
+                    IsVisible="False">
+                    <DockPanel>
+                        <Border
+                            Padding="12,12,16,12"
+                            BorderBrush="#273055"
+                            BorderThickness="0,0,0,1"
+                            DockPanel.Dock="Top">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <Button
+                                    x:Name="btnRuleBack"
+                                    Width="28"
+                                    Height="28"
+                                    Classes="sc gear"
+                                    CornerRadius="8"
+                                    ToolTip.Tip="Back without saving">
+                                    <Path
+                                        Data="M 5 0 L 0 5 L 5 10"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="1.6" />
+                                </Button>
+                                <TextBlock
+                                    x:Name="txtRuleEditorTitle"
+                                    Grid.Column="1"
+                                    Margin="12,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="15"
+                                    FontWeight="Bold"
+                                    Foreground="#E8EBF6"
+                                    Text="Edit rule" />
+                                <ToggleButton
+                                    x:Name="tglRuleEnabled"
+                                    Grid.Column="2"
+                                    Classes="sct"
+                                    ToolTip.Tip="Rule enabled" />
+                            </Grid>
+                        </Border>
+                        <Border
+                            Padding="16,12"
+                            BorderBrush="#273055"
+                            BorderThickness="0,1,0,0"
+                            DockPanel.Dock="Bottom">
+                            <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto">
+                                <Button
+                                    x:Name="btnRuleDelete"
+                                    Grid.Column="0"
+                                    Margin="0,0,8,0"
+                                    Classes="sc ghost danger">
+                                    <TextBlock VerticalAlignment="Center" Text="Delete" />
+                                </Button>
+                                <Button
+                                    x:Name="btnRuleUp"
+                                    Grid.Column="1"
+                                    Width="32"
+                                    Margin="0,0,4,0"
+                                    Padding="0"
+                                    Classes="sc ghost"
+                                    ToolTip.Tip="Move up (checked earlier)">
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="↑" />
+                                </Button>
+                                <Button
+                                    x:Name="btnRuleDown"
+                                    Grid.Column="2"
+                                    Width="32"
+                                    Padding="0"
+                                    Classes="sc ghost"
+                                    ToolTip.Tip="Move down (checked later)">
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="↓" />
+                                </Button>
+                                <TextBlock
+                                    x:Name="txtRulePosition"
+                                    Grid.Column="3"
+                                    Margin="10,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource ScMono}"
+                                    FontSize="11"
+                                    Foreground="#5B648A"
+                                    Text="" />
+                                <Button
+                                    x:Name="btnRuleCancel"
+                                    Grid.Column="4"
+                                    Margin="0,0,8,0"
+                                    Classes="sc ghost">
+                                    <TextBlock VerticalAlignment="Center" Text="Cancel" />
+                                </Button>
+                                <Button
+                                    x:Name="btnRuleSave"
+                                    Grid.Column="5"
+                                    Classes="sc primary">
+                                    <TextBlock VerticalAlignment="Center" Text="Save" />
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="16,14,16,16" Spacing="14">
+                                <StackPanel>
+                                    <TextBlock Classes="label" Text="Name" />
+                                    <TextBox
+                                        x:Name="txtRuleName"
+                                        Classes="field"
+                                        FontFamily="avares://v2rayN/Assets/Fonts#Manrope"
+                                        PlaceholderText="e.g. BitTorrent direct" />
+                                </StackPanel>
+
+                                <StackPanel>
+                                    <TextBlock Classes="label" Text="Action" />
+                                    <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
+                                        <RadioButton
+                                            x:Name="rbRuleProxy"
+                                            Classes="seg proxy"
+                                            Content="Proxy"
+                                            GroupName="ruleAction" />
+                                        <RadioButton
+                                            x:Name="rbRuleDirect"
+                                            Classes="seg direct"
+                                            Content="Bypass"
+                                            GroupName="ruleAction" />
+                                        <RadioButton
+                                            x:Name="rbRuleBlock"
+                                            Classes="seg block"
+                                            Content="Block"
+                                            GroupName="ruleAction" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <StackPanel>
+                                    <TextBlock Classes="label" Text="Domains" />
+                                    <TextBlock Classes="sub" Text="One per line: geosite:category-ru, domain:example.com, full:, regexp:\.ru$, keyword:" />
+                                    <TextBox
+                                        x:Name="txtRuleDomains"
+                                        Classes="field multi"
+                                        PlaceholderText="geosite:category-ads-all" />
+                                </StackPanel>
+
+                                <StackPanel>
+                                    <TextBlock Classes="label" Text="IP addresses" />
+                                    <TextBlock Classes="sub" Text="One per line: geoip:ru, geoip:private, 10.0.0.0/8 (prefix ! to exclude)" />
+                                    <TextBox
+                                        x:Name="txtRuleIps"
+                                        Classes="field multi"
+                                        PlaceholderText="geoip:ru" />
+                                </StackPanel>
+
+                                <StackPanel>
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Margin="0,0,12,0">
+                                            <TextBlock Classes="label" Text="Apps" />
+                                            <TextBlock Classes="sub" Text="One per line: exe name, full path, or a folder ending with \" />
+                                        </StackPanel>
+                                        <StackPanel
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal"
+                                            Spacing="6">
+                                            <Button
+                                                x:Name="btnRulePickProgram"
+                                                Width="28"
+                                                Height="28"
+                                                Classes="sc gear"
+                                                CornerRadius="8"
+                                                ToolTip.Tip="Add a running program">
+                                                <Path
+                                                    Data="M 0 5 H 10 M 5 0 V 10"
+                                                    StrokeLineCap="Round"
+                                                    StrokeThickness="1.6" />
+                                            </Button>
+                                            <Button
+                                                x:Name="btnRulePickFolder"
+                                                Width="28"
+                                                Height="28"
+                                                Classes="sc gear"
+                                                CornerRadius="8"
+                                                ToolTip.Tip="Add a whole folder">
+                                                <Viewbox Width="14" Height="14">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path
+                                                            Data="M 22 19 a 2 2 0 0 1 -2 2 H 4 a 2 2 0 0 1 -2 -2 V 5 a 2 2 0 0 1 2 -2 h 5 l 2 3 h 9 a 2 2 0 0 1 2 2 z"
+                                                            StrokeJoin="Round"
+                                                            StrokeThickness="2" />
+                                                    </Canvas>
+                                                </Viewbox>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBox
+                                        x:Name="txtRuleApps"
+                                        Classes="field multi"
+                                        PlaceholderText="qbittorrent.exe" />
+                                </StackPanel>
+
+                                <StackPanel>
+                                    <TextBlock Classes="label" Text="Protocol" />
+                                    <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
+                                        <ToggleButton x:Name="tglProtoHttp" Classes="chip" Content="http" />
+                                        <ToggleButton x:Name="tglProtoTls" Classes="chip" Content="tls" />
+                                        <ToggleButton x:Name="tglProtoQuic" Classes="chip" Content="quic" />
+                                        <ToggleButton x:Name="tglProtoBt" Classes="chip" Content="bittorrent" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Margin="0,0,16,0">
+                                        <TextBlock Classes="label" Text="Port" />
+                                        <TextBox
+                                            x:Name="txtRulePort"
+                                            Classes="field"
+                                            PlaceholderText="443, 1000-2000" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Classes="label" Text="Network" />
+                                        <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
+                                            <RadioButton
+                                                x:Name="rbNetAny"
+                                                Classes="seg"
+                                                Content="any"
+                                                GroupName="ruleNetwork" />
+                                            <RadioButton
+                                                x:Name="rbNetTcp"
+                                                Classes="seg"
+                                                Content="tcp"
+                                                GroupName="ruleNetwork" />
+                                            <RadioButton
+                                                x:Name="rbNetUdp"
+                                                Classes="seg"
+                                                Content="udp"
+                                                GroupName="ruleNetwork" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+                </Panel>
+            </Border>
+
+            <!-- ===== Running programs picker (Apps "+") ===== -->
+            <Border
+                x:Name="procPickerLayer"
+                Padding="18"
+                Background="#99080B18"
+                IsVisible="False">
+                <Border
+                    Width="440"
+                    MaxHeight="480"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#11162A"
+                    BorderBrush="#273055"
+                    BorderThickness="1"
+                    BoxShadow="0 24 60 0 #73000000"
+                    ClipToBounds="True"
+                    CornerRadius="14">
+                    <DockPanel>
+                        <Border
+                            Padding="16,13"
+                            BorderBrush="#273055"
+                            BorderThickness="0,0,0,1"
+                            DockPanel.Dock="Top">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel>
+                                    <TextBlock
+                                        FontSize="15"
+                                        FontWeight="Bold"
+                                        Foreground="#E8EBF6"
+                                        Text="Running programs" />
+                                    <TextBlock Classes="sub" Text="Click a program to add it by its full path." />
+                                </StackPanel>
+                                <Button
+                                    x:Name="btnProcClose"
+                                    Grid.Column="1"
+                                    Width="28"
+                                    Height="28"
+                                    Classes="sc gear"
+                                    CornerRadius="8"
+                                    ToolTip.Tip="Close">
+                                    <Path
+                                        Data="M 0 0 L 9 9 M 9 0 L 0 9"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="1.5" />
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <Border Padding="12,10,12,4" DockPanel.Dock="Top">
+                            <TextBox
+                                x:Name="txtProcSearch"
+                                Classes="add"
+                                PlaceholderText="Search by name or path" />
+                        </Border>
+                        <TextBlock
+                            x:Name="txtProcStatus"
+                            Margin="16,4,16,12"
+                            DockPanel.Dock="Bottom"
+                            FontSize="11.5"
+                            Foreground="#5B648A"
+                            Text="" />
+                        <ListBox
+                            x:Name="lstProcesses"
+                            Padding="8,4"
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                            SelectionMode="Single">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Spacing="1">
+                                        <TextBlock
+                                            FontSize="13"
+                                            FontWeight="SemiBold"
+                                            Foreground="#E8EBF6"
+                                            Text="{ReflectionBinding Name}" />
+                                        <TextBlock
+                                            FontFamily="{StaticResource ScMono}"
+                                            FontSize="11"
+                                            Foreground="#8B95B4"
+                                            Text="{ReflectionBinding Path}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
                     </DockPanel>
                 </Border>
             </Border>

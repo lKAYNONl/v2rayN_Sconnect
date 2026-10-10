@@ -1238,7 +1238,7 @@
                             Grid.ColumnSpan="2"
                             Margin="{StaticResource Margin4}"
                             FontWeight="Bold"
-                            Text="Split tunneling — bypass the tunnel" />
+                            Text="Split tunneling (mode: Secure Connect settings → whitelist by default)" />
 
                         <TextBlock
                             Grid.Row="4"
@@ -1256,7 +1256,7 @@
                             HorizontalAlignment="Left"
                             AcceptsReturn="True"
                             TextWrapping="NoWrap"
-                            Watermark="telegram.exe&#x0a;C:\Games\game.exe" />
+                            PlaceholderText="telegram.exe&#x0a;C:\Games\game.exe" />
 
                         <TextBlock
                             Grid.Row="5"
@@ -1274,7 +1274,7 @@
                             HorizontalAlignment="Left"
                             AcceptsReturn="True"
                             TextWrapping="NoWrap"
-                            Watermark="192.168.0.0/16&#x0a;10.0.0.0/8" />
+                            PlaceholderText="192.168.0.0/16&#x0a;10.0.0.0/8" />
 
                         <TextBlock
                             Grid.Row="6"
@@ -1285,7 +1285,7 @@
                             TextWrapping="Wrap"
                             MaxWidth="560"
                             HorizontalAlignment="Left"
-                            Text="Listed apps and subnets egress directly (outside the tunnel). The kill switch permits them through the firewall, and sing-box routes them as direct — so they are exempt from both the tunnel and the lock." />
+                            Text="Whitelist mode (default): only the listed apps and subnets use the tunnel, everything else goes direct; empty lists tunnel the whole PC. Bypass mode: the listed apps and subnets go direct and are permitted through the kill switch." />
                     </Grid>
                 </ScrollViewer>
             </TabItem>
