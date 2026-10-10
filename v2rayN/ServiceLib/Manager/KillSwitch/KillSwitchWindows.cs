@@ -35,6 +35,8 @@ public class KillSwitchWindows : IKillSwitchService
     private static readonly string[] Profiles = { "Domain", "Private", "Public" };
 
     private bool _isArmed;
+    // The user's own DefaultOutboundAction per profile, captured by the first arm.
+    private Dictionary<string, string>? _savedActions;
     private readonly SemaphoreSlim _lock = new(1, 1);
 
     public bool IsArmed => _isArmed;
@@ -54,7 +56,17 @@ public class KillSwitchWindows : IKillSwitchService
         {
             // 1) Capture and persist the current default outbound action BEFORE
             //    touching anything, so a crash mid-arm is recoverable.
-            var saved = await ReadOutboundActionsAsync();
+            //    A re-arm (reconnect, settings change, server switch) finds the
+            //    firewall already at Block - set by us. Reading it again would save
+            //    "Block" as the user's setting, and the disarm would then leave the
+            //    whole network blocked. Keep what the first arm saved instead.
+            var previous = await ReadStateAsync();
+            var saved = previous is { Armed: true, SavedOutboundAction.Count: > 0 }
+                ? previous.SavedOutboundAction
+                : _isArmed && _savedActions is { Count: > 0 }
+                    ? _savedActions
+                    : await ReadOutboundActionsAsync();
+            _savedActions = saved;
             var state = new KillSwitchState
             {
                 Armed = true,
@@ -71,6 +83,7 @@ public class KillSwitchWindows : IKillSwitchService
                 await ApplyDisarmAsync(saved);
                 await DeleteStateAsync();
                 _isArmed = false;
+                _savedActions = null;
                 return false;
             }
 
@@ -95,10 +108,13 @@ public class KillSwitchWindows : IKillSwitchService
         try
         {
             var state = await ReadStateAsync();
-            var saved = state?.SavedOutboundAction ?? DefaultAllowActions();
+            var saved = state?.SavedOutboundAction is { Count: > 0 } stateSaved
+                ? stateSaved
+                : _savedActions is { Count: > 0 } ? _savedActions : DefaultAllowActions();
             await ApplyDisarmAsync(saved);
             await DeleteStateAsync();
             _isArmed = false;
+            _savedActions = null;
             Logging.SaveLog($"{RuleGroup}: disarmed, outbound restored");
         }
         catch (Exception ex)
