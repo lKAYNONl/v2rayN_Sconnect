@@ -68,6 +68,7 @@ public partial class MainWindowViewModel : MyReactiveObject
     public ReactiveCommand<RxVoid, RxVoid> RegionalPresetIranCmd { get; }
 
     public ReactiveCommand<RxVoid, RxVoid> ReloadCmd { get; }
+    public ReactiveCommand<RxVoid, RxVoid> StopCoreCmd { get; }
 
     [Reactive]
     public partial bool BlReloadEnabled { get; set; }
@@ -238,6 +239,10 @@ public partial class MainWindowViewModel : MyReactiveObject
         ReloadCmd = ReactiveCommand.CreateFromTask(async () =>
         {
             await Reload();
+        });
+        StopCoreCmd = ReactiveCommand.CreateFromTask(async () =>
+        {
+            await StopCore();
         });
 
         RegionalPresetDefaultCmd = ReactiveCommand.CreateFromTask(async () =>
@@ -778,6 +783,40 @@ public partial class MainWindowViewModel : MyReactiveObject
     private async Task LoadCore(CoreConfigContext? mainContext, CoreConfigContext? preContext)
     {
         await CoreManager.Instance.LoadCore(mainContext, preContext);
+    }
+
+    /// <summary>
+    /// Explicit disconnect: stops the running core, lifts the kill switch so the
+    /// machine is not left offline, and clears the system proxy. This is a real
+    /// user action (unlike the internal CoreStop a reload performs), so the kill
+    /// switch is disarmed here.
+    /// </summary>
+    public async Task StopCore()
+    {
+        if (DesignMode)
+        {
+            return;
+        }
+
+        try
+        {
+            SetReloadEnabled(false);
+            await Task.Run(async () =>
+            {
+                await CoreManager.Instance.CoreStop();
+                await KillSwitchManager.Instance.DisarmAsync();
+                await SysProxyHandler.UpdateSysProxy(_config, true);
+            });
+            NoticeManager.Instance.Enqueue(ResUI.OperationSuccess);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("StopCore", ex);
+        }
+        finally
+        {
+            SetReloadEnabled(true);
+        }
     }
 
     #endregion core job
