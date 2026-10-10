@@ -14,6 +14,8 @@
     MinWidth="600"
     x:DataType="vms:MainWindowViewModel"
     Design.DataContext="{x:Static dd:DesignData.MainWindow}"
+    ExtendClientAreaChromeHints="PreferSystemChrome"
+    ExtendClientAreaToDecorationsHint="True"
     Icon="/Assets/NotifyIcon1.ico"
     ShowInTaskbar="True"
     WindowStartupLocation="CenterScreen"
@@ -45,7 +47,10 @@
     <dialogHost:DialogHost CloseOnClickAway="True" DisableOpeningAnimation="True">
         <DockPanel>
             <DockPanel Background="#11162A" DockPanel.Dock="Top">
-                <ContentControl x:Name="conTheme" DockPanel.Dock="Right" />
+                <ContentControl
+                    x:Name="conTheme"
+                    Margin="0,0,140,0"
+                    DockPanel.Dock="Right" />
                 <StackPanel
                     DockPanel.Dock="Left"
                     Margin="12,0,14,0"
