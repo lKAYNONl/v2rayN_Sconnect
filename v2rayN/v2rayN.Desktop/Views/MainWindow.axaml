@@ -163,7 +163,55 @@
                     IsVisible="False" />
             </DockPanel>
 
-            <ContentControl x:Name="contentStatusBarView" DockPanel.Dock="Bottom" />
+            <Border
+                DockPanel.Dock="Bottom"
+                Background="#0A0E1C"
+                BorderBrush="#273055"
+                BorderThickness="0,1,0,0"
+                Padding="16,7">
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
+                    <TextBlock
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="#8B95B4"
+                        Text="core " />
+                    <TextBlock
+                        Grid.Column="1"
+                        Margin="0,0,20,0"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Foreground="#E8EBF6"
+                        Text="sing-box" />
+                    <TextBlock
+                        x:Name="txtBarSpeed"
+                        Grid.Column="2"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="#8B95B4"
+                        Text="" />
+                    <ToggleSwitch
+                        x:Name="togBarTun"
+                        Grid.Column="3"
+                        Margin="0,0,20,0"
+                        VerticalAlignment="Center"
+                        OffContent="TUN"
+                        OnContent="TUN" />
+                    <TextBlock
+                        Grid.Column="4"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="#5B648A"
+                        Text="TUN&#160;" />
+                    <TextBlock
+                        Grid.Column="5"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="#8B95B4"
+                        Text="singbox_tun" />
+                </Grid>
+            </Border>
 
             <!-- Secure Connect dashboard: profiles list (reused) + connect stage -->
             <Grid Background="#0C1020" ColumnDefinitions="300,*">
@@ -362,11 +410,17 @@
                                 BorderThickness="1"
                                 CornerRadius="999"
                                 Padding="12,7">
-                                <TextBlock
-                                    x:Name="txtTun"
-                                    FontSize="12"
-                                    Foreground="#8B95B4"
-                                    Text="TUN off" />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="#5B648A"
+                                        Text="IP" />
+                                    <TextBlock
+                                        x:Name="txtIp"
+                                        FontSize="12"
+                                        Foreground="#E8EBF6"
+                                        Text="—" />
+                                </StackPanel>
                             </Border>
                             <Border
                                 Background="#161C35"

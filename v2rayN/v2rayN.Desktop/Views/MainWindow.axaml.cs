@@ -83,7 +83,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.OneWayBind(ViewModel, vm => vm.BlReloadEnabled, v => v.menuStopCore.IsEnabled).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.BlNewUpdate, v => v.btnNewUpdate.IsVisible).DisposeWith(disposables);
 
-            this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel, v => v.contentStatusBarView.Content).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.SpeedProxyDisplay, v => v.txtBarSpeed.Text).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.StatusBarViewModel.EnableTun, v => v.togBarTun.IsChecked).DisposeWith(disposables);
 
             // Secure Connect dashboard
             this.OneWayBind(ViewModel, vm => vm.ProfilesViewModel.ProfileItems, v => v.lstCards.ItemsSource).DisposeWith(disposables);
@@ -108,7 +109,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.BindCommand(ViewModel, vm => vm.OptionSettingCmd, v => v.btnSettings).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.SpeedProxyDisplay, v => v.txtSpeed.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.RunningInfoDisplay, v => v.txtInfo.Text).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.EnableTun, v => v.txtTun.Text, b => b ? "TUN on" : "TUN off").DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.ProfilesViewModel.SelectedProfile.IpInfo, v => v.txtIp.Text).DisposeWith(disposables);
 
             ViewModel.ReadTextFromClipboardInteraction.RegisterHandler(async interaction =>
             {
