@@ -89,9 +89,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.OneWayBind(ViewModel, vm => vm.ProfilesViewModel.ProfileItems, v => v.lstCards.ItemsSource).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.ProfilesViewModel.SelectedProfile, v => v.lstCards.SelectedItem).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.AddServerViaClipboardCmd, v => v.btnImport).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.EditServerCmd, v => v.btnEdit).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.RemoveServerCmd, v => v.btnDelete).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.RealPingServerCmd, v => v.btnPing).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.EditServerCmd, v => v.menuCtxEdit).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.RemoveServerCmd, v => v.menuCtxDelete).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.RealPingServerCmd, v => v.menuCtxPing).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.ReloadCmd, v => v.btnConnect).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.StopCoreCmd, v => v.btnDisconnect).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.IsRunning, v => v.btnDisconnect.IsVisible).DisposeWith(disposables);

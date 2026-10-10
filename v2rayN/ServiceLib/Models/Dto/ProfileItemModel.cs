@@ -41,6 +41,24 @@ public partial class ProfileItemModel : ReactiveObject
     [Reactive]
     public partial string TotalDown { get; set; }
 
+    /// <summary>Protocol summary for the dashboard card sub-line, e.g. "VLESS · tcp · reality".</summary>
+    public string ProtocolInfo
+    {
+        get
+        {
+            var parts = new List<string> { ConfigType.ToString() };
+            if (!Network.IsNullOrEmpty())
+            {
+                parts.Add(Network);
+            }
+            if (!StreamSecurity.IsNullOrEmpty())
+            {
+                parts.Add(StreamSecurity);
+            }
+            return string.Join(" · ", parts);
+        }
+    }
+
     public string GetSummary()
     {
         var summary = $"[{ConfigType}] {Remarks}";
