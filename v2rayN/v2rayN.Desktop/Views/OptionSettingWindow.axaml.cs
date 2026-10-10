@@ -138,6 +138,11 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
             this.Bind(ViewModel, vm => vm.TunIPv4Address, v => v.cmbIpv4Address.SelectedValue).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.TunIPv6Address, v => v.cmbIpv6Address.SelectedValue).DisposeWith(disposables);
 
+            this.Bind(ViewModel, vm => vm.EnableKillSwitch, v => v.togEnableKillSwitch.IsChecked).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.KillSwitchAllowLan, v => v.togKillSwitchAllowLan.IsChecked).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.KillSwitchBypassApps, v => v.txtKillSwitchBypassApps.Text).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.KillSwitchBypassSubnets, v => v.txtKillSwitchBypassSubnets.Text).DisposeWith(disposables);
+
             this.Bind(ViewModel, vm => vm.CoreType1, v => v.cmbCoreType1.SelectedValue).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.CoreType2, v => v.cmbCoreType2.SelectedValue).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.CoreType3, v => v.cmbCoreType3.SelectedValue).DisposeWith(disposables);

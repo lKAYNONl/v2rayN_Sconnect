@@ -82,6 +82,15 @@ public partial class CoreConfigSingboxService
                     });
                 }
 
+                // Split tunneling: apps / subnets the user chose to keep OUTSIDE the
+                // tunnel. Placed here - after the TUN anti-loop reject and the core's
+                // own direct rules, but before the generic DNS hijack and the final
+                // proxy - so a bypassed process also resolves DNS directly (no leak of
+                // its queries into the tunnel) and its traffic egresses on the physical
+                // NIC. The kill switch adds matching firewall Allow rules for the same
+                // lists, so this direct traffic is not blocked while the lock is armed.
+                GenRoutingSplitTunnel();
+
                 // ICMP Routing
                 var icmpRouting = _config.TunModeItem.IcmpRouting ?? "";
                 if (!Global.TunIcmpRoutingPolicies.Contains(icmpRouting))
@@ -296,6 +305,82 @@ public partial class CoreConfigSingboxService
         return IPAddress.TryParse(addr, out var ip)
             ? $"{addr}/{(ip.AddressFamily == AddressFamily.InterNetworkV6 ? 128 : 32)}"
             : address;
+    }
+
+    /// <summary>
+    /// Adds "direct" route rules for the split-tunnel bypass lists
+    /// (<see cref="KillSwitchItem.BypassApps"/> / <see cref="KillSwitchItem.BypassSubnets"/>),
+    /// so the listed programs and destination subnets leave the tunnel and use the
+    /// physical connection. Mode: tunnel everything EXCEPT these (the case that is
+    /// consistent with the kill switch). Only meaningful in TUN mode.
+    /// </summary>
+    private void GenRoutingSplitTunnel()
+    {
+        var ks = _config.KillSwitchItem;
+        if (ks is null)
+        {
+            return;
+        }
+
+        // Programs: match by full path (process_path) when an entry looks like a
+        // path, otherwise by exe name (process_name). sing-box ANDs different
+        // fields within one rule, so names and paths go in SEPARATE rules.
+        var procNames = new List<string>();
+        var procPaths = new List<string>();
+        foreach (var app in ks.BypassApps ?? [])
+        {
+            var entry = app?.Trim();
+            if (entry.IsNullOrEmpty())
+            {
+                continue;
+            }
+
+            if (entry.Contains('/') || entry.Contains('\\'))
+            {
+                procPaths.Add(Utils.IsWindows() ? entry.Replace('/', '\\') : entry);
+            }
+            else
+            {
+                // sing-box strictly matches the exe suffix on Windows.
+                procNames.Add(Utils.GetExeName(entry));
+            }
+        }
+
+        if (procNames.Count > 0)
+        {
+            _coreConfig.route.rules.Add(new()
+            {
+                outbound = Global.DirectTag,
+                process_name = procNames,
+            });
+        }
+        if (procPaths.Count > 0)
+        {
+            _coreConfig.route.rules.Add(new()
+            {
+                outbound = Global.DirectTag,
+                process_path = procPaths,
+            });
+        }
+
+        // Destination subnets (CIDR) routed direct.
+        var subnets = new List<string>();
+        foreach (var net in ks.BypassSubnets ?? [])
+        {
+            var entry = net?.Trim();
+            if (!entry.IsNullOrEmpty())
+            {
+                subnets.Add(entry);
+            }
+        }
+        if (subnets.Count > 0)
+        {
+            _coreConfig.route.rules.Add(new()
+            {
+                outbound = Global.DirectTag,
+                ip_cidr = subnets,
+            });
+        }
     }
 
     private List<string> BuildRoutingDirectExe()

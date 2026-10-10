@@ -1188,6 +1188,108 @@
                 </ScrollViewer>
             </TabItem>
 
+            <TabItem Header="Kill Switch">
+                <ScrollViewer VerticalScrollBarVisibility="Visible">
+                    <Grid
+                        Margin="{StaticResource Margin4}"
+                        ColumnDefinitions="Auto,Auto"
+                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+
+                        <TextBlock
+                            Grid.Row="0"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Margin="{StaticResource Margin4}"
+                            Opacity="0.7"
+                            TextWrapping="Wrap"
+                            MaxWidth="560"
+                            HorizontalAlignment="Left"
+                            Text="When enabled, connecting a TUN profile locks the firewall to default-deny outbound, so no traffic can leave outside the tunnel — even if the core drops. Requires running as administrator (TUN already does)." />
+
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Text="Enable kill switch" />
+                        <ToggleSwitch
+                            x:Name="togEnableKillSwitch"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Margin="{StaticResource Margin4}"
+                            HorizontalAlignment="Left" />
+
+                        <TextBlock
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Center"
+                            Text="Allow local network (LAN)" />
+                        <ToggleSwitch
+                            x:Name="togKillSwitchAllowLan"
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Margin="{StaticResource Margin4}"
+                            HorizontalAlignment="Left" />
+
+                        <TextBlock
+                            Grid.Row="3"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Margin="{StaticResource Margin4}"
+                            FontWeight="Bold"
+                            Text="Split tunneling — bypass the tunnel" />
+
+                        <TextBlock
+                            Grid.Row="4"
+                            Grid.Column="0"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Top"
+                            Text="Apps (one per line, exe name or full path)" />
+                        <TextBox
+                            x:Name="txtKillSwitchBypassApps"
+                            Grid.Row="4"
+                            Grid.Column="1"
+                            Width="360"
+                            Height="90"
+                            Margin="{StaticResource Margin4}"
+                            HorizontalAlignment="Left"
+                            AcceptsReturn="True"
+                            TextWrapping="NoWrap"
+                            Watermark="telegram.exe&#x0a;C:\Games\game.exe" />
+
+                        <TextBlock
+                            Grid.Row="5"
+                            Grid.Column="0"
+                            Margin="{StaticResource Margin4}"
+                            VerticalAlignment="Top"
+                            Text="Subnets (one CIDR per line)" />
+                        <TextBox
+                            x:Name="txtKillSwitchBypassSubnets"
+                            Grid.Row="5"
+                            Grid.Column="1"
+                            Width="360"
+                            Height="70"
+                            Margin="{StaticResource Margin4}"
+                            HorizontalAlignment="Left"
+                            AcceptsReturn="True"
+                            TextWrapping="NoWrap"
+                            Watermark="192.168.0.0/16&#x0a;10.0.0.0/8" />
+
+                        <TextBlock
+                            Grid.Row="6"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Margin="{StaticResource Margin4}"
+                            Opacity="0.7"
+                            TextWrapping="Wrap"
+                            MaxWidth="560"
+                            HorizontalAlignment="Left"
+                            Text="Listed apps and subnets egress directly (outside the tunnel). The kill switch permits them through the firewall, and sing-box routes them as direct — so they are exempt from both the tunnel and the lock." />
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
             <TabItem Header="{x:Static resx:ResUI.TbSettingsCoreType}">
                 <Grid
                     Margin="{StaticResource Margin4}"

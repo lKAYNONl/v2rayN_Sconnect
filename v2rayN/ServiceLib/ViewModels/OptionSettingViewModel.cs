@@ -103,6 +103,20 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
 
     #endregion Tun mode
 
+    #region Kill switch & split tunneling
+
+    [Reactive] public partial bool EnableKillSwitch { get; set; }
+    [Reactive] public partial bool KillSwitchAllowLan { get; set; }
+
+    // One entry per line. An entry with a path separator is matched by full
+    // path (process_path); otherwise by exe name (process_name).
+    [Reactive] public partial string KillSwitchBypassApps { get; set; }
+
+    // One CIDR per line, e.g. 192.168.0.0/16 or 10.0.0.0/8.
+    [Reactive] public partial string KillSwitchBypassSubnets { get; set; }
+
+    #endregion Kill switch & split tunneling
+
     #region CoreType
 
     [Reactive] public partial string CoreType1 { get; set; }
@@ -227,6 +241,15 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         TunIPv6Address = _config.TunModeItem.IPv6Address;
 
         #endregion Tun mode
+
+        #region Kill switch & split tunneling
+
+        EnableKillSwitch = _config.KillSwitchItem.EnableKillSwitch;
+        KillSwitchAllowLan = _config.KillSwitchItem.AllowLan;
+        KillSwitchBypassApps = Utils.List2String(_config.KillSwitchItem.BypassApps, true);
+        KillSwitchBypassSubnets = Utils.List2String(_config.KillSwitchItem.BypassSubnets, true);
+
+        #endregion Kill switch & split tunneling
 
         await InitCoreType();
     }
@@ -398,6 +421,12 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         _config.TunModeItem.RouteExcludeAddress = Utils.String2List(TunRouteExcludeAddress);
         _config.TunModeItem.IPv4Address = TunIPv4Address;
         _config.TunModeItem.IPv6Address = TunIPv6Address;
+
+        //kill switch & split tunneling
+        _config.KillSwitchItem.EnableKillSwitch = EnableKillSwitch;
+        _config.KillSwitchItem.AllowLan = KillSwitchAllowLan;
+        _config.KillSwitchItem.BypassApps = Utils.String2List(KillSwitchBypassApps);
+        _config.KillSwitchItem.BypassSubnets = Utils.String2List(KillSwitchBypassSubnets);
 
         //coreType
         await SaveCoreType();
