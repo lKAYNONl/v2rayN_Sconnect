@@ -172,7 +172,7 @@
                                                 FontSize="9"
                                                 FontWeight="Bold"
                                                 Foreground="#4F8CFF"
-                                                Text="{Binding ConfigType}" />
+                                                Text="{ReflectionBinding ConfigType}" />
                                         </Border>
                                         <StackPanel
                                             Grid.Column="1"
@@ -184,26 +184,26 @@
                                                     Height="7"
                                                     VerticalAlignment="Center"
                                                     Fill="#37D3C2"
-                                                    IsVisible="{Binding IsActive}" />
+                                                    IsVisible="{ReflectionBinding IsActive}" />
                                                 <TextBlock
                                                     FontSize="13"
                                                     FontWeight="SemiBold"
                                                     Foreground="#E8EBF6"
                                                     TextTrimming="CharacterEllipsis"
-                                                    Text="{Binding Remarks}" />
+                                                    Text="{ReflectionBinding Remarks}" />
                                             </StackPanel>
                                             <TextBlock
                                                 FontSize="11"
                                                 Foreground="#8B95B4"
                                                 TextTrimming="CharacterEllipsis"
-                                                Text="{Binding Address}" />
+                                                Text="{ReflectionBinding Address}" />
                                         </StackPanel>
                                         <TextBlock
                                             Grid.Column="2"
                                             VerticalAlignment="Center"
                                             FontSize="11"
                                             Foreground="#37D3C2"
-                                            Text="{Binding DelayVal}" />
+                                            Text="{ReflectionBinding DelayVal}" />
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
