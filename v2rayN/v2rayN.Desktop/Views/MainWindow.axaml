@@ -7,27 +7,114 @@
     xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
+    xmlns:sys="clr-namespace:System;assembly=netstandard"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="v2rayN"
-    Width="1200"
-    Height="800"
-    MinWidth="600"
+    Width="940"
+    Height="620"
+    MinWidth="760"
+    MinHeight="520"
     x:DataType="vms:MainWindowViewModel"
+    Background="#11162A"
     Design.DataContext="{x:Static dd:DesignData.MainWindow}"
     ExtendClientAreaToDecorationsHint="True"
     Icon="/Assets/NotifyIcon1.ico"
     ShowInTaskbar="True"
+    WindowDecorations="BorderOnly"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+    <!--
+        Secure Connect dashboard, 1:1 with the prototype.
+        Palette: bg #0C1020 · window #11162A · surface #161C35 · elevated #1D2647
+                 line #273055 · fg #E8EBF6 · muted #8B95B4 · faint #5B648A
+                 accent #37D3C2 · accent-2 #4F8CFF · warn #F5B83D · danger #FF5D6C
+        Window chrome: no OS title bar (BorderOnly keeps the native frame, shadow,
+        rounded corners and resize edges); the top bar is our own and is marked as
+        the drag area with WindowDecorationProperties.ElementRole="TitleBar".
+    -->
+    <Window.Resources>
+        <FontFamily x:Key="ScSans">avares://v2rayN/Assets/Fonts#Manrope</FontFamily>
+        <FontFamily x:Key="ScMono">avares://v2rayN/Assets/Fonts#IBM Plex Mono</FontFamily>
+    </Window.Resources>
+
     <Window.Styles>
+        <!-- Flat button: no theme chrome, just our own background/border. -->
+        <Style Selector="Button.sc">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter
+                        Name="PART_ContentPresenter"
+                        Padding="{TemplateBinding Padding}"
+                        HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        Content="{TemplateBinding Content}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                        CornerRadius="{TemplateBinding CornerRadius}" />
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <!-- Title bar: caption buttons and menu -->
+        <Style Selector="Button.cap">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+        <Style Selector="Button.cap Border.box">
+            <Setter Property="Width" Value="14" />
+            <Setter Property="Height" Value="14" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button.cap Path">
+            <Setter Property="Stroke" Value="#5B648A" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="StrokeLineCap" Value="Round" />
+        </Style>
+        <Style Selector="Button.cap:pointerover Border.box">
+            <Setter Property="BorderBrush" Value="#5B648A" />
+        </Style>
+        <Style Selector="Button.cap:pointerover Path">
+            <Setter Property="Stroke" Value="#E8EBF6" />
+        </Style>
+        <Style Selector="Button.cap.close:pointerover Border.box">
+            <Setter Property="BorderBrush" Value="#FF5D6C" />
+            <Setter Property="Background" Value="#33FF5D6C" />
+        </Style>
+        <Style Selector="Menu#mainMenu">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Height" Value="26" />
+        </Style>
+        <Style Selector="Menu#mainMenu > MenuItem">
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="MinHeight" Value="26" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+
         <!-- Profile cards -->
         <Style Selector="ListBox#lstCards">
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Background" Value="Transparent" />
         </Style>
         <Style Selector="ListBox#lstCards ListBoxItem">
-            <Setter Property="Padding" Value="9" />
-            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="Padding" Value="11,10" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+            <Setter Property="Cursor" Value="Hand" />
         </Style>
         <Style Selector="ListBox#lstCards ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="CornerRadius" Value="11" />
@@ -40,443 +127,1017 @@
         </Style>
         <Style Selector="ListBox#lstCards ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="#161C35" />
-            <Setter Property="BorderBrush" Value="#3A4A7A" />
+            <Setter Property="BorderBrush" Value="#3D63B3" />
+        </Style>
+        <Style Selector="ListBox#lstCards ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#161C35" />
+            <Setter Property="BorderBrush" Value="#3D63B3" />
+        </Style>
+
+        <!-- Import: dashed outline -->
+        <Style Selector="Button.import Rectangle">
+            <Setter Property="Stroke" Value="#273055" />
+        </Style>
+        <Style Selector="Button.import TextBlock">
+            <Setter Property="Foreground" Value="#8B95B4" />
+        </Style>
+        <Style Selector="Button.import:pointerover Rectangle">
+            <Setter Property="Stroke" Value="#5B648A" />
+        </Style>
+        <Style Selector="Button.import:pointerover TextBlock">
+            <Setter Property="Foreground" Value="#E8EBF6" />
+        </Style>
+
+        <!-- Settings gear and the panel's close button -->
+        <Style Selector="Button.gear">
+            <Setter Property="Background" Value="#161C35" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button.gear Path">
+            <Setter Property="Stroke" Value="#8B95B4" />
+        </Style>
+        <Style Selector="Button.gear:pointerover">
+            <Setter Property="BorderBrush" Value="#5B648A" />
+        </Style>
+        <Style Selector="Button.gear:pointerover Path">
+            <Setter Property="Stroke" Value="#E8EBF6" />
+        </Style>
+
+        <!-- Connect dial: spinning arc while connecting -->
+        <Style Selector="Ellipse.spin">
+            <Style.Animations>
+                <Animation Duration="0:0:1" IterationCount="Infinite">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="RotateTransform.Angle" Value="0" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="RotateTransform.Angle" Value="360" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <!-- Status strip TUN toggle -->
+        <Style Selector="Button.tun:pointerover TextBlock">
+            <Setter Property="TextDecorations" Value="Underline" />
+        </Style>
+
+        <!-- Settings panel -->
+        <Style Selector="TextBlock.eyebrow">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LetterSpacing" Value="1.5" />
+            <Setter Property="Foreground" Value="#5B648A" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#E8EBF6" />
+        </Style>
+        <Style Selector="TextBlock.sub">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Foreground" Value="#8B95B4" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Foreground" Value="#8B95B4" />
+            <Setter Property="Margin" Value="0,8,0,0" />
+            <Setter Property="LineHeight" Value="17" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style Selector="Border.section">
+            <Setter Property="Padding" Value="16,14" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
+        <Style Selector="Border.tag">
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Padding" Value="9,5,5,5" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="#1D2647" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button.tagx">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Foreground" Value="#5B648A" />
+        </Style>
+        <Style Selector="Button.tagx:pointerover">
+            <Setter Property="Background" Value="#273055" />
+        </Style>
+        <Style Selector="TextBox.add">
+            <Setter Property="FontFamily" Value="avares://v2rayN/Assets/Fonts#IBM Plex Mono" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="Padding" Value="9,6" />
+            <Setter Property="Margin" Value="0,2,0,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="#161C35" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#E8EBF6" />
+        </Style>
+
+        <!-- Prototype toggle: 42x24 pill, teal when on (amber for the kill switch). -->
+        <Style Selector="ToggleButton.sct">
+            <Setter Property="Width" Value="42" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border
+                        Name="track"
+                        Width="42"
+                        Height="24"
+                        Background="#161C35"
+                        BorderBrush="#273055"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                        <Ellipse
+                            Name="knob"
+                            Width="18"
+                            Height="18"
+                            Margin="2,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Fill="#5B648A" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="ToggleButton.sct:checked /template/ Border#track">
+            <Setter Property="Background" Value="#1F4F5C" />
+            <Setter Property="BorderBrush" Value="#319296" />
+        </Style>
+        <Style Selector="ToggleButton.sct:checked /template/ Ellipse#knob">
+            <Setter Property="Margin" Value="20,0,0,0" />
+            <Setter Property="Fill" Value="#37D3C2" />
+        </Style>
+        <Style Selector="ToggleButton.sct.warn:checked /template/ Border#track">
+            <Setter Property="Background" Value="#504537" />
+            <Setter Property="BorderBrush" Value="#A38247" />
+        </Style>
+        <Style Selector="ToggleButton.sct.warn:checked /template/ Ellipse#knob">
+            <Setter Property="Fill" Value="#F5B83D" />
         </Style>
     </Window.Styles>
-    <dialogHost:DialogHost CloseOnClickAway="True" DisableOpeningAnimation="True">
-        <DockPanel>
-            <DockPanel Background="#11162A" DockPanel.Dock="Top">
-                <ContentControl
-                    x:Name="conTheme"
-                    Margin="0,0,140,0"
-                    DockPanel.Dock="Right" />
-                <StackPanel
-                    DockPanel.Dock="Left"
-                    Margin="12,0,14,0"
-                    Orientation="Horizontal"
-                    VerticalAlignment="Center"
-                    Spacing="9">
-                    <Border
-                        Width="22"
-                        Height="22"
-                        Background="#37D3C2"
-                        CornerRadius="7" />
-                    <TextBlock
-                        VerticalAlignment="Center"
-                        FontWeight="Bold"
-                        Foreground="#E8EBF6"
-                        Text="v2rayN" />
-                    <TextBlock
-                        VerticalAlignment="Center"
-                        Foreground="#8B95B4"
-                        Text="Secure Connect" />
-                </StackPanel>
-                <Menu
-                    Margin="{StaticResource Margin4}"
-                    Background="Transparent">
-                    <MenuItem FontSize="16" Header="&#9776;">
-                    <MenuItem Header="{x:Static resx:ResUI.menuServers}">
-                        <MenuItem
-                            x:Name="menuAddServerViaClipboard"
-                            Header="{x:Static resx:ResUI.menuAddServerViaClipboard}"
-                            InputGesture="Ctrl+V" />
-                        <MenuItem
-                            x:Name="menuAddServerViaScan"
-                            Header="{x:Static resx:ResUI.menuAddServerViaScan}"
-                            InputGesture="Ctrl+S" />
-                        <MenuItem x:Name="menuAddServerViaImage" Header="{x:Static resx:ResUI.menuAddServerViaImage}" />
-                        <Separator />
-                        <MenuItem x:Name="menuAddCustomServer" Header="{x:Static resx:ResUI.menuAddCustomServer}" />
-                        <MenuItem x:Name="menuAddPolicyGroupServer" Header="{x:Static resx:ResUI.menuAddPolicyGroupServer}" />
-                        <MenuItem x:Name="menuAddProxyChainServer" Header="{x:Static resx:ResUI.menuAddProxyChainServer}" />
-                        <MenuItem x:Name="menuAddCustomOutboundServer" Header="{x:Static resx:ResUI.menuAddCustomOutboundServer}" />
-                        <Separator />
-                        <MenuItem x:Name="menuAddVmessServer" Header="{x:Static resx:ResUI.menuAddVmessServer}" />
-                        <MenuItem x:Name="menuAddVlessServer" Header="{x:Static resx:ResUI.menuAddVlessServer}" />
-                        <MenuItem x:Name="menuAddShadowsocksServer" Header="{x:Static resx:ResUI.menuAddShadowsocksServer}" />
-                        <MenuItem x:Name="menuAddTrojanServer" Header="{x:Static resx:ResUI.menuAddTrojanServer}" />
-                        <MenuItem x:Name="menuAddHysteria2Server" Header="{x:Static resx:ResUI.menuAddHysteria2Server}" />
-                        <MenuItem x:Name="menuAddWireguardServer" Header="{x:Static resx:ResUI.menuAddWireguardServer}" />
-                        <MenuItem x:Name="menuAddMasqueServer" Header="{x:Static resx:ResUI.menuAddMasqueServer}" />
-                        <MenuItem x:Name="menuAddSocksServer" Header="{x:Static resx:ResUI.menuAddSocksServer}" />
-                        <MenuItem x:Name="menuAddHttpServer" Header="{x:Static resx:ResUI.menuAddHttpServer}" />
-                        <Separator />
-                        <MenuItem x:Name="menuAddTuicServer" Header="{x:Static resx:ResUI.menuAddTuicServer}" />
-                        <MenuItem x:Name="menuAddAnytlsServer" Header="{x:Static resx:ResUI.menuAddAnytlsServer}" />
-                        <MenuItem x:Name="menuAddNaiveServer" Header="{x:Static resx:ResUI.menuAddNaiveServer}" />
-                    </MenuItem>
 
-                    <MenuItem Header="{x:Static resx:ResUI.menuSubscription}">
-                        <MenuItem x:Name="menuSubSetting" Header="{x:Static resx:ResUI.menuSubSetting}" />
-                        <Separator />
-                        <MenuItem x:Name="menuSubUpdate" Header="{x:Static resx:ResUI.menuSubUpdate}" />
-                        <MenuItem x:Name="menuSubUpdateViaProxy" Header="{x:Static resx:ResUI.menuSubUpdateViaProxy}" />
-                        <MenuItem x:Name="menuSubGroupUpdate" Header="{x:Static resx:ResUI.menuSubGroupUpdate}" />
-                        <MenuItem x:Name="menuSubGroupUpdateViaProxy" Header="{x:Static resx:ResUI.menuSubGroupUpdateViaProxy}" />
-                    </MenuItem>
-
-                    <MenuItem Header="{x:Static resx:ResUI.menuSetting}">
-                        <MenuItem x:Name="menuOptionSetting" Header="{x:Static resx:ResUI.menuOptionSetting}" />
-                        <MenuItem x:Name="menuRoutingSetting" Header="{x:Static resx:ResUI.menuRoutingSetting}" />
-                        <MenuItem x:Name="menuDNSSetting" Header="{x:Static resx:ResUI.menuDNSSetting}" />
-                        <MenuItem x:Name="menuFullConfigTemplate" Header="{x:Static resx:ResUI.menuFullConfigTemplate}" />
-                        <MenuItem
-                            x:Name="menuGlobalHotkeySetting"
-                            Header="{x:Static resx:ResUI.menuGlobalHotkeySetting}"
-                            IsVisible="{Binding BlIsWindows}" />
-                        <Separator />
-                        <MenuItem
-                            x:Name="menuRebootAsAdmin"
-                            Header="{x:Static resx:ResUI.menuRebootAsAdmin}"
-                            IsVisible="{Binding BlIsWindows}" />
-                        <MenuItem
-                            x:Name="menuSettingsSetUWP"
-                            Header="{x:Static resx:ResUI.TbSettingsSetUWP}"
-                            IsVisible="{Binding BlIsWindows}" />
-                        <MenuItem x:Name="menuClearServerStatistics" Header="{x:Static resx:ResUI.menuClearServerStatistics}" />
-                        <Separator />
-                        <MenuItem Header="{x:Static resx:ResUI.menuRegionalPresets}">
-                            <MenuItem x:Name="menuRegionalPresetsDefault" Header="{x:Static resx:ResUI.menuRegionalPresetsDefault}" />
-                            <MenuItem x:Name="menuRegionalPresetsRussia" Header="{x:Static resx:ResUI.menuRegionalPresetsRussia}" />
-                            <MenuItem x:Name="menuRegionalPresetsIran" Header="{x:Static resx:ResUI.menuRegionalPresetsIran}" />
-                        </MenuItem>
-                        <MenuItem x:Name="menuBackupAndRestore" Header="{x:Static resx:ResUI.menuBackupAndRestore}" />
-                        <MenuItem x:Name="menuOpenTheFileLocation" Header="{x:Static resx:ResUI.menuOpenTheFileLocation}" />
-                    </MenuItem>
-
-                    <MenuItem x:Name="menuHelp" Header="{x:Static resx:ResUI.menuHelp}">
-                        <MenuItem x:Name="menuCheckUpdate" Header="{x:Static resx:ResUI.menuCheckUpdate}" />
-                        <Separator />
-                    </MenuItem>
-
-                    <MenuItem x:Name="menuReload" Header="{x:Static resx:ResUI.menuReload}" />
-
-                    <MenuItem x:Name="menuStopCore" Header="Disconnect" />
-
-                    <MenuItem x:Name="menuPromotion" Header="{x:Static resx:ResUI.menuPromotion}" />
-
-                    <MenuItem x:Name="menuClose" Header="{x:Static resx:ResUI.menuExit}" />
-                    </MenuItem>
-                </Menu>
-
-                <Button
-                    x:Name="btnNewUpdate"
-                    Margin="{StaticResource MarginLr8}"
-                    HorizontalAlignment="Left"
-                    Content="{x:Static resx:ResUI.menuNewUpdate}"
-                    IsVisible="False" />
-            </DockPanel>
-
-            <Border
-                DockPanel.Dock="Bottom"
-                Background="#0A0E1C"
-                BorderBrush="#273055"
-                BorderThickness="0,1,0,0"
-                Padding="16,7">
-                <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
-                    <TextBlock
-                        Grid.Column="0"
-                        VerticalAlignment="Center"
-                        FontSize="12"
-                        Foreground="#8B95B4"
-                        Text="core " />
-                    <TextBlock
-                        Grid.Column="1"
-                        Margin="0,0,20,0"
-                        VerticalAlignment="Center"
-                        FontSize="12"
-                        FontWeight="SemiBold"
-                        Foreground="#E8EBF6"
-                        Text="sing-box" />
-                    <TextBlock
-                        x:Name="txtBarSpeed"
-                        Grid.Column="2"
-                        VerticalAlignment="Center"
-                        FontSize="12"
-                        Foreground="#8B95B4"
-                        Text="" />
-                    <ToggleSwitch
-                        x:Name="togBarTun"
-                        Grid.Column="3"
-                        Margin="0,0,20,0"
-                        VerticalAlignment="Center"
-                        OffContent="TUN"
-                        OnContent="TUN" />
-                    <TextBlock
-                        Grid.Column="4"
-                        VerticalAlignment="Center"
-                        FontSize="12"
-                        Foreground="#5B648A"
-                        Text="TUN&#160;" />
-                    <TextBlock
-                        Grid.Column="5"
-                        VerticalAlignment="Center"
-                        FontSize="12"
-                        Foreground="#8B95B4"
-                        Text="singbox_tun" />
-                </Grid>
-            </Border>
-
-            <!-- Secure Connect dashboard: profiles list (reused) + connect stage -->
-            <Grid Background="#0C1020" ColumnDefinitions="300,*">
+    <dialogHost:DialogHost
+        CloseOnClickAway="True"
+        DisableOpeningAnimation="True"
+        FontFamily="{StaticResource ScSans}">
+        <Panel>
+            <DockPanel>
+                <!-- ===== Title bar (drag area) ===== -->
                 <Border
-                    Grid.Column="0"
+                    x:Name="titleBar"
+                    Height="44"
                     Background="#11162A"
                     BorderBrush="#273055"
-                    BorderThickness="0,0,1,0">
-                    <Grid RowDefinitions="Auto,*,Auto">
-                        <TextBlock
-                            Grid.Row="0"
-                            Margin="16,14,16,6"
-                            FontSize="11"
-                            FontWeight="Bold"
-                            Foreground="#5B648A"
-                            Text="PROFILES" />
-                        <ListBox
-                            x:Name="lstCards"
-                            Grid.Row="1"
-                            Padding="8"
-                            Background="Transparent"
-                            SelectionMode="Single">
-                            <ListBox.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem x:Name="menuCtxEdit" Header="Edit" />
-                                    <MenuItem x:Name="menuCtxPing" Header="Ping" />
-                                    <Separator />
-                                    <MenuItem x:Name="menuCtxDelete" Header="Delete" />
-                                </ContextMenu>
-                            </ListBox.ContextMenu>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="2,4">
-                                        <Border
-                                            Grid.Column="0"
-                                            Width="34"
-                                            Height="34"
-                                            VerticalAlignment="Center"
-                                            Background="#1D2647"
-                                            CornerRadius="8">
-                                            <TextBlock
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                FontSize="9"
-                                                FontWeight="Bold"
-                                                Foreground="#4F8CFF"
-                                                Text="{ReflectionBinding CountryCode}" />
-                                        </Border>
-                                        <StackPanel
-                                            Grid.Column="1"
-                                            Margin="10,0"
-                                            VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <Ellipse
-                                                    Width="7"
-                                                    Height="7"
-                                                    VerticalAlignment="Center"
-                                                    Fill="#37D3C2"
-                                                    IsVisible="{ReflectionBinding IsActive}" />
-                                                <TextBlock
-                                                    FontSize="13"
-                                                    FontWeight="SemiBold"
-                                                    Foreground="#E8EBF6"
-                                                    TextTrimming="CharacterEllipsis"
-                                                    Text="{ReflectionBinding Remarks}" />
-                                            </StackPanel>
-                                            <TextBlock
-                                                FontSize="11"
-                                                Foreground="#8B95B4"
-                                                TextTrimming="CharacterEllipsis"
-                                                Text="{ReflectionBinding ProtocolInfo}" />
-                                        </StackPanel>
-                                        <TextBlock
-                                            Grid.Column="2"
-                                            VerticalAlignment="Center"
-                                            FontSize="11"
-                                            Foreground="#37D3C2"
-                                            Text="{ReflectionBinding DelayVal}" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                    BorderThickness="0,0,0,1"
+                    DockPanel.Dock="Top"
+                    WindowDecorationProperties.ElementRole="TitleBar">
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                        <StackPanel
+                            Grid.Column="0"
+                            Margin="14,0,0,0"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="10">
+                            <Border
+                                Width="22"
+                                Height="22"
+                                BoxShadow="inset 0 0 0 1 #0FFFFFFF"
+                                CornerRadius="7">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                        <GradientStop Offset="0" Color="#37D3C2" />
+                                        <GradientStop Offset="1" Color="#4F8CFF" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="15"
+                                FontWeight="Bold"
+                                Foreground="#E8EBF6"
+                                LetterSpacing="0.2"
+                                Text="v2rayN" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                Foreground="#8B95B4"
+                                Text="Secure Connect" />
+                        </StackPanel>
+
                         <Button
-                            x:Name="btnImport"
-                            Grid.Row="2"
-                            Margin="10,6,10,12"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            Background="Transparent"
-                            BorderBrush="#273055"
+                            x:Name="btnNewUpdate"
+                            Grid.Column="1"
+                            Height="22"
+                            Margin="14,0,0,0"
+                            Padding="10,0"
+                            VerticalAlignment="Center"
+                            Background="#1D2647"
+                            BorderBrush="#3D63B3"
                             BorderThickness="1"
-                            Content="+ Import from clipboard"
-                            Foreground="#8B95B4" />
+                            Classes="sc"
+                            CornerRadius="11"
+                            IsVisible="False"
+                            WindowDecorationProperties.ElementRole="User">
+                            <TextBlock
+                                FontSize="11"
+                                FontWeight="SemiBold"
+                                Foreground="#4F8CFF"
+                                Text="{x:Static resx:ResUI.menuNewUpdate}" />
+                        </Button>
+
+                        <!-- The theme/language control lives behind the menu (opened from code). -->
+                        <ContentControl
+                            x:Name="conTheme"
+                            Grid.Column="2"
+                            Width="0"
+                            HorizontalAlignment="Right"
+                            IsHitTestVisible="False"
+                            Opacity="0" />
+
+                        <StackPanel
+                            Grid.Column="3"
+                            Margin="0,0,10,0"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="2">
+                            <Menu
+                                x:Name="mainMenu"
+                                Margin="0,0,6,0"
+                                VerticalAlignment="Center"
+                                WindowDecorationProperties.ElementRole="User">
+                                <MenuItem x:Name="menuMain" ToolTip.Tip="Menu">
+                                    <MenuItem.Header>
+                                        <Path
+                                            Width="12"
+                                            Height="10"
+                                            Data="M 0 1 H 12 M 0 5 H 12 M 0 9 H 12"
+                                            Stroke="#8B95B4"
+                                            StrokeLineCap="Round"
+                                            StrokeThickness="1.4" />
+                                    </MenuItem.Header>
+                                    <MenuItem Header="{x:Static resx:ResUI.menuServers}">
+                                        <MenuItem
+                                            x:Name="menuAddServerViaClipboard"
+                                            Header="{x:Static resx:ResUI.menuAddServerViaClipboard}"
+                                            InputGesture="Ctrl+V" />
+                                        <MenuItem
+                                            x:Name="menuAddServerViaScan"
+                                            Header="{x:Static resx:ResUI.menuAddServerViaScan}"
+                                            InputGesture="Ctrl+S" />
+                                        <MenuItem x:Name="menuAddServerViaImage" Header="{x:Static resx:ResUI.menuAddServerViaImage}" />
+                                        <Separator />
+                                        <MenuItem x:Name="menuAddCustomServer" Header="{x:Static resx:ResUI.menuAddCustomServer}" />
+                                        <MenuItem x:Name="menuAddPolicyGroupServer" Header="{x:Static resx:ResUI.menuAddPolicyGroupServer}" />
+                                        <MenuItem x:Name="menuAddProxyChainServer" Header="{x:Static resx:ResUI.menuAddProxyChainServer}" />
+                                        <MenuItem x:Name="menuAddCustomOutboundServer" Header="{x:Static resx:ResUI.menuAddCustomOutboundServer}" />
+                                        <Separator />
+                                        <MenuItem x:Name="menuAddVmessServer" Header="{x:Static resx:ResUI.menuAddVmessServer}" />
+                                        <MenuItem x:Name="menuAddVlessServer" Header="{x:Static resx:ResUI.menuAddVlessServer}" />
+                                        <MenuItem x:Name="menuAddShadowsocksServer" Header="{x:Static resx:ResUI.menuAddShadowsocksServer}" />
+                                        <MenuItem x:Name="menuAddTrojanServer" Header="{x:Static resx:ResUI.menuAddTrojanServer}" />
+                                        <MenuItem x:Name="menuAddHysteria2Server" Header="{x:Static resx:ResUI.menuAddHysteria2Server}" />
+                                        <MenuItem x:Name="menuAddWireguardServer" Header="{x:Static resx:ResUI.menuAddWireguardServer}" />
+                                        <MenuItem x:Name="menuAddMasqueServer" Header="{x:Static resx:ResUI.menuAddMasqueServer}" />
+                                        <MenuItem x:Name="menuAddSocksServer" Header="{x:Static resx:ResUI.menuAddSocksServer}" />
+                                        <MenuItem x:Name="menuAddHttpServer" Header="{x:Static resx:ResUI.menuAddHttpServer}" />
+                                        <Separator />
+                                        <MenuItem x:Name="menuAddTuicServer" Header="{x:Static resx:ResUI.menuAddTuicServer}" />
+                                        <MenuItem x:Name="menuAddAnytlsServer" Header="{x:Static resx:ResUI.menuAddAnytlsServer}" />
+                                        <MenuItem x:Name="menuAddNaiveServer" Header="{x:Static resx:ResUI.menuAddNaiveServer}" />
+                                    </MenuItem>
+
+                                    <MenuItem Header="{x:Static resx:ResUI.menuSubscription}">
+                                        <MenuItem x:Name="menuSubSetting" Header="{x:Static resx:ResUI.menuSubSetting}" />
+                                        <Separator />
+                                        <MenuItem x:Name="menuSubUpdate" Header="{x:Static resx:ResUI.menuSubUpdate}" />
+                                        <MenuItem x:Name="menuSubUpdateViaProxy" Header="{x:Static resx:ResUI.menuSubUpdateViaProxy}" />
+                                        <MenuItem x:Name="menuSubGroupUpdate" Header="{x:Static resx:ResUI.menuSubGroupUpdate}" />
+                                        <MenuItem x:Name="menuSubGroupUpdateViaProxy" Header="{x:Static resx:ResUI.menuSubGroupUpdateViaProxy}" />
+                                    </MenuItem>
+
+                                    <MenuItem Header="{x:Static resx:ResUI.menuSetting}">
+                                        <MenuItem x:Name="menuOptionSetting" Header="{x:Static resx:ResUI.menuOptionSetting}" />
+                                        <MenuItem x:Name="menuRoutingSetting" Header="{x:Static resx:ResUI.menuRoutingSetting}" />
+                                        <MenuItem x:Name="menuDNSSetting" Header="{x:Static resx:ResUI.menuDNSSetting}" />
+                                        <MenuItem x:Name="menuFullConfigTemplate" Header="{x:Static resx:ResUI.menuFullConfigTemplate}" />
+                                        <MenuItem
+                                            x:Name="menuGlobalHotkeySetting"
+                                            Header="{x:Static resx:ResUI.menuGlobalHotkeySetting}"
+                                            IsVisible="{Binding BlIsWindows}" />
+                                        <MenuItem x:Name="menuAppearance" Header="Theme / Language" />
+                                        <Separator />
+                                        <MenuItem
+                                            x:Name="menuRebootAsAdmin"
+                                            Header="{x:Static resx:ResUI.menuRebootAsAdmin}"
+                                            IsVisible="{Binding BlIsWindows}" />
+                                        <MenuItem
+                                            x:Name="menuSettingsSetUWP"
+                                            Header="{x:Static resx:ResUI.TbSettingsSetUWP}"
+                                            IsVisible="{Binding BlIsWindows}" />
+                                        <MenuItem x:Name="menuClearServerStatistics" Header="{x:Static resx:ResUI.menuClearServerStatistics}" />
+                                        <Separator />
+                                        <MenuItem Header="{x:Static resx:ResUI.menuRegionalPresets}">
+                                            <MenuItem x:Name="menuRegionalPresetsDefault" Header="{x:Static resx:ResUI.menuRegionalPresetsDefault}" />
+                                            <MenuItem x:Name="menuRegionalPresetsRussia" Header="{x:Static resx:ResUI.menuRegionalPresetsRussia}" />
+                                            <MenuItem x:Name="menuRegionalPresetsIran" Header="{x:Static resx:ResUI.menuRegionalPresetsIran}" />
+                                        </MenuItem>
+                                        <MenuItem x:Name="menuBackupAndRestore" Header="{x:Static resx:ResUI.menuBackupAndRestore}" />
+                                        <MenuItem x:Name="menuOpenTheFileLocation" Header="{x:Static resx:ResUI.menuOpenTheFileLocation}" />
+                                    </MenuItem>
+
+                                    <MenuItem x:Name="menuHelp" Header="{x:Static resx:ResUI.menuHelp}">
+                                        <MenuItem x:Name="menuCheckUpdate" Header="{x:Static resx:ResUI.menuCheckUpdate}" />
+                                        <Separator />
+                                    </MenuItem>
+
+                                    <Separator />
+                                    <MenuItem x:Name="menuReload" Header="{x:Static resx:ResUI.menuReload}" />
+                                    <MenuItem x:Name="menuStopCore" Header="Disconnect" />
+                                    <Separator />
+                                    <MenuItem x:Name="menuPromotion" Header="{x:Static resx:ResUI.menuPromotion}" />
+                                    <MenuItem x:Name="menuClose" Header="{x:Static resx:ResUI.menuExit}" />
+                                </MenuItem>
+                            </Menu>
+
+                            <Button
+                                x:Name="btnMinimize"
+                                Classes="sc cap"
+                                ToolTip.Tip="Minimize"
+                                WindowDecorationProperties.ElementRole="User">
+                                <Border Classes="box">
+                                    <Path
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Data="M 0 0 H 6" />
+                                </Border>
+                            </Button>
+                            <Button
+                                x:Name="btnMaximize"
+                                Classes="sc cap"
+                                ToolTip.Tip="Maximize"
+                                WindowDecorationProperties.ElementRole="User">
+                                <Border Classes="box">
+                                    <Path
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Data="M 0.5 0.5 H 5.5 V 5.5 H 0.5 Z" />
+                                </Border>
+                            </Button>
+                            <Button
+                                x:Name="btnClose"
+                                Classes="sc cap close"
+                                ToolTip.Tip="Close"
+                                WindowDecorationProperties.ElementRole="User">
+                                <Border Classes="box">
+                                    <Path
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Data="M 0 0 L 6 6 M 6 0 L 0 6" />
+                                </Border>
+                            </Button>
+                        </StackPanel>
                     </Grid>
                 </Border>
 
-                <Grid Grid.Column="1">
-                    <StackPanel
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Spacing="18">
-                        <TextBlock
-                            x:Name="txtState"
-                            HorizontalAlignment="Center"
-                            FontSize="12"
-                            FontWeight="Bold"
-                            Foreground="#8B95B4"
-                            Text="DISCONNECTED" />
-                        <TextBlock
-                            x:Name="txtServerName"
-                            MaxWidth="360"
-                            HorizontalAlignment="Center"
-                            FontSize="20"
-                            FontWeight="Bold"
-                            Foreground="#E8EBF6"
-                            TextAlignment="Center"
-                            TextWrapping="Wrap"
-                            Text="-" />
-
-                        <Panel
-                            Width="210"
-                            Height="210"
-                            HorizontalAlignment="Center">
-                            <Ellipse
-                                x:Name="ringGlow"
-                                Width="208"
-                                Height="208"
-                                Fill="Transparent"
-                                IsVisible="False"
-                                Stroke="#37D3C2"
-                                StrokeThickness="2" />
-                            <Ellipse
-                                Width="196"
-                                Height="196"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Fill="#161C35"
-                                Stroke="#273055"
-                                StrokeThickness="1" />
-                            <Button
-                                x:Name="btnConnect"
-                                Width="150"
-                                Height="150"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center"
-                                Background="#1D2647"
-                                CornerRadius="75">
-                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
-                                    <Viewbox Width="34" Height="34" HorizontalAlignment="Center">
-                                        <Canvas Width="24" Height="24">
-                                            <Path Fill="#8B95B4" Data="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0 1 19 12a7 7 0 0 1-14 0c0-2.21 1.03-4.18 2.59-5.42L6.17 5.17A8.96 8.96 0 0 0 3 12a9 9 0 0 0 18 0c0-2.74-1.23-5.18-3.17-6.83z" />
-                                        </Canvas>
-                                    </Viewbox>
-                                    <TextBlock
-                                        HorizontalAlignment="Center"
-                                        FontWeight="Bold"
-                                        Foreground="#8B95B4"
-                                        Text="Connect" />
-                                </StackPanel>
-                            </Button>
-                            <Button
-                                x:Name="btnDisconnect"
-                                Width="150"
-                                Height="150"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="Center"
-                                Background="#1D2647"
-                                CornerRadius="75"
-                                IsVisible="False">
-                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
-                                    <Viewbox Width="34" Height="34" HorizontalAlignment="Center">
-                                        <Canvas Width="24" Height="24">
-                                            <Path Fill="#37D3C2" Data="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0 1 19 12a7 7 0 0 1-14 0c0-2.21 1.03-4.18 2.59-5.42L6.17 5.17A8.96 8.96 0 0 0 3 12a9 9 0 0 0 18 0c0-2.74-1.23-5.18-3.17-6.83z" />
-                                        </Canvas>
-                                    </Viewbox>
-                                    <TextBlock
-                                        HorizontalAlignment="Center"
-                                        FontWeight="Bold"
-                                        Foreground="#37D3C2"
-                                        Text="Disconnect" />
-                                </StackPanel>
-                            </Button>
-                        </Panel>
-
+                <!-- ===== Status strip ===== -->
+                <Border
+                    Padding="16,10"
+                    Background="#0E1325"
+                    BorderBrush="#273055"
+                    BorderThickness="0,1,0,0"
+                    DockPanel.Dock="Bottom">
+                    <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
                         <StackPanel
+                            Grid.Column="0"
+                            Margin="0,0,18,0"
+                            VerticalAlignment="Center"
                             Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            Spacing="8">
+                            Spacing="7">
                             <Border
-                                Background="#161C35"
-                                BorderBrush="#273055"
-                                BorderThickness="1"
-                                CornerRadius="999"
-                                Padding="12,7">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock
-                                        FontSize="12"
-                                        Foreground="#5B648A"
-                                        Text="IP" />
-                                    <TextBlock
-                                        x:Name="txtIp"
-                                        FontSize="12"
-                                        Foreground="#E8EBF6"
-                                        Text="—" />
-                                </StackPanel>
-                            </Border>
-                            <Border
-                                Background="#161C35"
-                                BorderBrush="#273055"
-                                BorderThickness="1"
-                                CornerRadius="999"
-                                Padding="12,7">
+                                x:Name="dotCore"
+                                Width="7"
+                                Height="7"
+                                VerticalAlignment="Center"
+                                Background="#5B648A"
+                                CornerRadius="4" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="#8B95B4"
+                                Text="core" />
+                            <TextBlock
+                                x:Name="txtCore"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource ScMono}"
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Foreground="#E8EBF6"
+                                Text="sing-box" />
+                        </StackPanel>
+                        <StackPanel
+                            Grid.Column="1"
+                            Margin="0,0,18,0"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="7">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="#5B648A"
+                                Text="↓" />
+                            <TextBlock
+                                x:Name="txtDown"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource ScMono}"
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Foreground="#E8EBF6"
+                                Text="0.0" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="#8B95B4"
+                                Text="Mbps" />
+                        </StackPanel>
+                        <StackPanel
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="7">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="#5B648A"
+                                Text="↑" />
+                            <TextBlock
+                                x:Name="txtUp"
+                                VerticalAlignment="Center"
+                                FontFamily="{StaticResource ScMono}"
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Foreground="#E8EBF6"
+                                Text="0.0" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="#8B95B4"
+                                Text="Mbps" />
+                        </StackPanel>
+                        <Button
+                            x:Name="btnTun"
+                            Grid.Column="4"
+                            VerticalAlignment="Center"
+                            Classes="sc tun"
+                            ToolTip.Tip="TUN mode (whole-PC tunnel) — click to toggle. Requires administrator.">
+                            <StackPanel Orientation="Horizontal" Spacing="7">
                                 <TextBlock
-                                    x:Name="txtKill"
+                                    VerticalAlignment="Center"
                                     FontSize="12"
                                     Foreground="#8B95B4"
-                                    Text="Kill switch off" />
-                            </Border>
+                                    Text="TUN" />
+                                <TextBlock
+                                    x:Name="txtTun"
+                                    VerticalAlignment="Center"
+                                    FontFamily="{StaticResource ScMono}"
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    Foreground="#E8EBF6"
+                                    Text="singbox_tun" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- ===== Body: profile rail + connect stage ===== -->
+                <Grid ColumnDefinitions="248,*">
+                    <Border
+                        Grid.Column="0"
+                        Background="#0F1426"
+                        BorderBrush="#273055"
+                        BorderThickness="0,0,1,0">
+                        <Grid RowDefinitions="Auto,*,Auto">
+                            <TextBlock
+                                Grid.Row="0"
+                                Margin="16,14,16,8"
+                                FontSize="11"
+                                FontWeight="Bold"
+                                Foreground="#5B648A"
+                                LetterSpacing="1.5"
+                                Text="PROFILES" />
+                            <ListBox
+                                x:Name="lstCards"
+                                Grid.Row="1"
+                                Padding="10,0,10,2"
+                                Background="Transparent"
+                                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                SelectionMode="Single">
+                                <ListBox.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem x:Name="menuCtxEdit" Header="Edit" />
+                                        <MenuItem x:Name="menuCtxPing" Header="Ping" />
+                                        <MenuItem x:Name="menuCtxShare" Header="Copy share link" />
+                                        <Separator />
+                                        <MenuItem x:Name="menuCtxDelete" Header="Delete" />
+                                    </ContextMenu>
+                                </ListBox.ContextMenu>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border
+                                                Grid.Column="0"
+                                                Width="30"
+                                                Height="30"
+                                                VerticalAlignment="Center"
+                                                Background="#1D2647"
+                                                CornerRadius="8">
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontFamily="{StaticResource ScMono}"
+                                                    FontSize="11"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="#4F8CFF"
+                                                    LetterSpacing="0.5"
+                                                    Text="{ReflectionBinding CountryCode}" />
+                                            </Border>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Margin="10,0"
+                                                VerticalAlignment="Center"
+                                                Spacing="1">
+                                                <TextBlock
+                                                    FontSize="13.5"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="#E8EBF6"
+                                                    Text="{ReflectionBinding Remarks}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                                <TextBlock
+                                                    FontFamily="{StaticResource ScMono}"
+                                                    FontSize="11"
+                                                    Foreground="#8B95B4"
+                                                    Text="{ReflectionBinding ProtocolInfo}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <StackPanel
+                                                Grid.Column="2"
+                                                VerticalAlignment="Center"
+                                                Orientation="Horizontal">
+                                                <TextBlock
+                                                    FontFamily="{StaticResource ScMono}"
+                                                    FontSize="11"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="#37D3C2"
+                                                    Text="{ReflectionBinding DelayVal}" />
+                                                <TextBlock
+                                                    FontFamily="{StaticResource ScMono}"
+                                                    FontSize="11"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="#8B95B4"
+                                                    IsVisible="{ReflectionBinding DelayVal, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                    Text=" ms" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <Button
+                                x:Name="btnImport"
+                                Grid.Row="2"
+                                Height="36"
+                                Margin="12,6,12,12"
+                                HorizontalAlignment="Stretch"
+                                Classes="sc import">
+                                <Panel>
+                                    <Rectangle
+                                        RadiusX="10"
+                                        RadiusY="10"
+                                        StrokeDashArray="4,3"
+                                        StrokeThickness="1" />
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        FontWeight="SemiBold"
+                                        Text="+ Import from clipboard" />
+                                </Panel>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <Grid Grid.Column="1" Background="#11162A">
+                        <StackPanel
+                            Margin="20"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="18">
+                            <StackPanel HorizontalAlignment="Center" Spacing="6">
+                                <TextBlock
+                                    x:Name="txtState"
+                                    HorizontalAlignment="Center"
+                                    FontSize="12"
+                                    FontWeight="Bold"
+                                    Foreground="#8B95B4"
+                                    LetterSpacing="2.2"
+                                    Text="DISCONNECTED" />
+                                <TextBlock
+                                    x:Name="txtServerName"
+                                    MaxWidth="420"
+                                    HorizontalAlignment="Center"
+                                    FontSize="20"
+                                    FontWeight="Bold"
+                                    Foreground="#E8EBF6"
+                                    Text="-"
+                                    TextAlignment="Center"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+
+                            <Button
+                                x:Name="btnDial"
+                                Width="212"
+                                Height="212"
+                                HorizontalAlignment="Center"
+                                Classes="sc"
+                                CornerRadius="106"
+                                ToolTip.Tip="Connect / Disconnect">
+                                <Panel Width="212" Height="212">
+                                    <!-- connected glow -->
+                                    <Border
+                                        x:Name="dialGlow"
+                                        Width="196"
+                                        Height="196"
+                                        Background="#161C35"
+                                        BoxShadow="0 0 40 0 #2E37D3C2, 0 0 0 4 #1437D3C2"
+                                        CornerRadius="98"
+                                        IsVisible="False" />
+                                    <!-- dial disc -->
+                                    <Ellipse
+                                        x:Name="dialDisc"
+                                        Width="196"
+                                        Height="196"
+                                        Stroke="#273055"
+                                        StrokeThickness="1">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush
+                                                Center="50%,42%"
+                                                GradientOrigin="50%,42%"
+                                                RadiusX="62%"
+                                                RadiusY="62%">
+                                                <GradientStop Offset="0" Color="#1D294D" />
+                                                <GradientStop Offset="1" Color="#161C35" />
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                    </Ellipse>
+                                    <!-- outer ring: connected -->
+                                    <Ellipse
+                                        x:Name="ringOn"
+                                        Width="208"
+                                        Height="208"
+                                        IsVisible="False"
+                                        Stroke="#37D3C2"
+                                        StrokeThickness="2" />
+                                    <!-- outer ring: connecting (spinning arc) -->
+                                    <Ellipse
+                                        x:Name="ringBusy"
+                                        Width="208"
+                                        Height="208"
+                                        IsVisible="False"
+                                        Stroke="#4F8CFF"
+                                        StrokeDashArray="245,82"
+                                        StrokeThickness="2" />
+                                    <!-- inner disc -->
+                                    <Ellipse
+                                        Width="150"
+                                        Height="150"
+                                        Stroke="#273055"
+                                        StrokeThickness="1">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush
+                                                Center="50%,35%"
+                                                GradientOrigin="50%,35%"
+                                                RadiusX="70%"
+                                                RadiusY="70%">
+                                                <GradientStop Offset="0" Color="#1D2647" />
+                                                <GradientStop Offset="1" Color="#11162A" />
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                    </Ellipse>
+                                    <StackPanel
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Spacing="4">
+                                        <Viewbox
+                                            Width="40"
+                                            Height="40"
+                                            HorizontalAlignment="Center">
+                                            <Canvas Width="24" Height="24">
+                                                <Path
+                                                    x:Name="iconPower"
+                                                    Data="M 12 3 V 12 M 6.5 7 A 8 8 0 1 0 17.5 7"
+                                                    Stroke="#8B95B4"
+                                                    StrokeLineCap="Round"
+                                                    StrokeThickness="2" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock
+                                            x:Name="txtVerb"
+                                            HorizontalAlignment="Center"
+                                            FontSize="13"
+                                            FontWeight="Bold"
+                                            Foreground="#8B95B4"
+                                            LetterSpacing="1"
+                                            Text="CONNECT" />
+                                        <TextBlock
+                                            x:Name="txtTimer"
+                                            HorizontalAlignment="Center"
+                                            FontFamily="{StaticResource ScMono}"
+                                            FontSize="15"
+                                            FontWeight="SemiBold"
+                                            Foreground="#37D3C2"
+                                            IsVisible="False"
+                                            LetterSpacing="0.5"
+                                            Text="00:00:00" />
+                                    </StackPanel>
+                                </Panel>
+                            </Button>
+
+                            <StackPanel
+                                HorizontalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="10">
+                                <Border
+                                    Padding="12,7"
+                                    Background="#161C35"
+                                    BorderBrush="#273055"
+                                    BorderThickness="1"
+                                    CornerRadius="999">
+                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                        <Border
+                                            Width="7"
+                                            Height="7"
+                                            VerticalAlignment="Center"
+                                            Background="#5B648A"
+                                            CornerRadius="4" />
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            Foreground="#8B95B4"
+                                            Text="IP" />
+                                        <TextBlock
+                                            x:Name="txtIp"
+                                            VerticalAlignment="Center"
+                                            FontFamily="{StaticResource ScMono}"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            Foreground="#E8EBF6"
+                                            LetterSpacing="0.3"
+                                            Text="—" />
+                                    </StackPanel>
+                                </Border>
+                                <Border
+                                    x:Name="chipLock"
+                                    Padding="12,7"
+                                    Background="#161C35"
+                                    BorderBrush="#273055"
+                                    BorderThickness="1"
+                                    CornerRadius="999">
+                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                        <Border
+                                            x:Name="dotLock"
+                                            Width="7"
+                                            Height="7"
+                                            VerticalAlignment="Center"
+                                            Background="#5B648A"
+                                            CornerRadius="4" />
+                                        <TextBlock
+                                            x:Name="txtKill"
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            Foreground="#8B95B4"
+                                            Text="Kill switch off" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
                         </StackPanel>
 
-                        <TextBlock
-                            x:Name="txtSpeed"
-                            HorizontalAlignment="Center"
-                            Foreground="#8B95B4"
-                            Text="" />
-                        <TextBlock
-                            x:Name="txtInfo"
-                            MaxWidth="360"
-                            HorizontalAlignment="Center"
-                            FontSize="11"
-                            Foreground="#5B648A"
-                            TextAlignment="Center"
-                            TextWrapping="Wrap"
-                            Text="" />
-                    </StackPanel>
-
-                    <Button
-                        x:Name="btnSettings"
-                        Width="36"
-                        Height="36"
-                        Margin="16"
-                        Padding="0"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Top"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        Background="#161C35"
-                        CornerRadius="10"
-                        ToolTip.Tip="Settings">
-                        <Viewbox Width="18" Height="18">
-                            <Canvas Width="24" Height="24">
-                                <Path Fill="#8B95B4" Data="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
-                            </Canvas>
-                        </Viewbox>
-                    </Button>
+                        <Button
+                            x:Name="btnSettings"
+                            Width="34"
+                            Height="34"
+                            Margin="16"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Classes="sc gear"
+                            CornerRadius="10"
+                            ToolTip.Tip="Settings">
+                            <Viewbox Width="16" Height="16">
+                                <Canvas Width="24" Height="24">
+                                    <Path
+                                        Data="M 15 12 A 3 3 0 1 1 9 12 A 3 3 0 1 1 15 12 Z M 19.4 15 a 1.65 1.65 0 0 0 0.33 1.82 l 0.06 0.06 a 2 2 0 1 1 -2.83 2.83 l -0.06 -0.06 a 1.65 1.65 0 0 0 -1.82 -0.33 a 1.65 1.65 0 0 0 -1 1.51 V 21 a 2 2 0 0 1 -4 0 v -0.09 A 1.65 1.65 0 0 0 9 19.4 a 1.65 1.65 0 0 0 -1.82 0.33 l -0.06 0.06 a 2 2 0 1 1 -2.83 -2.83 l 0.06 -0.06 a 1.65 1.65 0 0 0 0.33 -1.82 a 1.65 1.65 0 0 0 -1.51 -1 H 3 a 2 2 0 0 1 0 -4 h 0.09 A 1.65 1.65 0 0 0 4.6 9 a 1.65 1.65 0 0 0 -0.33 -1.82 l -0.06 -0.06 a 2 2 0 1 1 2.83 -2.83 l 0.06 0.06 a 1.65 1.65 0 0 0 1.82 0.33 H 9 a 1.65 1.65 0 0 0 1 -1.51 V 3 a 2 2 0 0 1 4 0 v 0.09 a 1.65 1.65 0 0 0 1 1.51 a 1.65 1.65 0 0 0 1.82 -0.33 l 0.06 -0.06 a 2 2 0 1 1 2.83 2.83 l -0.06 0.06 a 1.65 1.65 0 0 0 -0.33 1.82 V 9 a 1.65 1.65 0 0 0 1.51 1 H 21 a 2 2 0 0 1 0 4 h -0.09 a 1.65 1.65 0 0 0 -1.51 1 z"
+                                        StrokeJoin="Round"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="2" />
+                                </Canvas>
+                            </Viewbox>
+                        </Button>
+                    </Grid>
                 </Grid>
-            </Grid>
-        </DockPanel>
+            </DockPanel>
+
+            <!-- ===== Settings panel (gear) ===== -->
+            <Border
+                x:Name="settingsOverlay"
+                Padding="18"
+                Background="#B8080B18"
+                IsVisible="False">
+                <Border
+                    x:Name="settingsPanel"
+                    MaxWidth="420"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="#11162A"
+                    BorderBrush="#273055"
+                    BorderThickness="1"
+                    BoxShadow="0 24 60 0 #73000000"
+                    ClipToBounds="True"
+                    CornerRadius="14">
+                    <DockPanel>
+                        <Border
+                            Padding="16,15"
+                            BorderBrush="#273055"
+                            BorderThickness="0,0,0,1"
+                            DockPanel.Dock="Top">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="15"
+                                    FontWeight="Bold"
+                                    Foreground="#E8EBF6"
+                                    Text="Settings" />
+                                <Button
+                                    x:Name="btnSettingsClose"
+                                    Grid.Column="1"
+                                    Width="28"
+                                    Height="28"
+                                    Classes="sc gear"
+                                    CornerRadius="8"
+                                    ToolTip.Tip="Close">
+                                    <Path
+                                        Data="M 0 0 L 9 9 M 9 0 L 0 9"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="1.5" />
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel>
+                                <Border Classes="section">
+                                    <StackPanel>
+                                        <TextBlock Classes="eyebrow" Text="NETWORK LOCK" />
+                                        <Grid Margin="0,7" ColumnDefinitions="*,Auto">
+                                            <StackPanel Margin="0,0,12,0">
+                                                <TextBlock Classes="label" Text="Kill switch" />
+                                                <TextBlock Classes="sub" Text="Block all traffic outside the tunnel while connected — even if the core drops." />
+                                            </StackPanel>
+                                            <ToggleButton
+                                                x:Name="tglKill"
+                                                Grid.Column="1"
+                                                Classes="sct warn" />
+                                        </Grid>
+                                        <Grid Margin="0,7" ColumnDefinitions="*,Auto">
+                                            <StackPanel Margin="0,0,12,0">
+                                                <TextBlock Classes="label" Text="Allow local network" />
+                                                <TextBlock Classes="sub" Text="Keep LAN devices (printers, NAS) reachable while locked." />
+                                            </StackPanel>
+                                            <ToggleButton
+                                                x:Name="tglLan"
+                                                Grid.Column="1"
+                                                Classes="sct" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Classes="section">
+                                    <StackPanel>
+                                        <TextBlock Classes="eyebrow" Text="SPLIT TUNNELING — BYPASS THE TUNNEL" />
+                                        <StackPanel Margin="0,7">
+                                            <TextBlock Classes="label" Text="Apps" />
+                                            <TextBlock Classes="sub" Text="Routed direct (outside the tunnel)." />
+                                        </StackPanel>
+                                        <ItemsControl x:Name="lstBypassApps" Margin="0,1,0,0">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="sys:String">
+                                                    <Border Classes="tag">
+                                                        <StackPanel Orientation="Horizontal" Spacing="5">
+                                                            <TextBlock
+                                                                VerticalAlignment="Center"
+                                                                FontFamily="{StaticResource ScMono}"
+                                                                FontSize="11.5"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="#E8EBF6"
+                                                                Text="{Binding}" />
+                                                            <Button
+                                                                Classes="sc tagx"
+                                                                Tag="{Binding}"
+                                                                ToolTip.Tip="Remove">
+                                                                <TextBlock
+                                                                    FontSize="12"
+                                                                    Foreground="#8B95B4"
+                                                                    Text="×" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBox
+                                            x:Name="txtAddApp"
+                                            Classes="add"
+                                            PlaceholderText="+ add app — telegram.exe or C:\Path\app.exe, Enter" />
+
+                                        <TextBlock
+                                            Margin="0,13,0,8"
+                                            Classes="label"
+                                            Text="Subnets" />
+                                        <ItemsControl x:Name="lstBypassSubnets">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="sys:String">
+                                                    <Border Classes="tag">
+                                                        <StackPanel Orientation="Horizontal" Spacing="5">
+                                                            <TextBlock
+                                                                VerticalAlignment="Center"
+                                                                FontFamily="{StaticResource ScMono}"
+                                                                FontSize="11.5"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="#4F8CFF"
+                                                                Text="{Binding}" />
+                                                            <Button
+                                                                Classes="sc tagx"
+                                                                Tag="{Binding}"
+                                                                ToolTip.Tip="Remove">
+                                                                <TextBlock
+                                                                    FontSize="12"
+                                                                    Foreground="#8B95B4"
+                                                                    Text="×" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBox
+                                            x:Name="txtAddSubnet"
+                                            Classes="add"
+                                            PlaceholderText="+ add subnet — CIDR, e.g. 192.168.0.0/16, Enter" />
+
+                                        <TextBlock Classes="hint" Text="Listed apps and subnets egress directly and are permitted through the firewall lock, so they stay reachable while everything else is tunneled." />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Classes="section" BorderThickness="0">
+                                    <StackPanel>
+                                        <TextBlock Classes="eyebrow" Text="TUNNEL" />
+                                        <Grid Margin="0,7" ColumnDefinitions="*,Auto">
+                                            <StackPanel Margin="0,0,12,0">
+                                                <TextBlock Classes="label" Text="TUN mode (whole-PC)" />
+                                                <TextBlock Classes="sub" Text="Route every app through the tunnel. Requires administrator." />
+                                            </StackPanel>
+                                            <ToggleButton
+                                                x:Name="tglTun"
+                                                Grid.Column="1"
+                                                Classes="sct" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Border>
+        </Panel>
     </dialogHost:DialogHost>
 </Window>
