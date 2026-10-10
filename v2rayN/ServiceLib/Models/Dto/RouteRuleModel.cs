@@ -11,7 +11,7 @@ public partial class RouteRuleModel : ReactiveObject
     public RouteRuleModel(RulesItem rule, int index)
     {
         Rule = rule;
-        Title = rule.Remarks.IsNullOrEmpty() ? $"Rule {index + 1}" : rule.Remarks;
+        Title = rule.Remarks.IsNullOrEmpty() ? string.Format(ResUI.ScRuleTitle, index + 1) : rule.Remarks;
         Summary = BuildSummary(rule);
         Enabled = rule.Enabled;
 
@@ -19,14 +19,17 @@ public partial class RouteRuleModel : ReactiveObject
         IsDirect = outbound == Global.DirectTag;
         IsBlock = outbound == Global.BlockTag;
         IsProxy = !IsDirect && !IsBlock;
-        ActionText = IsDirect ? "Bypass" : IsBlock ? "Block" : outbound == Global.ProxyTag ? "Proxy" : $"Proxy · {outbound}";
+        ActionText = IsDirect ? ResUI.ScActionBypass
+            : IsBlock ? ResUI.ScActionBlock
+            : outbound == Global.ProxyTag ? ResUI.ScActionProxy
+            : string.Format(ResUI.ScActionProxyTo, outbound);
         if (rule.RuleType == ERuleType.DNS)
         {
-            ActionText += " · DNS only";
+            ActionText += ResUI.ScDnsOnly;
         }
         else if (rule.RuleType == ERuleType.Routing)
         {
-            ActionText += " · routing only";
+            ActionText += ResUI.ScRoutingOnly;
         }
     }
 
@@ -57,30 +60,30 @@ public partial class RouteRuleModel : ReactiveObject
         lines.AddRange(rule.Ip?.Where(t => t.IsNotEmpty()) ?? []);
         if (rule.Protocol?.Count > 0)
         {
-            lines.Add($"protocol: {string.Join(", ", rule.Protocol)}");
+            lines.Add(string.Format(ResUI.ScSumProtocol, string.Join(", ", rule.Protocol)));
         }
         if (rule.Process?.Count > 0)
         {
             lines.Add(rule.Process.Count == 1
-                ? $"app: {rule.Process[0]}"
-                : $"{rule.Process.Count} apps");
+                ? string.Format(ResUI.ScSumApp, rule.Process[0])
+                : string.Format(ResUI.ScSumApps, rule.Process.Count));
         }
         if (rule.Port.IsNotEmpty())
         {
-            lines.Add($"port: {rule.Port}");
+            lines.Add(string.Format(ResUI.ScSumPort, rule.Port));
         }
         if (rule.Network.IsNotEmpty())
         {
-            lines.Add($"network: {rule.Network}");
+            lines.Add(string.Format(ResUI.ScSumNetwork, rule.Network));
         }
         if (rule.InboundTag?.Count > 0)
         {
-            lines.Add($"inbound: {string.Join(", ", rule.InboundTag)}");
+            lines.Add(string.Format(ResUI.ScSumInbound, string.Join(", ", rule.InboundTag)));
         }
 
         if (lines.Count == 0)
         {
-            return "any traffic";
+            return ResUI.ScSumAnyTraffic;
         }
         if (lines.Count > MaxLines)
         {

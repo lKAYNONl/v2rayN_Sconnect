@@ -1188,7 +1188,7 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Kill Switch">
+            <TabItem Header="{x:Static resx:ResUI.ScKsTab}">
                 <ScrollViewer VerticalScrollBarVisibility="Visible">
                     <Grid
                         Margin="{StaticResource Margin4}"
@@ -1204,14 +1204,14 @@
                             TextWrapping="Wrap"
                             MaxWidth="560"
                             HorizontalAlignment="Left"
-                            Text="When enabled, connecting a TUN profile locks the firewall to default-deny outbound, so no traffic can leave outside the tunnel — even if the core drops. Requires running as administrator (TUN already does)." />
+                            Text="{x:Static resx:ResUI.ScKsTabDesc}" />
 
                         <TextBlock
                             Grid.Row="1"
                             Grid.Column="0"
                             Margin="{StaticResource Margin4}"
                             VerticalAlignment="Center"
-                            Text="Enable kill switch" />
+                            Text="{x:Static resx:ResUI.ScKsEnable}" />
                         <ToggleSwitch
                             x:Name="togEnableKillSwitch"
                             Grid.Row="1"
@@ -1224,7 +1224,7 @@
                             Grid.Column="0"
                             Margin="{StaticResource Margin4}"
                             VerticalAlignment="Center"
-                            Text="Allow local network (LAN)" />
+                            Text="{x:Static resx:ResUI.ScKsAllowLan}" />
                         <ToggleSwitch
                             x:Name="togKillSwitchAllowLan"
                             Grid.Row="2"
@@ -1238,14 +1238,14 @@
                             Grid.ColumnSpan="2"
                             Margin="{StaticResource Margin4}"
                             FontWeight="Bold"
-                            Text="Split tunneling (mode: Secure Connect settings → whitelist by default)" />
+                            Text="{x:Static resx:ResUI.ScKsSplit}" />
 
                         <TextBlock
                             Grid.Row="4"
                             Grid.Column="0"
                             Margin="{StaticResource Margin4}"
                             VerticalAlignment="Top"
-                            Text="Apps (one per line, exe name or full path)" />
+                            Text="{x:Static resx:ResUI.ScKsApps}" />
                         <TextBox
                             x:Name="txtKillSwitchBypassApps"
                             Grid.Row="4"
@@ -1263,7 +1263,7 @@
                             Grid.Column="0"
                             Margin="{StaticResource Margin4}"
                             VerticalAlignment="Top"
-                            Text="Subnets (one CIDR per line)" />
+                            Text="{x:Static resx:ResUI.ScKsSubnets}" />
                         <TextBox
                             x:Name="txtKillSwitchBypassSubnets"
                             Grid.Row="5"
@@ -1285,7 +1285,7 @@
                             TextWrapping="Wrap"
                             MaxWidth="560"
                             HorizontalAlignment="Left"
-                            Text="Whitelist mode (default): only the listed apps and subnets use the tunnel, everything else goes direct; empty lists tunnel the whole PC. Bypass mode: the listed apps and subnets go direct and are permitted through the kill switch." />
+                            Text="{x:Static resx:ResUI.ScKsHint}" />
                     </Grid>
                 </ScrollViewer>
             </TabItem>

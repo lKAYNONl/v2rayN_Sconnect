@@ -76,7 +76,9 @@ public sealed class CoreInfoManager
     {
         return type switch
         {
-            ECoreType.v2rayN => !Utils.IsPackagedInstall(),
+            // Secure Connect: the app updater targets upstream 2dust/v2rayN and
+            // would replace this fork, so self-update is turned off.
+            ECoreType.v2rayN => false,
             ECoreType.Xray => true,
             ECoreType.mihomo => true,
             ECoreType.sing_box => true,

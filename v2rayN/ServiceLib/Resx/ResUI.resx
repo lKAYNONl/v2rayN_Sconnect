@@ -1905,4 +1905,424 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="menuAddMasqueServer" xml:space="preserve">
     <value>Add [MASQUE]</value>
   </data>
+  <data name="ScMenu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="ScMinimize" xml:space="preserve">
+    <value>Minimize</value>
+  </data>
+  <data name="ScMaximize" xml:space="preserve">
+    <value>Maximize</value>
+  </data>
+  <data name="ScClose" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="ScDisconnect" xml:space="preserve">
+    <value>Disconnect</value>
+  </data>
+  <data name="ScCore" xml:space="preserve">
+    <value>core</value>
+  </data>
+  <data name="ScMbps" xml:space="preserve">
+    <value>Mbps</value>
+  </data>
+  <data name="ScTunTip" xml:space="preserve">
+    <value>TUN mode (whole-PC tunnel) — click to toggle. Requires administrator.</value>
+  </data>
+  <data name="ScOff" xml:space="preserve">
+    <value>off</value>
+  </data>
+  <data name="ScProfiles" xml:space="preserve">
+    <value>PROFILES</value>
+  </data>
+  <data name="ScEdit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="ScPing" xml:space="preserve">
+    <value>Ping</value>
+  </data>
+  <data name="ScCopyShareLink" xml:space="preserve">
+    <value>Copy share link</value>
+  </data>
+  <data name="ScDelete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="ScMs" xml:space="preserve">
+    <value> ms</value>
+  </data>
+  <data name="ScImportClipboard" xml:space="preserve">
+    <value>+ Import from clipboard</value>
+  </data>
+  <data name="ScStateDisconnected" xml:space="preserve">
+    <value>DISCONNECTED</value>
+  </data>
+  <data name="ScStateConnecting" xml:space="preserve">
+    <value>CONNECTING…</value>
+  </data>
+  <data name="ScStateDisconnecting" xml:space="preserve">
+    <value>DISCONNECTING…</value>
+  </data>
+  <data name="ScStateProxyOnly" xml:space="preserve">
+    <value>CONNECTED · PROXY ONLY</value>
+  </data>
+  <data name="ScStateProtected" xml:space="preserve">
+    <value>PROTECTED</value>
+  </data>
+  <data name="ScStateSplit" xml:space="preserve">
+    <value>SPLIT TUNNEL</value>
+  </data>
+  <data name="ScStateLocked" xml:space="preserve">
+    <value>{0} · LOCKED</value>
+  </data>
+  <data name="ScConnectVerb" xml:space="preserve">
+    <value>CONNECT</value>
+  </data>
+  <data name="ScConnectTip" xml:space="preserve">
+    <value>Connect / Disconnect</value>
+  </data>
+  <data name="ScChipNetworkLocked" xml:space="preserve">
+    <value>Network locked</value>
+  </data>
+  <data name="ScChipKillOff" xml:space="preserve">
+    <value>Kill switch off</value>
+  </data>
+  <data name="ScChipKillNeedsTun" xml:space="preserve">
+    <value>Kill switch needs TUN</value>
+  </data>
+  <data name="ScChipKillArmed" xml:space="preserve">
+    <value>Kill switch armed</value>
+  </data>
+  <data name="ScSettings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="ScNetworkLockSection" xml:space="preserve">
+    <value>NETWORK LOCK</value>
+  </data>
+  <data name="ScKillSwitch" xml:space="preserve">
+    <value>Kill switch</value>
+  </data>
+  <data name="ScKillSwitchSub" xml:space="preserve">
+    <value>Block all traffic outside the tunnel while connected — even if the core drops.</value>
+  </data>
+  <data name="ScAllowLan" xml:space="preserve">
+    <value>Allow local network</value>
+  </data>
+  <data name="ScAllowLanSub" xml:space="preserve">
+    <value>Keep LAN devices (printers, NAS) reachable while locked.</value>
+  </data>
+  <data name="ScSplitSection" xml:space="preserve">
+    <value>SPLIT TUNNELING</value>
+  </data>
+  <data name="ScSplitWhitelist" xml:space="preserve">
+    <value>Only listed via tunnel</value>
+  </data>
+  <data name="ScSplitWhitelistTip" xml:space="preserve">
+    <value>Whitelist: only the listed apps and subnets go through the tunnel, everything else goes direct</value>
+  </data>
+  <data name="ScSplitBypass" xml:space="preserve">
+    <value>Listed go direct</value>
+  </data>
+  <data name="ScSplitBypassTip" xml:space="preserve">
+    <value>Bypass: the listed apps and subnets go direct, everything else is tunneled</value>
+  </data>
+  <data name="ScApps" xml:space="preserve">
+    <value>Apps</value>
+  </data>
+  <data name="ScSplitAppsSubWhitelist" xml:space="preserve">
+    <value>Only these apps use the tunnel. A folder covers every program inside it.</value>
+  </data>
+  <data name="ScSplitAppsSubBypass" xml:space="preserve">
+    <value>Routed direct (outside the tunnel). A folder covers every program inside it.</value>
+  </data>
+  <data name="ScAddRunningProgram" xml:space="preserve">
+    <value>Add a running program</value>
+  </data>
+  <data name="ScAddFolder" xml:space="preserve">
+    <value>Add a whole folder</value>
+  </data>
+  <data name="ScRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="ScAddAppPlaceholder" xml:space="preserve">
+    <value>+ add app — telegram.exe or C:\Path\app.exe, Enter</value>
+  </data>
+  <data name="ScSubnets" xml:space="preserve">
+    <value>Subnets</value>
+  </data>
+  <data name="ScSplitSubnetsSubWhitelist" xml:space="preserve">
+    <value>Only these destinations use the tunnel.</value>
+  </data>
+  <data name="ScSplitSubnetsSubBypass" xml:space="preserve">
+    <value>Reached directly (outside the tunnel).</value>
+  </data>
+  <data name="ScAddSubnetPlaceholder" xml:space="preserve">
+    <value>+ add subnet — CIDR, e.g. 192.168.0.0/16, Enter</value>
+  </data>
+  <data name="ScSplitHintWhitelist" xml:space="preserve">
+    <value>Only the listed apps and subnets go through the tunnel; everything else leaves directly. With both lists empty the whole PC is tunneled.</value>
+  </data>
+  <data name="ScSplitHintBypass" xml:space="preserve">
+    <value>Listed apps and subnets egress directly and are permitted through the firewall lock, so they stay reachable while everything else is tunneled.</value>
+  </data>
+  <data name="ScRoutingSection" xml:space="preserve">
+    <value>ROUTING</value>
+  </data>
+  <data name="ScRoutes" xml:space="preserve">
+    <value>Routes</value>
+  </data>
+  <data name="ScRoutesSub" xml:space="preserve">
+    <value>Proxy, bypass or block by domain, IP, app and protocol.</value>
+  </data>
+  <data name="ScRoutesSummaryOne" xml:space="preserve">
+    <value>{0} rule · {1}</value>
+  </data>
+  <data name="ScRoutesSummaryMany" xml:space="preserve">
+    <value>{0} rules · {1}</value>
+  </data>
+  <data name="ScTunnelSection" xml:space="preserve">
+    <value>TUNNEL</value>
+  </data>
+  <data name="ScTunMode" xml:space="preserve">
+    <value>TUN mode (whole-PC)</value>
+  </data>
+  <data name="ScTunModeSub" xml:space="preserve">
+    <value>Route every app through the tunnel. Requires administrator.</value>
+  </data>
+  <data name="ScInterfaceSection" xml:space="preserve">
+    <value>INTERFACE</value>
+  </data>
+  <data name="ScLanguage" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="ScLanguageSub" xml:space="preserve">
+    <value>Applies after restart.</value>
+  </data>
+  <data name="ScLanguageRestartAsk" xml:space="preserve">
+    <value>Restart Secure Connect now to switch the language? An active connection will be closed.</value>
+  </data>
+  <data name="ScLanguageSaved" xml:space="preserve">
+    <value>Language saved — it applies after restart.</value>
+  </data>
+  <data name="ScBack" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="ScRoutingSetTip" xml:space="preserve">
+    <value>Routing set in use</value>
+  </data>
+  <data name="ScAddRule" xml:space="preserve">
+    <value>Add rule</value>
+  </data>
+  <data name="ScRoutesMenuTip" xml:space="preserve">
+    <value>Presets and more</value>
+  </data>
+  <data name="ScPresetRussia" xml:space="preserve">
+    <value>Preset: Russia (bypass RU sites and IPs)</value>
+  </data>
+  <data name="ScPresetIran" xml:space="preserve">
+    <value>Preset: Iran</value>
+  </data>
+  <data name="ScPresetDefault" xml:space="preserve">
+    <value>Preset: Default</value>
+  </data>
+  <data name="ScAdvancedRouting" xml:space="preserve">
+    <value>Advanced routing editor…</value>
+  </data>
+  <data name="ScRoutesHint" xml:space="preserve">
+    <value>Rules are checked top to bottom — the first match wins. A rule matches when any of its domains, IPs or apps match (and its port, protocol and network, if set).</value>
+  </data>
+  <data name="ScDuplicate" xml:space="preserve">
+    <value>Duplicate</value>
+  </data>
+  <data name="ScEnableDisable" xml:space="preserve">
+    <value>Enable / disable</value>
+  </data>
+  <data name="ScRoutesEmpty" xml:space="preserve">
+    <value>No rules yet — add one with +, or pick a preset from the menu next to it.</value>
+  </data>
+  <data name="ScPresetConfirm" xml:space="preserve">
+    <value>Apply the {0} preset? It switches the routing templates, DNS and geo files to this region (your profiles stay).</value>
+  </data>
+  <data name="ScBackNoSave" xml:space="preserve">
+    <value>Back without saving</value>
+  </data>
+  <data name="ScEditRule" xml:space="preserve">
+    <value>Edit rule</value>
+  </data>
+  <data name="ScNewRule" xml:space="preserve">
+    <value>New rule</value>
+  </data>
+  <data name="ScRuleEnabledTip" xml:space="preserve">
+    <value>Rule enabled</value>
+  </data>
+  <data name="ScMoveUp" xml:space="preserve">
+    <value>Move up (checked earlier)</value>
+  </data>
+  <data name="ScMoveDown" xml:space="preserve">
+    <value>Move down (checked later)</value>
+  </data>
+  <data name="ScCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ScSave" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="ScName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ScRuleNamePlaceholder" xml:space="preserve">
+    <value>e.g. BitTorrent direct</value>
+  </data>
+  <data name="ScAction" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="ScActionProxy" xml:space="preserve">
+    <value>Proxy</value>
+  </data>
+  <data name="ScActionBypass" xml:space="preserve">
+    <value>Bypass</value>
+  </data>
+  <data name="ScActionBlock" xml:space="preserve">
+    <value>Block</value>
+  </data>
+  <data name="ScDomains" xml:space="preserve">
+    <value>Domains</value>
+  </data>
+  <data name="ScDomainsSub" xml:space="preserve">
+    <value>One per line: geosite:category-ru, domain:example.com, full:, regexp:\.ru$, keyword:</value>
+  </data>
+  <data name="ScIps" xml:space="preserve">
+    <value>IP addresses</value>
+  </data>
+  <data name="ScIpsSub" xml:space="preserve">
+    <value>One per line: geoip:ru, geoip:private, 10.0.0.0/8 (prefix ! to exclude)</value>
+  </data>
+  <data name="ScRuleAppsSub" xml:space="preserve">
+    <value>One per line: exe name, full path, or a folder ending with \</value>
+  </data>
+  <data name="ScProtocol" xml:space="preserve">
+    <value>Protocol</value>
+  </data>
+  <data name="ScPort" xml:space="preserve">
+    <value>Port</value>
+  </data>
+  <data name="ScNetwork" xml:space="preserve">
+    <value>Network</value>
+  </data>
+  <data name="ScNetworkAny" xml:space="preserve">
+    <value>any</value>
+  </data>
+  <data name="ScRulePosition" xml:space="preserve">
+    <value>#{0} of {1}</value>
+  </data>
+  <data name="ScRuleNewOnTop" xml:space="preserve">
+    <value>new rules go on top</value>
+  </data>
+  <data name="ScPortInvalid" xml:space="preserve">
+    <value>Port: use numbers and ranges, e.g. 443, 1000-2000</value>
+  </data>
+  <data name="ScRuleNeedsCondition" xml:space="preserve">
+    <value>Add at least one condition: a domain, IP, app, protocol or port.</value>
+  </data>
+  <data name="ScDeleteConfirm" xml:space="preserve">
+    <value>Delete {0}?</value>
+  </data>
+  <data name="ScThisRule" xml:space="preserve">
+    <value>this rule</value>
+  </data>
+  <data name="ScRunningPrograms" xml:space="preserve">
+    <value>Running programs</value>
+  </data>
+  <data name="ScRunningProgramsSub" xml:space="preserve">
+    <value>Click a program to add it by its full path.</value>
+  </data>
+  <data name="ScSearchPrograms" xml:space="preserve">
+    <value>Search by name or path</value>
+  </data>
+  <data name="ScLoading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="ScNoPrograms" xml:space="preserve">
+    <value>No running programs could be read.</value>
+  </data>
+  <data name="ScProgramsCount" xml:space="preserve">
+    <value>{0} of {1} programs</value>
+  </data>
+  <data name="ScNotValid" xml:space="preserve">
+    <value>Not valid: {0}</value>
+  </data>
+  <data name="ScChooseFolder" xml:space="preserve">
+    <value>Choose a folder — it covers every program inside it</value>
+  </data>
+  <data name="ScRuleTitle" xml:space="preserve">
+    <value>Rule {0}</value>
+  </data>
+  <data name="ScActionProxyTo" xml:space="preserve">
+    <value>Proxy · {0}</value>
+  </data>
+  <data name="ScDnsOnly" xml:space="preserve">
+    <value> · DNS only</value>
+  </data>
+  <data name="ScRoutingOnly" xml:space="preserve">
+    <value> · routing only</value>
+  </data>
+  <data name="ScSumProtocol" xml:space="preserve">
+    <value>protocol: {0}</value>
+  </data>
+  <data name="ScSumApp" xml:space="preserve">
+    <value>app: {0}</value>
+  </data>
+  <data name="ScSumApps" xml:space="preserve">
+    <value>{0} apps</value>
+  </data>
+  <data name="ScSumPort" xml:space="preserve">
+    <value>port: {0}</value>
+  </data>
+  <data name="ScSumNetwork" xml:space="preserve">
+    <value>network: {0}</value>
+  </data>
+  <data name="ScSumInbound" xml:space="preserve">
+    <value>inbound: {0}</value>
+  </data>
+  <data name="ScSumAnyTraffic" xml:space="preserve">
+    <value>any traffic</value>
+  </data>
+  <data name="ScCopySuffix" xml:space="preserve">
+    <value>{0} (copy)</value>
+  </data>
+  <data name="ScNoRoutingSet" xml:space="preserve">
+    <value>No routing set to save the rules to</value>
+  </data>
+  <data name="ScKsDisarmed" xml:space="preserve">
+    <value>Kill switch disarmed</value>
+  </data>
+  <data name="ScKsNoCore" xml:space="preserve">
+    <value>Kill switch: core executable not found, not armed</value>
+  </data>
+  <data name="ScKsArmFailed" xml:space="preserve">
+    <value>Kill switch failed to arm</value>
+  </data>
+  <data name="ScKsTab" xml:space="preserve">
+    <value>Kill Switch</value>
+  </data>
+  <data name="ScKsTabDesc" xml:space="preserve">
+    <value>When enabled, connecting a TUN profile locks the firewall to default-deny outbound, so no traffic can leave outside the tunnel — even if the core drops. Requires running as administrator (TUN already does).</value>
+  </data>
+  <data name="ScKsEnable" xml:space="preserve">
+    <value>Enable kill switch</value>
+  </data>
+  <data name="ScKsAllowLan" xml:space="preserve">
+    <value>Allow local network (LAN)</value>
+  </data>
+  <data name="ScKsSplit" xml:space="preserve">
+    <value>Split tunneling (mode: Secure Connect settings → whitelist by default)</value>
+  </data>
+  <data name="ScKsApps" xml:space="preserve">
+    <value>Apps (one per line, exe name or full path)</value>
+  </data>
+  <data name="ScKsSubnets" xml:space="preserve">
+    <value>Subnets (one CIDR per line)</value>
+  </data>
+  <data name="ScKsHint" xml:space="preserve">
+    <value>Whitelist mode (default): only the listed apps and subnets use the tunnel, everything else goes direct; empty lists tunnel the whole PC. Bypass mode: the listed apps and subnets go direct and are permitted through the kill switch.</value>
+  </data>
 </root>

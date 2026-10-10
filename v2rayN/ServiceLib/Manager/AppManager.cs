@@ -75,6 +75,8 @@ public sealed class AppManager
         }
         _config = config;
         Thread.CurrentThread.CurrentUICulture = new(_config.UiItem.CurrentLanguage);
+        // Background threads (notices, core messages) use the same UI language.
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = Thread.CurrentThread.CurrentUICulture;
 
         //Under Win10
         if (Utils.IsWindows() && Environment.OSVersion.Version.Major < 10)

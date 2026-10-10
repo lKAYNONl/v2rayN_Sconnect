@@ -91,7 +91,8 @@ public partial class RoutesViewModel : MyReactiveObject
             return;
         }
         copy.Id = Utils.GetGuid(false);
-        copy.Remarks = $"{(_rules[index].Remarks.IsNullOrEmpty() ? $"Rule {index + 1}" : _rules[index].Remarks)} (copy)";
+        var source = _rules[index].Remarks.IsNullOrEmpty() ? string.Format(ResUI.ScRuleTitle, index + 1) : _rules[index].Remarks;
+        copy.Remarks = string.Format(ResUI.ScCopySuffix, source);
         _rules.Insert(index + 1, copy);
         Rebuild();
         await SaveAsync();
@@ -154,7 +155,7 @@ public partial class RoutesViewModel : MyReactiveObject
     {
         if (_routing is null)
         {
-            NoticeManager.Instance.Enqueue("No routing set to save the rules to");
+            NoticeManager.Instance.Enqueue(ResUI.ScNoRoutingSet);
             return;
         }
 

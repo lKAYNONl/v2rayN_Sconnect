@@ -5417,5 +5417,1265 @@ namespace ServiceLib.Resx {
                 return ResourceManager.GetString("UpgradeAppNotExistTip", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   查找类似 Menu 的本地化字符串。
+        /// </summary>
+        public static string ScMenu {
+            get {
+                return ResourceManager.GetString("ScMenu", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Minimize 的本地化字符串。
+        /// </summary>
+        public static string ScMinimize {
+            get {
+                return ResourceManager.GetString("ScMinimize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Maximize 的本地化字符串。
+        /// </summary>
+        public static string ScMaximize {
+            get {
+                return ResourceManager.GetString("ScMaximize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Close 的本地化字符串。
+        /// </summary>
+        public static string ScClose {
+            get {
+                return ResourceManager.GetString("ScClose", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Disconnect 的本地化字符串。
+        /// </summary>
+        public static string ScDisconnect {
+            get {
+                return ResourceManager.GetString("ScDisconnect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 core 的本地化字符串。
+        /// </summary>
+        public static string ScCore {
+            get {
+                return ResourceManager.GetString("ScCore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Mbps 的本地化字符串。
+        /// </summary>
+        public static string ScMbps {
+            get {
+                return ResourceManager.GetString("ScMbps", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 TUN mode (whole-PC tunnel) — click to toggle. Requires administrator. 的本地化字符串。
+        /// </summary>
+        public static string ScTunTip {
+            get {
+                return ResourceManager.GetString("ScTunTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 off 的本地化字符串。
+        /// </summary>
+        public static string ScOff {
+            get {
+                return ResourceManager.GetString("ScOff", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 PROFILES 的本地化字符串。
+        /// </summary>
+        public static string ScProfiles {
+            get {
+                return ResourceManager.GetString("ScProfiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Edit 的本地化字符串。
+        /// </summary>
+        public static string ScEdit {
+            get {
+                return ResourceManager.GetString("ScEdit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Ping 的本地化字符串。
+        /// </summary>
+        public static string ScPing {
+            get {
+                return ResourceManager.GetString("ScPing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Copy share link 的本地化字符串。
+        /// </summary>
+        public static string ScCopyShareLink {
+            get {
+                return ResourceManager.GetString("ScCopyShareLink", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Delete 的本地化字符串。
+        /// </summary>
+        public static string ScDelete {
+            get {
+                return ResourceManager.GetString("ScDelete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似  ms 的本地化字符串。
+        /// </summary>
+        public static string ScMs {
+            get {
+                return ResourceManager.GetString("ScMs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 + Import from clipboard 的本地化字符串。
+        /// </summary>
+        public static string ScImportClipboard {
+            get {
+                return ResourceManager.GetString("ScImportClipboard", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 DISCONNECTED 的本地化字符串。
+        /// </summary>
+        public static string ScStateDisconnected {
+            get {
+                return ResourceManager.GetString("ScStateDisconnected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 CONNECTING… 的本地化字符串。
+        /// </summary>
+        public static string ScStateConnecting {
+            get {
+                return ResourceManager.GetString("ScStateConnecting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 DISCONNECTING… 的本地化字符串。
+        /// </summary>
+        public static string ScStateDisconnecting {
+            get {
+                return ResourceManager.GetString("ScStateDisconnecting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 CONNECTED · PROXY ONLY 的本地化字符串。
+        /// </summary>
+        public static string ScStateProxyOnly {
+            get {
+                return ResourceManager.GetString("ScStateProxyOnly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 PROTECTED 的本地化字符串。
+        /// </summary>
+        public static string ScStateProtected {
+            get {
+                return ResourceManager.GetString("ScStateProtected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 SPLIT TUNNEL 的本地化字符串。
+        /// </summary>
+        public static string ScStateSplit {
+            get {
+                return ResourceManager.GetString("ScStateSplit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 {0} · LOCKED 的本地化字符串。
+        /// </summary>
+        public static string ScStateLocked {
+            get {
+                return ResourceManager.GetString("ScStateLocked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 CONNECT 的本地化字符串。
+        /// </summary>
+        public static string ScConnectVerb {
+            get {
+                return ResourceManager.GetString("ScConnectVerb", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Connect / Disconnect 的本地化字符串。
+        /// </summary>
+        public static string ScConnectTip {
+            get {
+                return ResourceManager.GetString("ScConnectTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Network locked 的本地化字符串。
+        /// </summary>
+        public static string ScChipNetworkLocked {
+            get {
+                return ResourceManager.GetString("ScChipNetworkLocked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Kill switch off 的本地化字符串。
+        /// </summary>
+        public static string ScChipKillOff {
+            get {
+                return ResourceManager.GetString("ScChipKillOff", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Kill switch needs TUN 的本地化字符串。
+        /// </summary>
+        public static string ScChipKillNeedsTun {
+            get {
+                return ResourceManager.GetString("ScChipKillNeedsTun", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Kill switch armed 的本地化字符串。
+        /// </summary>
+        public static string ScChipKillArmed {
+            get {
+                return ResourceManager.GetString("ScChipKillArmed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Settings 的本地化字符串。
+        /// </summary>
+        public static string ScSettings {
+            get {
+                return ResourceManager.GetString("ScSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 NETWORK LOCK 的本地化字符串。
+        /// </summary>
+        public static string ScNetworkLockSection {
+            get {
+                return ResourceManager.GetString("ScNetworkLockSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Kill switch 的本地化字符串。
+        /// </summary>
+        public static string ScKillSwitch {
+            get {
+                return ResourceManager.GetString("ScKillSwitch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Block all traffic outside the tunnel while connected — even if the core drops. 的本地化字符串。
+        /// </summary>
+        public static string ScKillSwitchSub {
+            get {
+                return ResourceManager.GetString("ScKillSwitchSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Allow local network 的本地化字符串。
+        /// </summary>
+        public static string ScAllowLan {
+            get {
+                return ResourceManager.GetString("ScAllowLan", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Keep LAN devices (printers, NAS) reachable while locked. 的本地化字符串。
+        /// </summary>
+        public static string ScAllowLanSub {
+            get {
+                return ResourceManager.GetString("ScAllowLanSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 SPLIT TUNNELING 的本地化字符串。
+        /// </summary>
+        public static string ScSplitSection {
+            get {
+                return ResourceManager.GetString("ScSplitSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Only listed via tunnel 的本地化字符串。
+        /// </summary>
+        public static string ScSplitWhitelist {
+            get {
+                return ResourceManager.GetString("ScSplitWhitelist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Whitelist: only the listed apps and subnets go through the tunnel, everything else goes direct 的本地化字符串。
+        /// </summary>
+        public static string ScSplitWhitelistTip {
+            get {
+                return ResourceManager.GetString("ScSplitWhitelistTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Listed go direct 的本地化字符串。
+        /// </summary>
+        public static string ScSplitBypass {
+            get {
+                return ResourceManager.GetString("ScSplitBypass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Bypass: the listed apps and subnets go direct, everything else is tunneled 的本地化字符串。
+        /// </summary>
+        public static string ScSplitBypassTip {
+            get {
+                return ResourceManager.GetString("ScSplitBypassTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Apps 的本地化字符串。
+        /// </summary>
+        public static string ScApps {
+            get {
+                return ResourceManager.GetString("ScApps", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Only these apps use the tunnel. A folder covers every program inside it. 的本地化字符串。
+        /// </summary>
+        public static string ScSplitAppsSubWhitelist {
+            get {
+                return ResourceManager.GetString("ScSplitAppsSubWhitelist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Routed direct (outside the tunnel). A folder covers every program inside it. 的本地化字符串。
+        /// </summary>
+        public static string ScSplitAppsSubBypass {
+            get {
+                return ResourceManager.GetString("ScSplitAppsSubBypass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Add a running program 的本地化字符串。
+        /// </summary>
+        public static string ScAddRunningProgram {
+            get {
+                return ResourceManager.GetString("ScAddRunningProgram", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Add a whole folder 的本地化字符串。
+        /// </summary>
+        public static string ScAddFolder {
+            get {
+                return ResourceManager.GetString("ScAddFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Remove 的本地化字符串。
+        /// </summary>
+        public static string ScRemove {
+            get {
+                return ResourceManager.GetString("ScRemove", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 + add app — telegram.exe or C:\Path\app.exe, Enter 的本地化字符串。
+        /// </summary>
+        public static string ScAddAppPlaceholder {
+            get {
+                return ResourceManager.GetString("ScAddAppPlaceholder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Subnets 的本地化字符串。
+        /// </summary>
+        public static string ScSubnets {
+            get {
+                return ResourceManager.GetString("ScSubnets", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Only these destinations use the tunnel. 的本地化字符串。
+        /// </summary>
+        public static string ScSplitSubnetsSubWhitelist {
+            get {
+                return ResourceManager.GetString("ScSplitSubnetsSubWhitelist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Reached directly (outside the tunnel). 的本地化字符串。
+        /// </summary>
+        public static string ScSplitSubnetsSubBypass {
+            get {
+                return ResourceManager.GetString("ScSplitSubnetsSubBypass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 + add subnet — CIDR, e.g. 192.168.0.0/16, Enter 的本地化字符串。
+        /// </summary>
+        public static string ScAddSubnetPlaceholder {
+            get {
+                return ResourceManager.GetString("ScAddSubnetPlaceholder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Only the listed apps and subnets go through the tunnel; everything else leaves directly. With both lists empty the whole PC is tunneled. 的本地化字符串。
+        /// </summary>
+        public static string ScSplitHintWhitelist {
+            get {
+                return ResourceManager.GetString("ScSplitHintWhitelist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Listed apps and subnets egress directly and are permitted through the firewall lock, so they stay reachable while everything else is tunneled. 的本地化字符串。
+        /// </summary>
+        public static string ScSplitHintBypass {
+            get {
+                return ResourceManager.GetString("ScSplitHintBypass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 ROUTING 的本地化字符串。
+        /// </summary>
+        public static string ScRoutingSection {
+            get {
+                return ResourceManager.GetString("ScRoutingSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Routes 的本地化字符串。
+        /// </summary>
+        public static string ScRoutes {
+            get {
+                return ResourceManager.GetString("ScRoutes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Proxy, bypass or block by domain, IP, app and protocol. 的本地化字符串。
+        /// </summary>
+        public static string ScRoutesSub {
+            get {
+                return ResourceManager.GetString("ScRoutesSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 {0} rule · {1} 的本地化字符串。
+        /// </summary>
+        public static string ScRoutesSummaryOne {
+            get {
+                return ResourceManager.GetString("ScRoutesSummaryOne", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 {0} rules · {1} 的本地化字符串。
+        /// </summary>
+        public static string ScRoutesSummaryMany {
+            get {
+                return ResourceManager.GetString("ScRoutesSummaryMany", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 TUNNEL 的本地化字符串。
+        /// </summary>
+        public static string ScTunnelSection {
+            get {
+                return ResourceManager.GetString("ScTunnelSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 TUN mode (whole-PC) 的本地化字符串。
+        /// </summary>
+        public static string ScTunMode {
+            get {
+                return ResourceManager.GetString("ScTunMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Route every app through the tunnel. Requires administrator. 的本地化字符串。
+        /// </summary>
+        public static string ScTunModeSub {
+            get {
+                return ResourceManager.GetString("ScTunModeSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 INTERFACE 的本地化字符串。
+        /// </summary>
+        public static string ScInterfaceSection {
+            get {
+                return ResourceManager.GetString("ScInterfaceSection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Language 的本地化字符串。
+        /// </summary>
+        public static string ScLanguage {
+            get {
+                return ResourceManager.GetString("ScLanguage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Applies after restart. 的本地化字符串。
+        /// </summary>
+        public static string ScLanguageSub {
+            get {
+                return ResourceManager.GetString("ScLanguageSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Restart Secure Connect now to switch the language? An active connection will be closed. 的本地化字符串。
+        /// </summary>
+        public static string ScLanguageRestartAsk {
+            get {
+                return ResourceManager.GetString("ScLanguageRestartAsk", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Language saved — it applies after restart. 的本地化字符串。
+        /// </summary>
+        public static string ScLanguageSaved {
+            get {
+                return ResourceManager.GetString("ScLanguageSaved", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Back 的本地化字符串。
+        /// </summary>
+        public static string ScBack {
+            get {
+                return ResourceManager.GetString("ScBack", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Routing set in use 的本地化字符串。
+        /// </summary>
+        public static string ScRoutingSetTip {
+            get {
+                return ResourceManager.GetString("ScRoutingSetTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Add rule 的本地化字符串。
+        /// </summary>
+        public static string ScAddRule {
+            get {
+                return ResourceManager.GetString("ScAddRule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Presets and more 的本地化字符串。
+        /// </summary>
+        public static string ScRoutesMenuTip {
+            get {
+                return ResourceManager.GetString("ScRoutesMenuTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Preset: Russia (bypass RU sites and IPs) 的本地化字符串。
+        /// </summary>
+        public static string ScPresetRussia {
+            get {
+                return ResourceManager.GetString("ScPresetRussia", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Preset: Iran 的本地化字符串。
+        /// </summary>
+        public static string ScPresetIran {
+            get {
+                return ResourceManager.GetString("ScPresetIran", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Preset: Default 的本地化字符串。
+        /// </summary>
+        public static string ScPresetDefault {
+            get {
+                return ResourceManager.GetString("ScPresetDefault", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Advanced routing editor… 的本地化字符串。
+        /// </summary>
+        public static string ScAdvancedRouting {
+            get {
+                return ResourceManager.GetString("ScAdvancedRouting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Rules are checked top to bottom — the first match wins. A rule matches when any of its domains, IPs or apps match (and its port, protocol and network, if set). 的本地化字符串。
+        /// </summary>
+        public static string ScRoutesHint {
+            get {
+                return ResourceManager.GetString("ScRoutesHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Duplicate 的本地化字符串。
+        /// </summary>
+        public static string ScDuplicate {
+            get {
+                return ResourceManager.GetString("ScDuplicate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Enable / disable 的本地化字符串。
+        /// </summary>
+        public static string ScEnableDisable {
+            get {
+                return ResourceManager.GetString("ScEnableDisable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 No rules yet — add one with +, or pick a preset from the menu next to it. 的本地化字符串。
+        /// </summary>
+        public static string ScRoutesEmpty {
+            get {
+                return ResourceManager.GetString("ScRoutesEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Apply the {0} preset? It switches the routing templates, DNS and geo files to this region (your profiles stay). 的本地化字符串。
+        /// </summary>
+        public static string ScPresetConfirm {
+            get {
+                return ResourceManager.GetString("ScPresetConfirm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Back without saving 的本地化字符串。
+        /// </summary>
+        public static string ScBackNoSave {
+            get {
+                return ResourceManager.GetString("ScBackNoSave", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Edit rule 的本地化字符串。
+        /// </summary>
+        public static string ScEditRule {
+            get {
+                return ResourceManager.GetString("ScEditRule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 New rule 的本地化字符串。
+        /// </summary>
+        public static string ScNewRule {
+            get {
+                return ResourceManager.GetString("ScNewRule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Rule enabled 的本地化字符串。
+        /// </summary>
+        public static string ScRuleEnabledTip {
+            get {
+                return ResourceManager.GetString("ScRuleEnabledTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Move up (checked earlier) 的本地化字符串。
+        /// </summary>
+        public static string ScMoveUp {
+            get {
+                return ResourceManager.GetString("ScMoveUp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Move down (checked later) 的本地化字符串。
+        /// </summary>
+        public static string ScMoveDown {
+            get {
+                return ResourceManager.GetString("ScMoveDown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Cancel 的本地化字符串。
+        /// </summary>
+        public static string ScCancel {
+            get {
+                return ResourceManager.GetString("ScCancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Save 的本地化字符串。
+        /// </summary>
+        public static string ScSave {
+            get {
+                return ResourceManager.GetString("ScSave", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Name 的本地化字符串。
+        /// </summary>
+        public static string ScName {
+            get {
+                return ResourceManager.GetString("ScName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 e.g. BitTorrent direct 的本地化字符串。
+        /// </summary>
+        public static string ScRuleNamePlaceholder {
+            get {
+                return ResourceManager.GetString("ScRuleNamePlaceholder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Action 的本地化字符串。
+        /// </summary>
+        public static string ScAction {
+            get {
+                return ResourceManager.GetString("ScAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Proxy 的本地化字符串。
+        /// </summary>
+        public static string ScActionProxy {
+            get {
+                return ResourceManager.GetString("ScActionProxy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Bypass 的本地化字符串。
+        /// </summary>
+        public static string ScActionBypass {
+            get {
+                return ResourceManager.GetString("ScActionBypass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Block 的本地化字符串。
+        /// </summary>
+        public static string ScActionBlock {
+            get {
+                return ResourceManager.GetString("ScActionBlock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Domains 的本地化字符串。
+        /// </summary>
+        public static string ScDomains {
+            get {
+                return ResourceManager.GetString("ScDomains", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 One per line: geosite:category-ru, domain:example.com, full:, regexp:\.ru$, keyword: 的本地化字符串。
+        /// </summary>
+        public static string ScDomainsSub {
+            get {
+                return ResourceManager.GetString("ScDomainsSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 IP addresses 的本地化字符串。
+        /// </summary>
+        public static string ScIps {
+            get {
+                return ResourceManager.GetString("ScIps", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 One per line: geoip:ru, geoip:private, 10.0.0.0/8 (prefix ! to exclude) 的本地化字符串。
+        /// </summary>
+        public static string ScIpsSub {
+            get {
+                return ResourceManager.GetString("ScIpsSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 One per line: exe name, full path, or a folder ending with \ 的本地化字符串。
+        /// </summary>
+        public static string ScRuleAppsSub {
+            get {
+                return ResourceManager.GetString("ScRuleAppsSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Protocol 的本地化字符串。
+        /// </summary>
+        public static string ScProtocol {
+            get {
+                return ResourceManager.GetString("ScProtocol", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Port 的本地化字符串。
+        /// </summary>
+        public static string ScPort {
+            get {
+                return ResourceManager.GetString("ScPort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Network 的本地化字符串。
+        /// </summary>
+        public static string ScNetwork {
+            get {
+                return ResourceManager.GetString("ScNetwork", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 any 的本地化字符串。
+        /// </summary>
+        public static string ScNetworkAny {
+            get {
+                return ResourceManager.GetString("ScNetworkAny", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 #{0} of {1} 的本地化字符串。
+        /// </summary>
+        public static string ScRulePosition {
+            get {
+                return ResourceManager.GetString("ScRulePosition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 new rules go on top 的本地化字符串。
+        /// </summary>
+        public static string ScRuleNewOnTop {
+            get {
+                return ResourceManager.GetString("ScRuleNewOnTop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Port: use numbers and ranges, e.g. 443, 1000-2000 的本地化字符串。
+        /// </summary>
+        public static string ScPortInvalid {
+            get {
+                return ResourceManager.GetString("ScPortInvalid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Add at least one condition: a domain, IP, app, protocol or port. 的本地化字符串。
+        /// </summary>
+        public static string ScRuleNeedsCondition {
+            get {
+                return ResourceManager.GetString("ScRuleNeedsCondition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Delete {0}? 的本地化字符串。
+        /// </summary>
+        public static string ScDeleteConfirm {
+            get {
+                return ResourceManager.GetString("ScDeleteConfirm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 this rule 的本地化字符串。
+        /// </summary>
+        public static string ScThisRule {
+            get {
+                return ResourceManager.GetString("ScThisRule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Running programs 的本地化字符串。
+        /// </summary>
+        public static string ScRunningPrograms {
+            get {
+                return ResourceManager.GetString("ScRunningPrograms", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Click a program to add it by its full path. 的本地化字符串。
+        /// </summary>
+        public static string ScRunningProgramsSub {
+            get {
+                return ResourceManager.GetString("ScRunningProgramsSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Search by name or path 的本地化字符串。
+        /// </summary>
+        public static string ScSearchPrograms {
+            get {
+                return ResourceManager.GetString("ScSearchPrograms", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Loading… 的本地化字符串。
+        /// </summary>
+        public static string ScLoading {
+            get {
+                return ResourceManager.GetString("ScLoading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 No running programs could be read. 的本地化字符串。
+        /// </summary>
+        public static string ScNoPrograms {
+            get {
+                return ResourceManager.GetString("ScNoPrograms", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 {0} of {1} programs 的本地化字符串。
+        /// </summary>
+        public static string ScProgramsCount {
+            get {
+                return ResourceManager.GetString("ScProgramsCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Not valid: {0} 的本地化字符串。
+        /// </summary>
+        public static string ScNotValid {
+            get {
+                return ResourceManager.GetString("ScNotValid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Choose a folder — it covers every program inside it 的本地化字符串。
+        /// </summary>
+        public static string ScChooseFolder {
+            get {
+                return ResourceManager.GetString("ScChooseFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Rule {0} 的本地化字符串。
+        /// </summary>
+        public static string ScRuleTitle {
+            get {
+                return ResourceManager.GetString("ScRuleTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Proxy · {0} 的本地化字符串。
+        /// </summary>
+        public static string ScActionProxyTo {
+            get {
+                return ResourceManager.GetString("ScActionProxyTo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似  · DNS only 的本地化字符串。
+        /// </summary>
+        public static string ScDnsOnly {
+            get {
+                return ResourceManager.GetString("ScDnsOnly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似  · routing only 的本地化字符串。
+        /// </summary>
+        public static string ScRoutingOnly {
+            get {
+                return ResourceManager.GetString("ScRoutingOnly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 protocol: {0} 的本地化字符串。
+        /// </summary>
+        public static string ScSumProtocol {
+            get {
+                return ResourceManager.GetString("ScSumProtocol", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 app: {0} 的本地化字符串。
+        /// </summary>
+        public static string ScSumApp {
+            get {
+                return ResourceManager.GetString("ScSumApp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 {0} apps 的本地化字符串。
+        /// </summary>
+        public static string ScSumApps {
+            get {
+                return ResourceManager.GetString("ScSumApps", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 port: {0} 的本地化字符串。
+        /// </summary>
+        public static string ScSumPort {
+            get {
+                return ResourceManager.GetString("ScSumPort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 network: {0} 的本地化字符串。
+        /// </summary>
+        public static string ScSumNetwork {
+            get {
+                return ResourceManager.GetString("ScSumNetwork", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 inbound: {0} 的本地化字符串。
+        /// </summary>
+        public static string ScSumInbound {
+            get {
+                return ResourceManager.GetString("ScSumInbound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 any traffic 的本地化字符串。
+        /// </summary>
+        public static string ScSumAnyTraffic {
+            get {
+                return ResourceManager.GetString("ScSumAnyTraffic", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 {0} (copy) 的本地化字符串。
+        /// </summary>
+        public static string ScCopySuffix {
+            get {
+                return ResourceManager.GetString("ScCopySuffix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 No routing set to save the rules to 的本地化字符串。
+        /// </summary>
+        public static string ScNoRoutingSet {
+            get {
+                return ResourceManager.GetString("ScNoRoutingSet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Kill switch disarmed 的本地化字符串。
+        /// </summary>
+        public static string ScKsDisarmed {
+            get {
+                return ResourceManager.GetString("ScKsDisarmed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Kill switch: core executable not found, not armed 的本地化字符串。
+        /// </summary>
+        public static string ScKsNoCore {
+            get {
+                return ResourceManager.GetString("ScKsNoCore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Kill switch failed to arm 的本地化字符串。
+        /// </summary>
+        public static string ScKsArmFailed {
+            get {
+                return ResourceManager.GetString("ScKsArmFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Kill Switch 的本地化字符串。
+        /// </summary>
+        public static string ScKsTab {
+            get {
+                return ResourceManager.GetString("ScKsTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 When enabled, connecting a TUN profile locks the firewall to default-deny outbound, so no traffic can leave outside the tunnel — even if the core drops. Requires running as administrator (TUN already does). 的本地化字符串。
+        /// </summary>
+        public static string ScKsTabDesc {
+            get {
+                return ResourceManager.GetString("ScKsTabDesc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Enable kill switch 的本地化字符串。
+        /// </summary>
+        public static string ScKsEnable {
+            get {
+                return ResourceManager.GetString("ScKsEnable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Allow local network (LAN) 的本地化字符串。
+        /// </summary>
+        public static string ScKsAllowLan {
+            get {
+                return ResourceManager.GetString("ScKsAllowLan", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Split tunneling (mode: Secure Connect settings → whitelist by default) 的本地化字符串。
+        /// </summary>
+        public static string ScKsSplit {
+            get {
+                return ResourceManager.GetString("ScKsSplit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Apps (one per line, exe name or full path) 的本地化字符串。
+        /// </summary>
+        public static string ScKsApps {
+            get {
+                return ResourceManager.GetString("ScKsApps", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Subnets (one CIDR per line) 的本地化字符串。
+        /// </summary>
+        public static string ScKsSubnets {
+            get {
+                return ResourceManager.GetString("ScKsSubnets", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Whitelist mode (default): only the listed apps and subnets use the tunnel, everything else goes direct; empty lists tunnel the whole PC. Bypass mode: the listed apps and subnets go direct and are permitted through the kill switch. 的本地化字符串。
+        /// </summary>
+        public static string ScKsHint {
+            get {
+                return ResourceManager.GetString("ScKsHint", resourceCulture);
+            }
+        }
     }
 }

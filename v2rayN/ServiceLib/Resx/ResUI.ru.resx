@@ -1905,4 +1905,424 @@
   <data name="menuAddMasqueServer" xml:space="preserve">
     <value>Добавить сервер [MASQUE]</value>
   </data>
+  <data name="ScMenu" xml:space="preserve">
+    <value>Меню</value>
+  </data>
+  <data name="ScMinimize" xml:space="preserve">
+    <value>Свернуть</value>
+  </data>
+  <data name="ScMaximize" xml:space="preserve">
+    <value>Развернуть</value>
+  </data>
+  <data name="ScClose" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="ScDisconnect" xml:space="preserve">
+    <value>Отключить</value>
+  </data>
+  <data name="ScCore" xml:space="preserve">
+    <value>ядро</value>
+  </data>
+  <data name="ScMbps" xml:space="preserve">
+    <value>Мбит/с</value>
+  </data>
+  <data name="ScTunTip" xml:space="preserve">
+    <value>Режим TUN (туннель для всего ПК) — нажмите, чтобы переключить. Нужны права администратора.</value>
+  </data>
+  <data name="ScOff" xml:space="preserve">
+    <value>выкл</value>
+  </data>
+  <data name="ScProfiles" xml:space="preserve">
+    <value>ПРОФИЛИ</value>
+  </data>
+  <data name="ScEdit" xml:space="preserve">
+    <value>Изменить</value>
+  </data>
+  <data name="ScPing" xml:space="preserve">
+    <value>Пинг</value>
+  </data>
+  <data name="ScCopyShareLink" xml:space="preserve">
+    <value>Копировать ссылку</value>
+  </data>
+  <data name="ScDelete" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="ScMs" xml:space="preserve">
+    <value> мс</value>
+  </data>
+  <data name="ScImportClipboard" xml:space="preserve">
+    <value>+ Импорт из буфера обмена</value>
+  </data>
+  <data name="ScStateDisconnected" xml:space="preserve">
+    <value>ОТКЛЮЧЕНО</value>
+  </data>
+  <data name="ScStateConnecting" xml:space="preserve">
+    <value>ПОДКЛЮЧЕНИЕ…</value>
+  </data>
+  <data name="ScStateDisconnecting" xml:space="preserve">
+    <value>ОТКЛЮЧЕНИЕ…</value>
+  </data>
+  <data name="ScStateProxyOnly" xml:space="preserve">
+    <value>ПОДКЛЮЧЕНО · ТОЛЬКО ПРОКСИ</value>
+  </data>
+  <data name="ScStateProtected" xml:space="preserve">
+    <value>ЗАЩИЩЕНО</value>
+  </data>
+  <data name="ScStateSplit" xml:space="preserve">
+    <value>РАЗДЕЛЬНЫЙ ТУННЕЛЬ</value>
+  </data>
+  <data name="ScStateLocked" xml:space="preserve">
+    <value>{0} · С БЛОКИРОВКОЙ</value>
+  </data>
+  <data name="ScConnectVerb" xml:space="preserve">
+    <value>ПОДКЛЮЧИТЬ</value>
+  </data>
+  <data name="ScConnectTip" xml:space="preserve">
+    <value>Подключить / отключить</value>
+  </data>
+  <data name="ScChipNetworkLocked" xml:space="preserve">
+    <value>Сеть заблокирована</value>
+  </data>
+  <data name="ScChipKillOff" xml:space="preserve">
+    <value>Kill switch выключен</value>
+  </data>
+  <data name="ScChipKillNeedsTun" xml:space="preserve">
+    <value>Kill switch: нужен TUN</value>
+  </data>
+  <data name="ScChipKillArmed" xml:space="preserve">
+    <value>Kill switch включён</value>
+  </data>
+  <data name="ScSettings" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="ScNetworkLockSection" xml:space="preserve">
+    <value>БЛОКИРОВКА СЕТИ</value>
+  </data>
+  <data name="ScKillSwitch" xml:space="preserve">
+    <value>Kill switch</value>
+  </data>
+  <data name="ScKillSwitchSub" xml:space="preserve">
+    <value>Блокировать весь трафик мимо туннеля, пока есть подключение, — даже если ядро упадёт.</value>
+  </data>
+  <data name="ScAllowLan" xml:space="preserve">
+    <value>Разрешить локальную сеть</value>
+  </data>
+  <data name="ScAllowLanSub" xml:space="preserve">
+    <value>Устройства в локальной сети (принтеры, NAS) остаются доступны при блокировке.</value>
+  </data>
+  <data name="ScSplitSection" xml:space="preserve">
+    <value>РАЗДЕЛЬНОЕ ТУННЕЛИРОВАНИЕ</value>
+  </data>
+  <data name="ScSplitWhitelist" xml:space="preserve">
+    <value>Только список — в туннель</value>
+  </data>
+  <data name="ScSplitWhitelistTip" xml:space="preserve">
+    <value>Белый список: через туннель идут только указанные приложения и подсети, всё остальное — напрямую</value>
+  </data>
+  <data name="ScSplitBypass" xml:space="preserve">
+    <value>Список — напрямую</value>
+  </data>
+  <data name="ScSplitBypassTip" xml:space="preserve">
+    <value>Исключения: указанные приложения и подсети идут напрямую, всё остальное — через туннель</value>
+  </data>
+  <data name="ScApps" xml:space="preserve">
+    <value>Приложения</value>
+  </data>
+  <data name="ScSplitAppsSubWhitelist" xml:space="preserve">
+    <value>Только эти приложения идут через туннель. Папка включает все программы внутри неё.</value>
+  </data>
+  <data name="ScSplitAppsSubBypass" xml:space="preserve">
+    <value>Идут напрямую (мимо туннеля). Папка включает все программы внутри неё.</value>
+  </data>
+  <data name="ScAddRunningProgram" xml:space="preserve">
+    <value>Добавить запущенную программу</value>
+  </data>
+  <data name="ScAddFolder" xml:space="preserve">
+    <value>Добавить папку целиком</value>
+  </data>
+  <data name="ScRemove" xml:space="preserve">
+    <value>Убрать</value>
+  </data>
+  <data name="ScAddAppPlaceholder" xml:space="preserve">
+    <value>+ приложение — telegram.exe или C:\Path\app.exe, Enter</value>
+  </data>
+  <data name="ScSubnets" xml:space="preserve">
+    <value>Подсети</value>
+  </data>
+  <data name="ScSplitSubnetsSubWhitelist" xml:space="preserve">
+    <value>Только эти адреса идут через туннель.</value>
+  </data>
+  <data name="ScSplitSubnetsSubBypass" xml:space="preserve">
+    <value>Доступны напрямую (мимо туннеля).</value>
+  </data>
+  <data name="ScAddSubnetPlaceholder" xml:space="preserve">
+    <value>+ подсеть — CIDR, например 192.168.0.0/16, Enter</value>
+  </data>
+  <data name="ScSplitHintWhitelist" xml:space="preserve">
+    <value>Через туннель идут только указанные приложения и подсети, остальное — напрямую. Если оба списка пусты, через туннель идёт весь ПК.</value>
+  </data>
+  <data name="ScSplitHintBypass" xml:space="preserve">
+    <value>Указанные приложения и подсети выходят напрямую и пропускаются блокировкой брандмауэра; всё остальное идёт через туннель.</value>
+  </data>
+  <data name="ScRoutingSection" xml:space="preserve">
+    <value>МАРШРУТИЗАЦИЯ</value>
+  </data>
+  <data name="ScRoutes" xml:space="preserve">
+    <value>Маршруты</value>
+  </data>
+  <data name="ScRoutesSub" xml:space="preserve">
+    <value>Прокси, напрямую или блок — по домену, IP, приложению и протоколу.</value>
+  </data>
+  <data name="ScRoutesSummaryOne" xml:space="preserve">
+    <value>Правил: {0} · {1}</value>
+  </data>
+  <data name="ScRoutesSummaryMany" xml:space="preserve">
+    <value>Правил: {0} · {1}</value>
+  </data>
+  <data name="ScTunnelSection" xml:space="preserve">
+    <value>ТУННЕЛЬ</value>
+  </data>
+  <data name="ScTunMode" xml:space="preserve">
+    <value>Режим TUN (весь ПК)</value>
+  </data>
+  <data name="ScTunModeSub" xml:space="preserve">
+    <value>Пропускать все приложения через туннель. Нужны права администратора.</value>
+  </data>
+  <data name="ScInterfaceSection" xml:space="preserve">
+    <value>ИНТЕРФЕЙС</value>
+  </data>
+  <data name="ScLanguage" xml:space="preserve">
+    <value>Язык</value>
+  </data>
+  <data name="ScLanguageSub" xml:space="preserve">
+    <value>Применяется после перезапуска.</value>
+  </data>
+  <data name="ScLanguageRestartAsk" xml:space="preserve">
+    <value>Перезапустить Secure Connect сейчас, чтобы сменить язык? Активное подключение будет закрыто.</value>
+  </data>
+  <data name="ScLanguageSaved" xml:space="preserve">
+    <value>Язык сохранён — он применится после перезапуска.</value>
+  </data>
+  <data name="ScBack" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="ScRoutingSetTip" xml:space="preserve">
+    <value>Используемый набор правил</value>
+  </data>
+  <data name="ScAddRule" xml:space="preserve">
+    <value>Добавить правило</value>
+  </data>
+  <data name="ScRoutesMenuTip" xml:space="preserve">
+    <value>Пресеты и другое</value>
+  </data>
+  <data name="ScPresetRussia" xml:space="preserve">
+    <value>Пресет: Россия (RU-сайты и IP напрямую)</value>
+  </data>
+  <data name="ScPresetIran" xml:space="preserve">
+    <value>Пресет: Иран</value>
+  </data>
+  <data name="ScPresetDefault" xml:space="preserve">
+    <value>Пресет: по умолчанию</value>
+  </data>
+  <data name="ScAdvancedRouting" xml:space="preserve">
+    <value>Расширенный редактор маршрутизации…</value>
+  </data>
+  <data name="ScRoutesHint" xml:space="preserve">
+    <value>Правила проверяются сверху вниз — срабатывает первое совпадение. Правило совпадает, если подошёл любой его домен, IP или приложение (и порт, протокол и сеть, если заданы).</value>
+  </data>
+  <data name="ScDuplicate" xml:space="preserve">
+    <value>Дублировать</value>
+  </data>
+  <data name="ScEnableDisable" xml:space="preserve">
+    <value>Включить / выключить</value>
+  </data>
+  <data name="ScRoutesEmpty" xml:space="preserve">
+    <value>Правил пока нет — добавьте кнопкой + или выберите пресет в меню рядом.</value>
+  </data>
+  <data name="ScPresetConfirm" xml:space="preserve">
+    <value>Применить пресет «{0}»? Шаблоны маршрутизации, DNS и geo-файлы переключатся на этот регион (профили останутся).</value>
+  </data>
+  <data name="ScBackNoSave" xml:space="preserve">
+    <value>Назад без сохранения</value>
+  </data>
+  <data name="ScEditRule" xml:space="preserve">
+    <value>Изменить правило</value>
+  </data>
+  <data name="ScNewRule" xml:space="preserve">
+    <value>Новое правило</value>
+  </data>
+  <data name="ScRuleEnabledTip" xml:space="preserve">
+    <value>Правило включено</value>
+  </data>
+  <data name="ScMoveUp" xml:space="preserve">
+    <value>Выше (проверяется раньше)</value>
+  </data>
+  <data name="ScMoveDown" xml:space="preserve">
+    <value>Ниже (проверяется позже)</value>
+  </data>
+  <data name="ScCancel" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="ScSave" xml:space="preserve">
+    <value>Сохранить</value>
+  </data>
+  <data name="ScName" xml:space="preserve">
+    <value>Название</value>
+  </data>
+  <data name="ScRuleNamePlaceholder" xml:space="preserve">
+    <value>например, BitTorrent напрямую</value>
+  </data>
+  <data name="ScAction" xml:space="preserve">
+    <value>Действие</value>
+  </data>
+  <data name="ScActionProxy" xml:space="preserve">
+    <value>Прокси</value>
+  </data>
+  <data name="ScActionBypass" xml:space="preserve">
+    <value>Напрямую</value>
+  </data>
+  <data name="ScActionBlock" xml:space="preserve">
+    <value>Блокировать</value>
+  </data>
+  <data name="ScDomains" xml:space="preserve">
+    <value>Домены</value>
+  </data>
+  <data name="ScDomainsSub" xml:space="preserve">
+    <value>По одному в строке: geosite:category-ru, domain:example.com, full:, regexp:\.ru$, keyword:</value>
+  </data>
+  <data name="ScIps" xml:space="preserve">
+    <value>IP-адреса</value>
+  </data>
+  <data name="ScIpsSub" xml:space="preserve">
+    <value>По одному в строке: geoip:ru, geoip:private, 10.0.0.0/8 (префикс ! — исключить)</value>
+  </data>
+  <data name="ScRuleAppsSub" xml:space="preserve">
+    <value>По одному в строке: имя exe, полный путь или папка с \ на конце</value>
+  </data>
+  <data name="ScProtocol" xml:space="preserve">
+    <value>Протокол</value>
+  </data>
+  <data name="ScPort" xml:space="preserve">
+    <value>Порт</value>
+  </data>
+  <data name="ScNetwork" xml:space="preserve">
+    <value>Сеть</value>
+  </data>
+  <data name="ScNetworkAny" xml:space="preserve">
+    <value>любая</value>
+  </data>
+  <data name="ScRulePosition" xml:space="preserve">
+    <value>№{0} из {1}</value>
+  </data>
+  <data name="ScRuleNewOnTop" xml:space="preserve">
+    <value>новые правила добавляются наверх</value>
+  </data>
+  <data name="ScPortInvalid" xml:space="preserve">
+    <value>Порт: числа и диапазоны, например 443, 1000-2000</value>
+  </data>
+  <data name="ScRuleNeedsCondition" xml:space="preserve">
+    <value>Добавьте хотя бы одно условие: домен, IP, приложение, протокол или порт.</value>
+  </data>
+  <data name="ScDeleteConfirm" xml:space="preserve">
+    <value>Удалить {0}?</value>
+  </data>
+  <data name="ScThisRule" xml:space="preserve">
+    <value>это правило</value>
+  </data>
+  <data name="ScRunningPrograms" xml:space="preserve">
+    <value>Запущенные программы</value>
+  </data>
+  <data name="ScRunningProgramsSub" xml:space="preserve">
+    <value>Нажмите на программу, чтобы добавить её по полному пути.</value>
+  </data>
+  <data name="ScSearchPrograms" xml:space="preserve">
+    <value>Поиск по имени или пути</value>
+  </data>
+  <data name="ScLoading" xml:space="preserve">
+    <value>Загрузка…</value>
+  </data>
+  <data name="ScNoPrograms" xml:space="preserve">
+    <value>Не удалось прочитать список запущенных программ.</value>
+  </data>
+  <data name="ScProgramsCount" xml:space="preserve">
+    <value>{0} из {1} программ</value>
+  </data>
+  <data name="ScNotValid" xml:space="preserve">
+    <value>Неверное значение: {0}</value>
+  </data>
+  <data name="ScChooseFolder" xml:space="preserve">
+    <value>Выберите папку — она включает все программы внутри</value>
+  </data>
+  <data name="ScRuleTitle" xml:space="preserve">
+    <value>Правило {0}</value>
+  </data>
+  <data name="ScActionProxyTo" xml:space="preserve">
+    <value>Прокси · {0}</value>
+  </data>
+  <data name="ScDnsOnly" xml:space="preserve">
+    <value> · только DNS</value>
+  </data>
+  <data name="ScRoutingOnly" xml:space="preserve">
+    <value> · только маршрутизация</value>
+  </data>
+  <data name="ScSumProtocol" xml:space="preserve">
+    <value>протокол: {0}</value>
+  </data>
+  <data name="ScSumApp" xml:space="preserve">
+    <value>приложение: {0}</value>
+  </data>
+  <data name="ScSumApps" xml:space="preserve">
+    <value>приложений: {0}</value>
+  </data>
+  <data name="ScSumPort" xml:space="preserve">
+    <value>порт: {0}</value>
+  </data>
+  <data name="ScSumNetwork" xml:space="preserve">
+    <value>сеть: {0}</value>
+  </data>
+  <data name="ScSumInbound" xml:space="preserve">
+    <value>вход: {0}</value>
+  </data>
+  <data name="ScSumAnyTraffic" xml:space="preserve">
+    <value>любой трафик</value>
+  </data>
+  <data name="ScCopySuffix" xml:space="preserve">
+    <value>{0} (копия)</value>
+  </data>
+  <data name="ScNoRoutingSet" xml:space="preserve">
+    <value>Нет набора правил, в который можно сохранить</value>
+  </data>
+  <data name="ScKsDisarmed" xml:space="preserve">
+    <value>Kill switch отключён</value>
+  </data>
+  <data name="ScKsNoCore" xml:space="preserve">
+    <value>Kill switch: исполняемый файл ядра не найден, блокировка не включена</value>
+  </data>
+  <data name="ScKsArmFailed" xml:space="preserve">
+    <value>Не удалось включить kill switch</value>
+  </data>
+  <data name="ScKsTab" xml:space="preserve">
+    <value>Kill Switch</value>
+  </data>
+  <data name="ScKsTabDesc" xml:space="preserve">
+    <value>Когда включено, при подключении в режиме TUN брандмауэр по умолчанию запрещает исходящий трафик, и ничего не уходит мимо туннеля — даже если ядро упадёт. Нужны права администратора (TUN их уже требует).</value>
+  </data>
+  <data name="ScKsEnable" xml:space="preserve">
+    <value>Включить kill switch</value>
+  </data>
+  <data name="ScKsAllowLan" xml:space="preserve">
+    <value>Разрешить локальную сеть (LAN)</value>
+  </data>
+  <data name="ScKsSplit" xml:space="preserve">
+    <value>Раздельное туннелирование (режим — в настройках Secure Connect, по умолчанию белый список)</value>
+  </data>
+  <data name="ScKsApps" xml:space="preserve">
+    <value>Приложения (по одному в строке, имя exe или полный путь)</value>
+  </data>
+  <data name="ScKsSubnets" xml:space="preserve">
+    <value>Подсети (по одному CIDR в строке)</value>
+  </data>
+  <data name="ScKsHint" xml:space="preserve">
+    <value>Белый список (по умолчанию): через туннель идут только указанные приложения и подсети, остальное — напрямую; при пустых списках через туннель идёт весь ПК. Режим исключений: указанные приложения и подсети идут напрямую и пропускаются kill switch.</value>
+  </data>
 </root>

@@ -558,7 +558,7 @@
                                 Margin="0,0,6,0"
                                 VerticalAlignment="Center"
                                 WindowDecorationProperties.ElementRole="User">
-                                <MenuItem x:Name="menuMain" ToolTip.Tip="Menu">
+                                <MenuItem x:Name="menuMain" ToolTip.Tip="{x:Static resx:ResUI.ScMenu}">
                                     <MenuItem.Header>
                                         <Path
                                             Width="12"
@@ -645,7 +645,7 @@
 
                                     <Separator />
                                     <MenuItem x:Name="menuReload" Header="{x:Static resx:ResUI.menuReload}" />
-                                    <MenuItem x:Name="menuStopCore" Header="Disconnect" />
+                                    <MenuItem x:Name="menuStopCore" Header="{x:Static resx:ResUI.ScDisconnect}" />
                                     <Separator />
                                     <MenuItem x:Name="menuPromotion" Header="{x:Static resx:ResUI.menuPromotion}" />
                                     <MenuItem x:Name="menuClose" Header="{x:Static resx:ResUI.menuExit}" />
@@ -655,7 +655,7 @@
                             <Button
                                 x:Name="btnMinimize"
                                 Classes="sc cap"
-                                ToolTip.Tip="Minimize"
+                                ToolTip.Tip="{x:Static resx:ResUI.ScMinimize}"
                                 WindowDecorationProperties.ElementRole="User">
                                 <Border Classes="box">
                                     <Path
@@ -667,7 +667,7 @@
                             <Button
                                 x:Name="btnMaximize"
                                 Classes="sc cap"
-                                ToolTip.Tip="Maximize"
+                                ToolTip.Tip="{x:Static resx:ResUI.ScMaximize}"
                                 WindowDecorationProperties.ElementRole="User">
                                 <Border Classes="box">
                                     <Path
@@ -679,7 +679,7 @@
                             <Button
                                 x:Name="btnClose"
                                 Classes="sc cap close"
-                                ToolTip.Tip="Close"
+                                ToolTip.Tip="{x:Static resx:ResUI.ScClose}"
                                 WindowDecorationProperties.ElementRole="User">
                                 <Border Classes="box">
                                     <Path
@@ -717,7 +717,7 @@
                                 VerticalAlignment="Center"
                                 FontSize="12"
                                 Foreground="#8B95B4"
-                                Text="core" />
+                                Text="{x:Static resx:ResUI.ScCore}" />
                             <TextBlock
                                 x:Name="txtCore"
                                 VerticalAlignment="Center"
@@ -750,7 +750,7 @@
                                 VerticalAlignment="Center"
                                 FontSize="12"
                                 Foreground="#8B95B4"
-                                Text="Mbps" />
+                                Text="{x:Static resx:ResUI.ScMbps}" />
                         </StackPanel>
                         <StackPanel
                             Grid.Column="2"
@@ -774,14 +774,14 @@
                                 VerticalAlignment="Center"
                                 FontSize="12"
                                 Foreground="#8B95B4"
-                                Text="Mbps" />
+                                Text="{x:Static resx:ResUI.ScMbps}" />
                         </StackPanel>
                         <Button
                             x:Name="btnTun"
                             Grid.Column="4"
                             VerticalAlignment="Center"
                             Classes="sc tun"
-                            ToolTip.Tip="TUN mode (whole-PC tunnel) — click to toggle. Requires administrator.">
+                            ToolTip.Tip="{x:Static resx:ResUI.ScTunTip}">
                             <StackPanel Orientation="Horizontal" Spacing="7">
                                 <TextBlock
                                     VerticalAlignment="Center"
@@ -816,7 +816,7 @@
                                 FontWeight="Bold"
                                 Foreground="#5B648A"
                                 LetterSpacing="1.5"
-                                Text="PROFILES" />
+                                Text="{x:Static resx:ResUI.ScProfiles}" />
                             <ListBox
                                 x:Name="lstCards"
                                 Grid.Row="1"
@@ -826,11 +826,11 @@
                                 SelectionMode="Single">
                                 <ListBox.ContextMenu>
                                     <ContextMenu>
-                                        <MenuItem x:Name="menuCtxEdit" Header="Edit" />
-                                        <MenuItem x:Name="menuCtxPing" Header="Ping" />
-                                        <MenuItem x:Name="menuCtxShare" Header="Copy share link" />
+                                        <MenuItem x:Name="menuCtxEdit" Header="{x:Static resx:ResUI.ScEdit}" />
+                                        <MenuItem x:Name="menuCtxPing" Header="{x:Static resx:ResUI.ScPing}" />
+                                        <MenuItem x:Name="menuCtxShare" Header="{x:Static resx:ResUI.ScCopyShareLink}" />
                                         <Separator />
-                                        <MenuItem x:Name="menuCtxDelete" Header="Delete" />
+                                        <MenuItem x:Name="menuCtxDelete" Header="{x:Static resx:ResUI.ScDelete}" />
                                     </ContextMenu>
                                 </ListBox.ContextMenu>
                                 <ListBox.ItemTemplate>
@@ -887,7 +887,7 @@
                                                     FontWeight="SemiBold"
                                                     Foreground="#8B95B4"
                                                     IsVisible="{ReflectionBinding DelayVal, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                                    Text=" ms" />
+                                                    Text="{x:Static resx:ResUI.ScMs}" />
                                             </StackPanel>
                                         </Grid>
                                     </DataTemplate>
@@ -911,7 +911,7 @@
                                         VerticalAlignment="Center"
                                         FontSize="12"
                                         FontWeight="SemiBold"
-                                        Text="+ Import from clipboard" />
+                                        Text="{x:Static resx:ResUI.ScImportClipboard}" />
                                 </Panel>
                             </Button>
                         </Grid>
@@ -931,7 +931,7 @@
                                     FontWeight="Bold"
                                     Foreground="#8B95B4"
                                     LetterSpacing="2.2"
-                                    Text="DISCONNECTED" />
+                                    Text="{x:Static resx:ResUI.ScStateDisconnected}" />
                                 <TextBlock
                                     x:Name="txtServerName"
                                     MaxWidth="420"
@@ -951,7 +951,7 @@
                                 HorizontalAlignment="Center"
                                 Classes="sc"
                                 CornerRadius="106"
-                                ToolTip.Tip="Connect / Disconnect">
+                                ToolTip.Tip="{x:Static resx:ResUI.ScConnectTip}">
                                 <Panel Width="212" Height="212">
                                     <!-- connected glow -->
                                     <Border
@@ -1038,7 +1038,7 @@
                                             FontWeight="Bold"
                                             Foreground="#8B95B4"
                                             LetterSpacing="1"
-                                            Text="CONNECT" />
+                                            Text="{x:Static resx:ResUI.ScConnectVerb}" />
                                         <TextBlock
                                             x:Name="txtTimer"
                                             HorizontalAlignment="Center"
@@ -1108,7 +1108,7 @@
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Foreground="#8B95B4"
-                                            Text="Kill switch off" />
+                                            Text="{x:Static resx:ResUI.ScChipKillOff}" />
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -1123,7 +1123,7 @@
                             VerticalAlignment="Top"
                             Classes="sc gear"
                             CornerRadius="10"
-                            ToolTip.Tip="Settings">
+                            ToolTip.Tip="{x:Static resx:ResUI.ScSettings}">
                             <Viewbox Width="16" Height="16">
                                 <Canvas Width="24" Height="24">
                                     <Path
@@ -1168,7 +1168,7 @@
                                     FontSize="15"
                                     FontWeight="Bold"
                                     Foreground="#E8EBF6"
-                                    Text="Settings" />
+                                    Text="{x:Static resx:ResUI.ScSettings}" />
                                 <Button
                                     x:Name="btnSettingsClose"
                                     Grid.Column="1"
@@ -1176,7 +1176,7 @@
                                     Height="28"
                                     Classes="sc gear"
                                     CornerRadius="8"
-                                    ToolTip.Tip="Close">
+                                    ToolTip.Tip="{x:Static resx:ResUI.ScClose}">
                                     <Path
                                         Data="M 0 0 L 9 9 M 9 0 L 0 9"
                                         StrokeLineCap="Round"
@@ -1188,11 +1188,11 @@
                             <StackPanel>
                                 <Border Classes="section">
                                     <StackPanel>
-                                        <TextBlock Classes="eyebrow" Text="NETWORK LOCK" />
+                                        <TextBlock Classes="eyebrow" Text="{x:Static resx:ResUI.ScNetworkLockSection}" />
                                         <Grid Margin="0,7" ColumnDefinitions="*,Auto">
                                             <StackPanel Margin="0,0,12,0">
-                                                <TextBlock Classes="label" Text="Kill switch" />
-                                                <TextBlock Classes="sub" Text="Block all traffic outside the tunnel while connected — even if the core drops." />
+                                                <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScKillSwitch}" />
+                                                <TextBlock Classes="sub" Text="{x:Static resx:ResUI.ScKillSwitchSub}" />
                                             </StackPanel>
                                             <ToggleButton
                                                 x:Name="tglKill"
@@ -1201,8 +1201,8 @@
                                         </Grid>
                                         <Grid Margin="0,7" ColumnDefinitions="*,Auto">
                                             <StackPanel Margin="0,0,12,0">
-                                                <TextBlock Classes="label" Text="Allow local network" />
-                                                <TextBlock Classes="sub" Text="Keep LAN devices (printers, NAS) reachable while locked." />
+                                                <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScAllowLan}" />
+                                                <TextBlock Classes="sub" Text="{x:Static resx:ResUI.ScAllowLanSub}" />
                                             </StackPanel>
                                             <ToggleButton
                                                 x:Name="tglLan"
@@ -1214,28 +1214,28 @@
 
                                 <Border Classes="section">
                                     <StackPanel>
-                                        <TextBlock Classes="eyebrow" Text="SPLIT TUNNELING" />
-                                        <StackPanel Margin="0,7,0,2" Orientation="Horizontal">
+                                        <TextBlock Classes="eyebrow" Text="{x:Static resx:ResUI.ScSplitSection}" />
+                                        <WrapPanel Margin="0,7,0,2" Orientation="Horizontal">
                                             <RadioButton
                                                 x:Name="rbSplitWhitelist"
                                                 Classes="seg direct"
-                                                Content="Only listed via tunnel"
+                                                Content="{x:Static resx:ResUI.ScSplitWhitelist}"
                                                 GroupName="splitMode"
-                                                ToolTip.Tip="Whitelist: only the listed apps and subnets go through the tunnel, everything else goes direct" />
+                                                ToolTip.Tip="{x:Static resx:ResUI.ScSplitWhitelistTip}" />
                                             <RadioButton
                                                 x:Name="rbSplitBypass"
                                                 Classes="seg"
-                                                Content="Listed go direct"
+                                                Content="{x:Static resx:ResUI.ScSplitBypass}"
                                                 GroupName="splitMode"
-                                                ToolTip.Tip="Bypass: the listed apps and subnets go direct, everything else is tunneled" />
-                                        </StackPanel>
+                                                ToolTip.Tip="{x:Static resx:ResUI.ScSplitBypassTip}" />
+                                        </WrapPanel>
                                         <Grid Margin="0,7" ColumnDefinitions="*,Auto">
                                             <StackPanel Margin="0,0,12,0">
-                                                <TextBlock Classes="label" Text="Apps" />
+                                                <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScApps}" />
                                                 <TextBlock
                                                     x:Name="txtSplitAppsSub"
                                                     Classes="sub"
-                                                    Text="Only these apps use the tunnel. A folder covers every program inside it." />
+                                                    Text="{x:Static resx:ResUI.ScSplitAppsSubWhitelist}" />
                                             </StackPanel>
                                             <StackPanel
                                                 Grid.Column="1"
@@ -1248,7 +1248,7 @@
                                                     Height="28"
                                                     Classes="sc gear"
                                                     CornerRadius="8"
-                                                    ToolTip.Tip="Add a running program">
+                                                    ToolTip.Tip="{x:Static resx:ResUI.ScAddRunningProgram}">
                                                     <Path
                                                         Data="M 0 5 H 10 M 5 0 V 10"
                                                         StrokeLineCap="Round"
@@ -1260,7 +1260,7 @@
                                                     Height="28"
                                                     Classes="sc gear"
                                                     CornerRadius="8"
-                                                    ToolTip.Tip="Add a whole folder">
+                                                    ToolTip.Tip="{x:Static resx:ResUI.ScAddFolder}">
                                                     <Viewbox Width="14" Height="14">
                                                         <Canvas Width="24" Height="24">
                                                             <Path
@@ -1292,7 +1292,7 @@
                                                             <Button
                                                                 Classes="sc tagx"
                                                                 Tag="{Binding}"
-                                                                ToolTip.Tip="Remove">
+                                                                ToolTip.Tip="{x:Static resx:ResUI.ScRemove}">
                                                                 <TextBlock
                                                                     FontSize="12"
                                                                     Foreground="#8B95B4"
@@ -1306,17 +1306,17 @@
                                         <TextBox
                                             x:Name="txtAddApp"
                                             Classes="add"
-                                            PlaceholderText="+ add app — telegram.exe or C:\Path\app.exe, Enter" />
+                                            PlaceholderText="{x:Static resx:ResUI.ScAddAppPlaceholder}" />
 
                                         <TextBlock
                                             Margin="0,13,0,8"
                                             Classes="label"
-                                            Text="Subnets" />
+                                            Text="{x:Static resx:ResUI.ScSubnets}" />
                                         <TextBlock
                                             x:Name="txtSplitSubnetsSub"
                                             Margin="0,-6,0,8"
                                             Classes="sub"
-                                            Text="Only these destinations use the tunnel." />
+                                            Text="{x:Static resx:ResUI.ScSplitSubnetsSubWhitelist}" />
                                         <ItemsControl x:Name="lstBypassSubnets">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -1337,7 +1337,7 @@
                                                             <Button
                                                                 Classes="sc tagx"
                                                                 Tag="{Binding}"
-                                                                ToolTip.Tip="Remove">
+                                                                ToolTip.Tip="{x:Static resx:ResUI.ScRemove}">
                                                                 <TextBlock
                                                                     FontSize="12"
                                                                     Foreground="#8B95B4"
@@ -1351,26 +1351,26 @@
                                         <TextBox
                                             x:Name="txtAddSubnet"
                                             Classes="add"
-                                            PlaceholderText="+ add subnet — CIDR, e.g. 192.168.0.0/16, Enter" />
+                                            PlaceholderText="{x:Static resx:ResUI.ScAddSubnetPlaceholder}" />
 
                                         <TextBlock
                                             x:Name="txtSplitHint"
                                             Classes="hint"
-                                            Text="Only the listed apps and subnets go through the tunnel; everything else leaves directly. With both lists empty the whole PC is tunneled." />
+                                            Text="{x:Static resx:ResUI.ScSplitHintWhitelist}" />
                                     </StackPanel>
                                 </Border>
 
                                 <Border Classes="section">
                                     <StackPanel>
-                                        <TextBlock Classes="eyebrow" Text="ROUTING" />
+                                        <TextBlock Classes="eyebrow" Text="{x:Static resx:ResUI.ScRoutingSection}" />
                                         <Button x:Name="btnOpenRoutes" Classes="sc row">
                                             <Grid ColumnDefinitions="*,Auto">
                                                 <StackPanel Margin="0,0,12,0">
-                                                    <TextBlock Classes="label" Text="Routes" />
+                                                    <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScRoutes}" />
                                                     <TextBlock
                                                         x:Name="txtRoutesSummary"
                                                         Classes="sub"
-                                                        Text="Proxy, bypass or block by domain, IP, app and protocol." />
+                                                        Text="{x:Static resx:ResUI.ScRoutesSub}" />
                                                 </StackPanel>
                                                 <Path
                                                     Grid.Column="1"
@@ -1383,18 +1383,41 @@
                                     </StackPanel>
                                 </Border>
 
-                                <Border Classes="section" BorderThickness="0">
+                                <Border Classes="section">
                                     <StackPanel>
-                                        <TextBlock Classes="eyebrow" Text="TUNNEL" />
+                                        <TextBlock Classes="eyebrow" Text="{x:Static resx:ResUI.ScTunnelSection}" />
                                         <Grid Margin="0,7" ColumnDefinitions="*,Auto">
                                             <StackPanel Margin="0,0,12,0">
-                                                <TextBlock Classes="label" Text="TUN mode (whole-PC)" />
-                                                <TextBlock Classes="sub" Text="Route every app through the tunnel. Requires administrator." />
+                                                <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScTunMode}" />
+                                                <TextBlock Classes="sub" Text="{x:Static resx:ResUI.ScTunModeSub}" />
                                             </StackPanel>
                                             <ToggleButton
                                                 x:Name="tglTun"
                                                 Grid.Column="1"
                                                 Classes="sct" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Classes="section" BorderThickness="0">
+                                    <StackPanel>
+                                        <TextBlock Classes="eyebrow" Text="{x:Static resx:ResUI.ScInterfaceSection}" />
+                                        <Grid Margin="0,7" ColumnDefinitions="*,Auto">
+                                            <StackPanel Margin="0,0,12,0">
+                                                <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScLanguage}" />
+                                                <TextBlock Classes="sub" Text="{x:Static resx:ResUI.ScLanguageSub}" />
+                                            </StackPanel>
+                                            <ComboBox
+                                                x:Name="cmbLanguage"
+                                                Grid.Column="1"
+                                                Width="150"
+                                                VerticalAlignment="Center">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{ReflectionBinding Display}" TextTrimming="CharacterEllipsis" />
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
                                         </Grid>
                                     </StackPanel>
                                 </Border>
@@ -1429,7 +1452,7 @@
                                     Height="28"
                                     Classes="sc gear"
                                     CornerRadius="8"
-                                    ToolTip.Tip="Back">
+                                    ToolTip.Tip="{x:Static resx:ResUI.ScBack}">
                                     <Path
                                         Data="M 5 0 L 0 5 L 5 10"
                                         StrokeLineCap="Round"
@@ -1442,14 +1465,14 @@
                                     FontSize="15"
                                     FontWeight="Bold"
                                     Foreground="#E8EBF6"
-                                    Text="Routes" />
+                                    Text="{x:Static resx:ResUI.ScRoutes}" />
                                 <ComboBox
                                     x:Name="cmbRoutingSet"
                                     Grid.Column="2"
                                     Width="170"
                                     Margin="0,0,8,0"
                                     VerticalAlignment="Center"
-                                    ToolTip.Tip="Routing set in use">
+                                    ToolTip.Tip="{x:Static resx:ResUI.ScRoutingSetTip}">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{ReflectionBinding Remarks}" TextTrimming="CharacterEllipsis" />
@@ -1464,7 +1487,7 @@
                                     Margin="0,0,6,0"
                                     Classes="sc gear"
                                     CornerRadius="8"
-                                    ToolTip.Tip="Add rule">
+                                    ToolTip.Tip="{x:Static resx:ResUI.ScAddRule}">
                                     <Path
                                         Data="M 0 5 H 10 M 5 0 V 10"
                                         StrokeLineCap="Round"
@@ -1477,18 +1500,18 @@
                                     Height="28"
                                     Classes="sc gear"
                                     CornerRadius="8"
-                                    ToolTip.Tip="Presets and more">
+                                    ToolTip.Tip="{x:Static resx:ResUI.ScRoutesMenuTip}">
                                     <Path
                                         Data="M 0 0 L 0.01 0 M 5 0 L 5.01 0 M 10 0 L 10.01 0"
                                         StrokeLineCap="Round"
                                         StrokeThickness="2.6" />
                                     <Button.Flyout>
                                         <MenuFlyout Placement="BottomEdgeAlignedRight">
-                                            <MenuItem Header="Preset: Russia (bypass RU sites and IPs)" Tag="preset-russia" />
-                                            <MenuItem Header="Preset: Iran" Tag="preset-iran" />
-                                            <MenuItem Header="Preset: Default" Tag="preset-default" />
+                                            <MenuItem Header="{x:Static resx:ResUI.ScPresetRussia}" Tag="preset-russia" />
+                                            <MenuItem Header="{x:Static resx:ResUI.ScPresetIran}" Tag="preset-iran" />
+                                            <MenuItem Header="{x:Static resx:ResUI.ScPresetDefault}" Tag="preset-default" />
                                             <Separator />
-                                            <MenuItem Header="Advanced routing editor…" Tag="advanced" />
+                                            <MenuItem Header="{x:Static resx:ResUI.ScAdvancedRouting}" Tag="advanced" />
                                         </MenuFlyout>
                                     </Button.Flyout>
                                 </Button>
@@ -1506,7 +1529,7 @@
                                 FontSize="12"
                                 Foreground="#8B95B4"
                                 LineHeight="17"
-                                Text="Rules are checked top to bottom — the first match wins. A rule matches when any of its domains, IPs or apps match (and its port, protocol and network, if set)."
+                                Text="{x:Static resx:ResUI.ScRoutesHint}"
                                 TextWrapping="Wrap" />
                         </Border>
                         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
@@ -1533,7 +1556,7 @@
                                                         <Button
                                                             Classes="sc icon"
                                                             Tag="edit"
-                                                            ToolTip.Tip="Edit">
+                                                            ToolTip.Tip="{x:Static resx:ResUI.ScEdit}">
                                                             <Viewbox Width="16" Height="16">
                                                                 <Canvas Width="24" Height="24">
                                                                     <Path Data="M 3 17.25 V 21 h 3.75 L 17.81 9.94 l -3.75 -3.75 L 3 17.25 z M 20.71 7.04 a 1 1 0 0 0 0 -1.41 l -2.34 -2.34 a 1 1 0 0 0 -1.41 0 l -1.83 1.83 l 3.75 3.75 l 1.83 -1.83 z" />
@@ -1543,7 +1566,7 @@
                                                         <Button
                                                             Classes="sc icon"
                                                             Tag="copy"
-                                                            ToolTip.Tip="Duplicate">
+                                                            ToolTip.Tip="{x:Static resx:ResUI.ScDuplicate}">
                                                             <Viewbox Width="16" Height="16">
                                                                 <Canvas Width="24" Height="24">
                                                                     <Path Data="M 16 1 H 4 c -1.1 0 -2 0.9 -2 2 v 14 h 2 V 3 h 12 V 1 z m 3 4 H 8 c -1.1 0 -2 0.9 -2 2 v 14 c 0 1.1 0.9 2 2 2 h 11 c 1.1 0 2 -0.9 2 -2 V 7 c 0 -1.1 -0.9 -2 -2 -2 z m 0 16 H 8 V 7 h 11 v 14 z" />
@@ -1579,7 +1602,7 @@
                                                         Classes="sct"
                                                         IsChecked="{Binding Enabled, Mode=OneWay}"
                                                         Tag="toggle"
-                                                        ToolTip.Tip="Enable / disable" />
+                                                        ToolTip.Tip="{x:Static resx:ResUI.ScEnableDisable}" />
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
@@ -1592,7 +1615,7 @@
                                     FontSize="12"
                                     Foreground="#5B648A"
                                     IsVisible="False"
-                                    Text="No rules yet — add one with +, or pick a preset from the menu next to it." />
+                                    Text="{x:Static resx:ResUI.ScRoutesEmpty}" />
                             </StackPanel>
                         </ScrollViewer>
                     </DockPanel>
@@ -1624,7 +1647,7 @@
                                     Height="28"
                                     Classes="sc gear"
                                     CornerRadius="8"
-                                    ToolTip.Tip="Back without saving">
+                                    ToolTip.Tip="{x:Static resx:ResUI.ScBackNoSave}">
                                     <Path
                                         Data="M 5 0 L 0 5 L 5 10"
                                         StrokeLineCap="Round"
@@ -1638,12 +1661,12 @@
                                     FontSize="15"
                                     FontWeight="Bold"
                                     Foreground="#E8EBF6"
-                                    Text="Edit rule" />
+                                    Text="{x:Static resx:ResUI.ScEditRule}" />
                                 <ToggleButton
                                     x:Name="tglRuleEnabled"
                                     Grid.Column="2"
                                     Classes="sct"
-                                    ToolTip.Tip="Rule enabled" />
+                                    ToolTip.Tip="{x:Static resx:ResUI.ScRuleEnabledTip}" />
                             </Grid>
                         </Border>
                         <Border
@@ -1657,7 +1680,7 @@
                                     Grid.Column="0"
                                     Margin="0,0,8,0"
                                     Classes="sc ghost danger">
-                                    <TextBlock VerticalAlignment="Center" Text="Delete" />
+                                    <TextBlock VerticalAlignment="Center" Text="{x:Static resx:ResUI.ScDelete}" />
                                 </Button>
                                 <Button
                                     x:Name="btnRuleUp"
@@ -1666,7 +1689,7 @@
                                     Margin="0,0,4,0"
                                     Padding="0"
                                     Classes="sc ghost"
-                                    ToolTip.Tip="Move up (checked earlier)">
+                                    ToolTip.Tip="{x:Static resx:ResUI.ScMoveUp}">
                                     <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="↑" />
                                 </Button>
                                 <Button
@@ -1675,7 +1698,7 @@
                                     Width="32"
                                     Padding="0"
                                     Classes="sc ghost"
-                                    ToolTip.Tip="Move down (checked later)">
+                                    ToolTip.Tip="{x:Static resx:ResUI.ScMoveDown}">
                                     <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="↓" />
                                 </Button>
                                 <TextBlock
@@ -1692,51 +1715,51 @@
                                     Grid.Column="4"
                                     Margin="0,0,8,0"
                                     Classes="sc ghost">
-                                    <TextBlock VerticalAlignment="Center" Text="Cancel" />
+                                    <TextBlock VerticalAlignment="Center" Text="{x:Static resx:ResUI.ScCancel}" />
                                 </Button>
                                 <Button
                                     x:Name="btnRuleSave"
                                     Grid.Column="5"
                                     Classes="sc primary">
-                                    <TextBlock VerticalAlignment="Center" Text="Save" />
+                                    <TextBlock VerticalAlignment="Center" Text="{x:Static resx:ResUI.ScSave}" />
                                 </Button>
                             </Grid>
                         </Border>
                         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
                             <StackPanel Margin="16,14,16,16" Spacing="14">
                                 <StackPanel>
-                                    <TextBlock Classes="label" Text="Name" />
+                                    <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScName}" />
                                     <TextBox
                                         x:Name="txtRuleName"
                                         Classes="field"
                                         FontFamily="avares://v2rayN/Assets/Fonts#Manrope"
-                                        PlaceholderText="e.g. BitTorrent direct" />
+                                        PlaceholderText="{x:Static resx:ResUI.ScRuleNamePlaceholder}" />
                                 </StackPanel>
 
                                 <StackPanel>
-                                    <TextBlock Classes="label" Text="Action" />
+                                    <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScAction}" />
                                     <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
                                         <RadioButton
                                             x:Name="rbRuleProxy"
                                             Classes="seg proxy"
-                                            Content="Proxy"
+                                            Content="{x:Static resx:ResUI.ScActionProxy}"
                                             GroupName="ruleAction" />
                                         <RadioButton
                                             x:Name="rbRuleDirect"
                                             Classes="seg direct"
-                                            Content="Bypass"
+                                            Content="{x:Static resx:ResUI.ScActionBypass}"
                                             GroupName="ruleAction" />
                                         <RadioButton
                                             x:Name="rbRuleBlock"
                                             Classes="seg block"
-                                            Content="Block"
+                                            Content="{x:Static resx:ResUI.ScActionBlock}"
                                             GroupName="ruleAction" />
                                     </StackPanel>
                                 </StackPanel>
 
                                 <StackPanel>
-                                    <TextBlock Classes="label" Text="Domains" />
-                                    <TextBlock Classes="sub" Text="One per line: geosite:category-ru, domain:example.com, full:, regexp:\.ru$, keyword:" />
+                                    <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScDomains}" />
+                                    <TextBlock Classes="sub" Text="{x:Static resx:ResUI.ScDomainsSub}" />
                                     <TextBox
                                         x:Name="txtRuleDomains"
                                         Classes="field multi"
@@ -1744,8 +1767,8 @@
                                 </StackPanel>
 
                                 <StackPanel>
-                                    <TextBlock Classes="label" Text="IP addresses" />
-                                    <TextBlock Classes="sub" Text="One per line: geoip:ru, geoip:private, 10.0.0.0/8 (prefix ! to exclude)" />
+                                    <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScIps}" />
+                                    <TextBlock Classes="sub" Text="{x:Static resx:ResUI.ScIpsSub}" />
                                     <TextBox
                                         x:Name="txtRuleIps"
                                         Classes="field multi"
@@ -1755,8 +1778,8 @@
                                 <StackPanel>
                                     <Grid ColumnDefinitions="*,Auto">
                                         <StackPanel Margin="0,0,12,0">
-                                            <TextBlock Classes="label" Text="Apps" />
-                                            <TextBlock Classes="sub" Text="One per line: exe name, full path, or a folder ending with \" />
+                                            <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScApps}" />
+                                            <TextBlock Classes="sub" Text="{x:Static resx:ResUI.ScRuleAppsSub}" />
                                         </StackPanel>
                                         <StackPanel
                                             Grid.Column="1"
@@ -1769,7 +1792,7 @@
                                                 Height="28"
                                                 Classes="sc gear"
                                                 CornerRadius="8"
-                                                ToolTip.Tip="Add a running program">
+                                                ToolTip.Tip="{x:Static resx:ResUI.ScAddRunningProgram}">
                                                 <Path
                                                     Data="M 0 5 H 10 M 5 0 V 10"
                                                     StrokeLineCap="Round"
@@ -1781,7 +1804,7 @@
                                                 Height="28"
                                                 Classes="sc gear"
                                                 CornerRadius="8"
-                                                ToolTip.Tip="Add a whole folder">
+                                                ToolTip.Tip="{x:Static resx:ResUI.ScAddFolder}">
                                                 <Viewbox Width="14" Height="14">
                                                     <Canvas Width="24" Height="24">
                                                         <Path
@@ -1800,7 +1823,7 @@
                                 </StackPanel>
 
                                 <StackPanel>
-                                    <TextBlock Classes="label" Text="Protocol" />
+                                    <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScProtocol}" />
                                     <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
                                         <ToggleButton x:Name="tglProtoHttp" Classes="chip" Content="http" />
                                         <ToggleButton x:Name="tglProtoTls" Classes="chip" Content="tls" />
@@ -1811,19 +1834,19 @@
 
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Margin="0,0,16,0">
-                                        <TextBlock Classes="label" Text="Port" />
+                                        <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScPort}" />
                                         <TextBox
                                             x:Name="txtRulePort"
                                             Classes="field"
                                             PlaceholderText="443, 1000-2000" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
-                                        <TextBlock Classes="label" Text="Network" />
+                                        <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScNetwork}" />
                                         <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
                                             <RadioButton
                                                 x:Name="rbNetAny"
                                                 Classes="seg"
-                                                Content="any"
+                                                Content="{x:Static resx:ResUI.ScNetworkAny}"
                                                 GroupName="ruleNetwork" />
                                             <RadioButton
                                                 x:Name="rbNetTcp"
@@ -1874,8 +1897,8 @@
                                         FontSize="15"
                                         FontWeight="Bold"
                                         Foreground="#E8EBF6"
-                                        Text="Running programs" />
-                                    <TextBlock Classes="sub" Text="Click a program to add it by its full path." />
+                                        Text="{x:Static resx:ResUI.ScRunningPrograms}" />
+                                    <TextBlock Classes="sub" Text="{x:Static resx:ResUI.ScRunningProgramsSub}" />
                                 </StackPanel>
                                 <Button
                                     x:Name="btnProcClose"
@@ -1884,7 +1907,7 @@
                                     Height="28"
                                     Classes="sc gear"
                                     CornerRadius="8"
-                                    ToolTip.Tip="Close">
+                                    ToolTip.Tip="{x:Static resx:ResUI.ScClose}">
                                     <Path
                                         Data="M 0 0 L 9 9 M 9 0 L 0 9"
                                         StrokeLineCap="Round"
@@ -1896,7 +1919,7 @@
                             <TextBox
                                 x:Name="txtProcSearch"
                                 Classes="add"
-                                PlaceholderText="Search by name or path" />
+                                PlaceholderText="{x:Static resx:ResUI.ScSearchPrograms}" />
                         </Border>
                         <TextBlock
                             x:Name="txtProcStatus"

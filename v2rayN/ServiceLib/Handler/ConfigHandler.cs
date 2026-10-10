@@ -120,9 +120,12 @@ public static class ConfigHandler
 
         if (config.UiItem.CurrentLanguage.IsNullOrEmpty())
         {
-            config.UiItem.CurrentLanguage = Thread.CurrentThread.CurrentCulture.TwoLetterISOLanguageName.Equals("zh", StringComparison.CurrentCultureIgnoreCase)
+            // First run: follow the Windows display language when it is one of ours
+            // (e.g. Russian Windows starts in Russian), English otherwise.
+            var osLanguage = Thread.CurrentThread.CurrentUICulture.TwoLetterISOLanguageName;
+            config.UiItem.CurrentLanguage = osLanguage.Equals("zh", StringComparison.OrdinalIgnoreCase)
                 ? Global.Languages.First()
-                : Global.Languages[2];
+                : Global.Languages.FirstOrDefault(t => t.Equals(osLanguage, StringComparison.OrdinalIgnoreCase)) ?? Global.Languages[2];
         }
 
         config.ConstItem ??= new ConstItem();

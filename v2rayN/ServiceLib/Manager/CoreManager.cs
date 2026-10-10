@@ -237,7 +237,7 @@ public class CoreManager
                 if (KillSwitchManager.Instance.IsArmed)
                 {
                     await KillSwitchManager.Instance.DisarmAsync();
-                    await UpdateFunc(false, "Kill switch disarmed");
+                    await UpdateFunc(false, ResUI.ScKsDisarmed);
                 }
                 return;
             }
@@ -246,7 +246,7 @@ public class CoreManager
             var coreExe = GetCoreExePath(mainContext);
             if (coreExe.IsNullOrEmpty())
             {
-                await UpdateFunc(false, "Kill switch: core executable not found, not armed");
+                await UpdateFunc(false, ResUI.ScKsNoCore);
                 return;
             }
 
@@ -277,7 +277,7 @@ public class CoreManager
             };
 
             var ok = await KillSwitchManager.Instance.ArmAsync(ctx);
-            await UpdateFunc(false, ok ? "Kill switch armed" : "Kill switch failed to arm");
+            await UpdateFunc(false, ok ? ResUI.ScChipKillArmed : ResUI.ScKsArmFailed);
         }
         catch (Exception ex)
         {

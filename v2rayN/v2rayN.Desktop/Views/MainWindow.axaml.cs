@@ -192,6 +192,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
         conTheme.Content ??= new ThemeSettingView();
 
+        // Interface language (settings panel); applied after a restart.
+        cmbLanguage.ItemsSource = Global.LanguageOptions;
+        cmbLanguage.SelectionChanged += CmbLanguage_SelectionChanged;
+
         this.WhenActivated(disposables =>
         {
             //servers
@@ -423,15 +427,15 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var ks = _config.KillSwitchItem;
         var split = ks is { SplitTunnelWhitelist: true }
                     && (ks.BypassApps?.Count > 0 || ks.BypassSubnets?.Count > 0);
-        var tunnelLabel = split ? "SPLIT TUNNEL" : "PROTECTED";
+        var tunnelLabel = split ? ResUI.ScStateSplit : ResUI.ScStateProtected;
         txtState.Text = state switch
         {
-            EConnState.Connecting => "CONNECTING…",
-            EConnState.Stopping => "DISCONNECTING…",
-            EConnState.On when !vm.TunActive => "CONNECTED · PROXY ONLY",
-            EConnState.On when vm.NetworkLocked => $"{tunnelLabel} · LOCKED",
+            EConnState.Connecting => ResUI.ScStateConnecting,
+            EConnState.Stopping => ResUI.ScStateDisconnecting,
+            EConnState.On when !vm.TunActive => ResUI.ScStateProxyOnly,
+            EConnState.On when vm.NetworkLocked => string.Format(ResUI.ScStateLocked, tunnelLabel),
             EConnState.On => tunnelLabel,
-            _ => "DISCONNECTED",
+            _ => ResUI.ScStateDisconnected,
         };
 
         var name = vm.ProfilesViewModel?.SelectedProfile?.Remarks;
@@ -445,7 +449,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         dialDisc.Stroke = on ? BrDialOn : BrLine;
         iconPower.Stroke = on ? BrAccent : busy ? BrAccent2 : BrMuted;
         txtVerb.IsVisible = !on;
-        txtVerb.Text = busy ? "…" : "CONNECT";
+        txtVerb.Text = busy ? "…" : ResUI.ScConnectVerb;
         txtTimer.IsVisible = on;
         if (on)
         {
@@ -467,7 +471,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             dotLock.Background = BrWarn;
             dotLock.BoxShadow = GlowWarn;
             txtKill.Foreground = BrWarn;
-            txtKill.Text = "Network locked";
+            txtKill.Text = ResUI.ScChipNetworkLocked;
         }
         else
         {
@@ -476,15 +480,15 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             dotLock.BoxShadow = default;
             txtKill.Foreground = BrMuted;
             txtKill.Text = !vm.KillSwitchEnabled
-                ? "Kill switch off"
-                : on && !vm.TunActive ? "Kill switch needs TUN" : "Kill switch armed";
+                ? ResUI.ScChipKillOff
+                : on && !vm.TunActive ? ResUI.ScChipKillNeedsTun : ResUI.ScChipKillArmed;
         }
 
         // Status strip
         dotCore.Background = on ? BrAccent : BrFaint;
         dotCore.BoxShadow = on ? GlowAccent : default;
         var tun = vm.StatusBarViewModel?.EnableTun == true;
-        txtTun.Text = tun ? "singbox_tun" : "off";
+        txtTun.Text = tun ? "singbox_tun" : ResUI.ScOff;
         txtTun.Foreground = tun ? BrFg : BrFaint;
     }
 
@@ -650,6 +654,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             }
             txtAddApp.Text = string.Empty;
             txtAddSubnet.Text = string.Empty;
+            cmbLanguage.SelectedItem = Global.LanguageOptions.FirstOrDefault(t => t.Value == _config.UiItem.CurrentLanguage);
         }
         finally
         {
@@ -705,20 +710,62 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
     }
 
+    private async void CmbLanguage_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingSettings
+            || cmbLanguage.SelectedItem is not LanguageOption language
+            || language.Value == _config.UiItem.CurrentLanguage)
+        {
+            return;
+        }
+        try
+        {
+            _config.UiItem.CurrentLanguage = language.Value;
+            await ConfigHandler.SaveConfig(_config);
+            // Keep the Theme / Language flyout in sync (the value is already saved).
+            if (conTheme.Content is ThemeSettingView { ViewModel: { } themeVm })
+            {
+                themeVm.CurrentLanguage = language.Value;
+            }
+
+            if (Utils.IsWindows() && await UI.ShowYesNo(ResUI.ScLanguageRestartAsk) == ButtonResult.Yes)
+            {
+                await RestartAppAsync();
+                return;
+            }
+            _manager?.Show(new Avalonia.Controls.Notifications.Notification(null, ResUI.ScLanguageSaved, NotificationType.Information));
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("ChangeLanguage", ex);
+        }
+    }
+
+    /// <summary>
+    /// Restarts the app: stops the core and lifts the kill switch first, then
+    /// starts the new instance ("rebootas" skips the single-instance check) and quits.
+    /// </summary>
+    private static async Task RestartAppAsync()
+    {
+        await AppManager.Instance.AppExitAsync(false);
+        ProcUtils.RebootAsAdmin(Utils.IsAdministrator());
+        AppManager.Instance.Shutdown(true);
+    }
+
     /// <summary>Split tunneling texts for the selected mode (whitelist / go direct).</summary>
     private void UpdateSplitTexts()
     {
         if (rbSplitWhitelist.IsChecked == true)
         {
-            txtSplitAppsSub.Text = "Only these apps use the tunnel. A folder covers every program inside it.";
-            txtSplitSubnetsSub.Text = "Only these destinations use the tunnel.";
-            txtSplitHint.Text = "Only the listed apps and subnets go through the tunnel; everything else leaves directly. With both lists empty the whole PC is tunneled.";
+            txtSplitAppsSub.Text = ResUI.ScSplitAppsSubWhitelist;
+            txtSplitSubnetsSub.Text = ResUI.ScSplitSubnetsSubWhitelist;
+            txtSplitHint.Text = ResUI.ScSplitHintWhitelist;
         }
         else
         {
-            txtSplitAppsSub.Text = "Routed direct (outside the tunnel). A folder covers every program inside it.";
-            txtSplitSubnetsSub.Text = "Reached directly (outside the tunnel).";
-            txtSplitHint.Text = "Listed apps and subnets egress directly and are permitted through the firewall lock, so they stay reachable while everything else is tunneled.";
+            txtSplitAppsSub.Text = ResUI.ScSplitAppsSubBypass;
+            txtSplitSubnetsSub.Text = ResUI.ScSplitSubnetsSubBypass;
+            txtSplitHint.Text = ResUI.ScSplitHintBypass;
         }
     }
 
@@ -752,7 +799,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             if (!quiet)
             {
-                _manager?.Show(new Avalonia.Controls.Notifications.Notification(null, $"Not valid: {raw}", NotificationType.Warning));
+                _manager?.Show(new Avalonia.Controls.Notifications.Notification(null, string.Format(ResUI.ScNotValid, raw), NotificationType.Warning));
             }
             return;
         }
@@ -809,7 +856,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
-                Title = "Choose a folder — every program inside it bypasses the tunnel",
+                Title = ResUI.ScChooseFolder,
                 AllowMultiple = false,
             });
             var path = folders.FirstOrDefault()?.TryGetLocalPath();
@@ -833,7 +880,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         _programs = [];
         txtProcSearch.Text = string.Empty;
         lstProcesses.ItemsSource = null;
-        txtProcStatus.Text = "Loading…";
+        txtProcStatus.Text = ResUI.ScLoading;
         procPickerLayer.IsVisible = true;
         txtProcSearch.Focus();
         try
@@ -864,8 +911,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                                    || p.Path.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
         lstProcesses.ItemsSource = list;
         txtProcStatus.Text = _programs.Count == 0
-            ? "No running programs could be read."
-            : $"{list.Count} of {_programs.Count} programs";
+            ? ResUI.ScNoPrograms
+            : string.Format(ResUI.ScProgramsCount, list.Count, _programs.Count);
     }
 
     private void PickSelectedProgram()
@@ -920,8 +967,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var count = routes.RuleCount;
         txtRoutesSummary.Text = routes.RoutingName.IsNullOrEmpty()
-            ? "Proxy, bypass or block by domain, IP, app and protocol."
-            : $"{count} {(count == 1 ? "rule" : "rules")} · {routes.RoutingName}";
+            ? ResUI.ScRoutesSub
+            : string.Format(count == 1 ? ResUI.ScRoutesSummaryOne : ResUI.ScRoutesSummaryMany, count, routes.RoutingName);
         txtRoutesEmpty.IsVisible = count == 0;
     }
 
@@ -995,13 +1042,20 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private async Task ApplyPresetAsync(EPresetType type)
     {
         if (ViewModel == null
-            || await UI.ShowYesNo($"Apply the {type} preset? It switches the routing templates, DNS and geo files to this region (your profiles stay).") != ButtonResult.Yes)
+            || await UI.ShowYesNo(string.Format(ResUI.ScPresetConfirm, PresetName(type))) != ButtonResult.Yes)
         {
             return;
         }
         await ViewModel.ApplyRegionalPreset(type);
         await ViewModel.RoutesViewModel.LoadAsync();
     }
+
+    private static string PresetName(EPresetType type) => type switch
+    {
+        EPresetType.Russia => ResUI.menuRegionalPresetsRussia,
+        EPresetType.Iran => ResUI.menuRegionalPresetsIran,
+        _ => ResUI.menuRegionalPresetsDefault,
+    };
 
     #endregion Routes page
 
@@ -1019,7 +1073,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         _editingRule = rule;
         _editingOutbound = rule.OutboundTag.IsNullOrEmpty() ? Global.ProxyTag : rule.OutboundTag;
 
-        txtRuleEditorTitle.Text = isNew ? "New rule" : "Edit rule";
+        txtRuleEditorTitle.Text = isNew ? ResUI.ScNewRule : ResUI.ScEditRule;
         txtRuleName.Text = rule.Remarks ?? string.Empty;
         tglRuleEnabled.IsChecked = rule.Enabled;
         rbRuleDirect.IsChecked = _editingOutbound == Global.DirectTag;
@@ -1055,7 +1109,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var routes = ViewModel?.RoutesViewModel;
         var index = routes?.IndexOf(_editingRule?.Id) ?? -1;
         var count = routes?.RuleCount ?? 0;
-        txtRulePosition.Text = index >= 0 ? $"#{index + 1} of {count}" : "new rules go on top";
+        txtRulePosition.Text = index >= 0 ? string.Format(ResUI.ScRulePosition, index + 1, count) : ResUI.ScRuleNewOnTop;
         btnRuleUp.IsEnabled = index > 0;
         btnRuleDown.IsEnabled = index >= 0 && index < count - 1;
     }
@@ -1138,7 +1192,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var port = txtRulePort.Text?.Replace(" ", string.Empty);
         if (!port.IsNullOrEmpty() && !IsValidPortList(port))
         {
-            _manager?.Show(new Avalonia.Controls.Notifications.Notification(null, "Port: use numbers and ranges, e.g. 443, 1000-2000", NotificationType.Warning));
+            _manager?.Show(new Avalonia.Controls.Notifications.Notification(null, ResUI.ScPortInvalid, NotificationType.Warning));
             return;
         }
         rule.Port = port.IsNullOrEmpty() ? null : port;
@@ -1147,7 +1201,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         if (rule.Domain is null && rule.Ip is null && rule.Process is null && rule.Protocol is null
             && rule.Port.IsNullOrEmpty() && rule.Network.IsNullOrEmpty() && !(rule.InboundTag?.Count > 0))
         {
-            _manager?.Show(new Avalonia.Controls.Notifications.Notification(null, "Add at least one condition: a domain, IP, app, protocol or port.", NotificationType.Warning));
+            _manager?.Show(new Avalonia.Controls.Notifications.Notification(null, ResUI.ScRuleNeedsCondition, NotificationType.Warning));
             return;
         }
 
@@ -1168,8 +1222,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             return;
         }
-        var name = rule.Remarks.IsNullOrEmpty() ? "this rule" : $"\"{rule.Remarks}\"";
-        if (await UI.ShowYesNo($"Delete {name}?") != ButtonResult.Yes)
+        var name = rule.Remarks.IsNullOrEmpty() ? ResUI.ScThisRule : $"\"{rule.Remarks}\"";
+        if (await UI.ShowYesNo(string.Format(ResUI.ScDeleteConfirm, name)) != ButtonResult.Yes)
         {
             return;
         }
