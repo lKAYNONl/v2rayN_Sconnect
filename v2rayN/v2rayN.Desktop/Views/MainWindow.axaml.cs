@@ -88,6 +88,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             // Secure Connect dashboard
             this.OneWayBind(ViewModel, vm => vm.ProfilesViewModel.ProfileItems, v => v.lstCards.ItemsSource).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.ProfilesViewModel.SelectedProfile, v => v.lstCards.SelectedItem).DisposeWith(disposables);
+            if (ViewModel?.ProfilesViewModel?.ProfileItems != null)
+            {
+                ViewModel.ProfilesViewModel.ProfileItems.CollectionChanged += OnProfileItemsChanged;
+                FillCountryCodes();
+            }
             this.BindCommand(ViewModel, vm => vm.AddServerViaClipboardCmd, v => v.btnImport).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.EditServerCmd, v => v.menuCtxEdit).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.RemoveServerCmd, v => v.menuCtxDelete).DisposeWith(disposables);
@@ -272,6 +277,45 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             ViewModel.ProfilesViewModel.SelectedProfiles = lstCards.SelectedItems?.Cast<ProfileItemModel>().ToList() ?? new List<ProfileItemModel>();
         }
+    }
+
+    private void OnProfileItemsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        => Dispatcher.UIThread.Post(FillCountryCodes);
+
+    private void FillCountryCodes()
+    {
+        var items = ViewModel?.ProfilesViewModel?.ProfileItems;
+        if (items == null)
+        {
+            return;
+        }
+
+        foreach (var item in items.ToList())
+        {
+            if (!item.CountryCode.IsNullOrEmpty())
+            {
+                continue;
+            }
+
+            // Placeholder so the badge is never empty, replaced once geo resolves.
+            item.CountryCode = ShortType(item.ConfigType);
+
+            var captured = item;
+            _ = Task.Run(async () =>
+            {
+                var code = await GeoLookupManager.Instance.GetCountryCodeAsync(captured.Address);
+                if (!code.IsNullOrEmpty())
+                {
+                    Dispatcher.UIThread.Post(() => captured.CountryCode = code);
+                }
+            });
+        }
+    }
+
+    private static string ShortType(EConfigType t)
+    {
+        var s = t.ToString();
+        return (s.Length <= 2 ? s : s[..2]).ToUpperInvariant();
     }
 
     private void MenuSettingsSetUWP_Click(object? sender, RoutedEventArgs e)

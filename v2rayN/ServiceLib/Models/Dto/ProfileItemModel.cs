@@ -23,6 +23,10 @@ public partial class ProfileItemModel : ReactiveObject
     [Reactive]
     public partial string DelayVal { get; set; }
 
+    // 2-letter country code of the server, resolved lazily for the card badge.
+    [Reactive]
+    public partial string CountryCode { get; set; }
+
     [Reactive]
     public partial string SpeedVal { get; set; }
 

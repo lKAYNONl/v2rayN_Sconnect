@@ -210,7 +210,7 @@
                                                 FontSize="9"
                                                 FontWeight="Bold"
                                                 Foreground="#4F8CFF"
-                                                Text="{ReflectionBinding ConfigType}" />
+                                                Text="{ReflectionBinding CountryCode}" />
                                         </Border>
                                         <StackPanel
                                             Grid.Column="1"
