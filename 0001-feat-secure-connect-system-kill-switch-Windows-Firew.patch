@@ -1,0 +1,891 @@
+From da871089252a646873c511fa3c83660f763d62a6 Mon Sep 17 00:00:00 2001
+From: firstkaynon <firstkaynon@gmail.com>
+Date: Fri, 9 Oct 2026 00:38:15 +0900
+Subject: [PATCH 1/2] feat(secure-connect): system kill switch (Windows
+ Firewall) for TUN mode
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Adds a WireSock-style network lock that puts Windows Firewall into
+default-deny outbound while a TUN profile is connected, so no traffic can
+leak outside the tunnel — even if the core drops or during connect/disconnect.
+
+- ServiceLib/Manager/KillSwitch/: platform backend (interface, manager,
+  Windows impl via NetSecurity, no-op stub, context + persisted state)
+- Config: KillSwitchItem (enable, allow LAN, split-tunnel bypass lists)
+- CoreManager: arm after a successful TUN connect (idempotent on reload,
+  fail-closed on mid-session core restart)
+- AppManager: disarm on app exit; MainWindowViewModel: recover on startup
+  (unlock if a previous run crashed while armed)
+
+First step of the v2rayN -> Secure Connect fork; see FORK-ROADMAP.md.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01ECTzcs4wuuXGnbPPiFReiK
+---
+ FORK-ROADMAP.md                               | 177 ++++++++++
+ v2rayN/ServiceLib/Handler/ConfigHandler.cs    |   1 +
+ v2rayN/ServiceLib/Manager/AppManager.cs       |   3 +
+ v2rayN/ServiceLib/Manager/CoreManager.cs      |  67 ++++
+ .../Manager/KillSwitch/IKillSwitchService.cs  |  29 ++
+ .../Manager/KillSwitch/KillSwitchContext.cs   |  47 +++
+ .../Manager/KillSwitch/KillSwitchManager.cs   |  37 +++
+ .../Manager/KillSwitch/KillSwitchNoop.cs      |  17 +
+ .../Manager/KillSwitch/KillSwitchState.cs     |  20 ++
+ .../Manager/KillSwitch/KillSwitchWindows.cs   | 304 ++++++++++++++++++
+ v2rayN/ServiceLib/Models/Configs/Config.cs    |   1 +
+ .../ServiceLib/Models/Configs/ConfigItems.cs  |  20 ++
+ .../ViewModels/MainWindowViewModel.cs         |   2 +
+ 13 files changed, 725 insertions(+)
+ create mode 100644 FORK-ROADMAP.md
+ create mode 100644 v2rayN/ServiceLib/Manager/KillSwitch/IKillSwitchService.cs
+ create mode 100644 v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchContext.cs
+ create mode 100644 v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchManager.cs
+ create mode 100644 v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchNoop.cs
+ create mode 100644 v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchState.cs
+ create mode 100644 v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchWindows.cs
+
+diff --git a/FORK-ROADMAP.md b/FORK-ROADMAP.md
+new file mode 100644
+index 0000000..94744a4
+--- /dev/null
++++ b/FORK-ROADMAP.md
+@@ -0,0 +1,177 @@
++# v2rayN → «Secure Connect» fork — дорожная карта
++
++Форк **v2rayN v7 (Avalonia)** с функционалом VPN-туннелирования в духе
++**WireSock Secure Connect**: системный kill switch, split tunneling по
++приложениям/подсетям и переработанный интерфейс.
++
++База: `2dust/v2rayN` (ветка `main`, .NET 10). Общая логика — в `ServiceLib`,
++фронтенды — `v2rayN` (WPF) и `v2rayN.Desktop` (Avalonia). Цель — Avalonia +
++`ServiceLib`.
++
++---
++
++## Что уже сделано (этап 1 — Kill Switch)
++
++Реализован системный kill switch на Windows Firewall. Новые файлы:
++
++```
++ServiceLib/Manager/KillSwitch/
++├── IKillSwitchService.cs     # интерфейс бэкенда (Arm/Disarm/Recover)
++├── KillSwitchManager.cs      # синглтон-точка входа, выбор платформы
++├── KillSwitchWindows.cs      # реализация через Windows Firewall (NetSecurity)
++├── KillSwitchNoop.cs         # заглушка для Linux/macOS
++├── KillSwitchContext.cs      # что разрешить, пока замок активен
++└── KillSwitchState.cs        # состояние на диске для восстановления после сбоя
++```
++
++Точки интеграции (изменённые файлы):
++
++| Файл | Что добавлено |
++|------|---------------|
++| `ServiceLib/Models/Configs/ConfigItems.cs` | класс `KillSwitchItem` (настройки) |
++| `ServiceLib/Models/Configs/Config.cs` | поле `KillSwitchItem` |
++| `ServiceLib/Handler/ConfigHandler.cs` | инициализация по умолчанию |
++| `ServiceLib/Manager/CoreManager.cs` | **arm** после успешного TUN-подключения |
++| `ServiceLib/Manager/AppManager.cs` | **disarm** при выходе из приложения |
++| `ServiceLib/ViewModels/MainWindowViewModel.cs` | **recover** при старте |
++
++### Как работает замок
++
++Модель «запрет по умолчанию + белый список» (как у WireGuard):
++
++1. Сохраняем текущий `DefaultOutboundAction` каждого профиля фаервола в файл
++   состояния.
++2. Добавляем группу Outbound/Allow-правил `v2rayN-KillSwitch`:
++   - процесс ядра (`sing-box.exe`) — единственный, кто ходит в сеть напрямую
++     (именно он дозванивается до VPN-сервера);
++   - loopback (`127.0.0.1` / `::1`) — локальные прокси-порты и связь UI↔ядро;
++   - DHCP (UDP 67/68) — чтобы физический адаптер сохранял аренду;
++   - опционально: LAN, bypass-приложения и bypass-подсети (split tunneling).
++3. Переключаем `DefaultOutboundAction` → `Block` на всех профилях.
++
++Итог: в TUN-режиме наружу на физический интерфейс ходит только ядро; весь
++остальной трафик (включая IPv6 и прямой DNS на :53) отбрасывается → утечки
++невозможны ни при падении ядра, ни в момент подключения/отключения.
++
++Жизненный цикл:
++- **Arm** — в `CoreManager.LoadCore` после удачного старта, если профиль в TUN
++  и `KillSwitchItem.EnableKillSwitch`. Идемпотентно: reload переподтверждает
++  правила без «окна утечки».
++- **Fail-closed** — внутренний `CoreStop` при reload замок **не снимает**, так
++  что падение ядра в середине сессии держит сеть закрытой до переподключения.
++- **Disarm** — при выходе из приложения (`AppExitAsync`) и из будущей кнопки
++  Disconnect: иначе выход оставил бы ПК без интернета.
++- **Recover** — при старте проверяется файл состояния; если прошлый запуск
++  упал с активным замком, сеть разблокируется, чтобы не «окирпичить» ПК.
++
++### Известное ограничение и ручная разблокировка
++
++Запрет-по-умолчанию отбрасывает только трафик, не подошедший ни под одно
++правило. Теоретически **уже существующее пользовательское Allow-правило** для
++другой программы может пропустить её напрямую. В TUN-режиме это почти не играет
++роли (приложения отдают пакеты в TUN-устройство, а не в прямой сокет — наружу
++дозванивается только ядро), но для полной герметичности см. этап 1b ниже.
++
++Аварийная ручная разблокировка (PowerShell от админа):
++```powershell
++Set-NetFirewallProfile -All -DefaultOutboundAction Allow
++Remove-NetFirewallRule -Group 'v2rayN-KillSwitch' -ErrorAction SilentlyContinue
++```
++
++---
++
++## Этап 1b — Нативный WFP-бэкенд (упрочнение)
++
++Чтобы замок перекрывал даже чужие Allow-правила и авто-снимался при падении
++процесса — портировать подход WireGuard-for-Windows (пакет `firewall`):
++- динамическая WFP-сессия (`FWPM_SESSION_FLAG_DYNAMIC` → фильтры удаляются
++  автоматически при закрытии хэндла/выходе процесса — защита от «кирпича»);
++- собственный sublayer с высоким весом → permit/block поверх всех обычных
++  правил фаервола;
++- permit-фильтры: app-id ядра, loopback, DHCP, (опц.) LAN; block-фильтр на всё
++  остальное (IPv4+IPv6) на уровне ALE.
++
++Реализуется как второй `IKillSwitchService` (`KillSwitchWindowsWfp`) — callers
++не меняются, переключение в `KillSwitchManager`. Это ~400–600 строк P/Invoke
++(FwpmEngineOpen0/SublayerAdd0/FilterAdd0 + структуры FWPM). Рекомендую делать и
++отлаживать уже на целевой Windows-машине (точность marshalling структур).
++
++---
++
++## Этап 2 — Split tunneling (приложения/подсети)
++
++Две стороны, обе нужны:
++
++1. **Маршрутизация (sing-box)** — чтобы bypass-трафик реально шёл мимо туннеля.
++   В `ServiceLib/Services/CoreConfig/Singbox/SingboxRoutingService.cs` добавить
++   route-правила с `outbound: "direct"` по:
++   - `process_name` (имена exe из `KillSwitchItem.BypassApps`);
++   - `ip_cidr` (подсети из `KillSwitchItem.BypassSubnets`).
++   Режимы как у WireSock: «туннелировать только выбранные» vs «туннелировать всё
++   кроме выбранных» — добавить `ESplitTunnelMode` в `KillSwitchItem`.
++2. **Фаервол** — bypass-приложения/подсети уже прокидываются в
++   `KillSwitchContext` и получают Allow-правила, так что при включённом замке
++   они не блокируются. (Готово со стороны kill switch.)
++
++Примечание: `process_name`-правила корректно работают на ядре **sing-box** (в
++v2rayN TUN и так на sing-box), что подтверждается обсуждениями апстрима.
++
++---
++
++## Этап 3 — Рескин интерфейса под WireSock (Avalonia)
++
++Цель фронтенда `v2rayN.Desktop`:
++- один главный экран с крупным тумблером **Connect/Disconnect** и статусом
++  (Connected / Connecting / Locked), индикатор kill switch и текущего IP;
++- список профилей (import/export/delete), поиск/пинг;
++- экран настроек: Kill Switch (вкл + Allow LAN), Split Tunneling (списки
++  приложений и подсетей, режим), DNS, MTU.
++
++Что переиспользовать: `MainWindowViewModel` (reload/connect), `ProfilesViewModel`,
++`StatusBarViewModel`. Добавить команду **Disconnect** (сейчас у v2rayN явной нет)
++→ `CoreManager.CoreStop()` + `KillSwitchManager.DisarmAsync()`.
++
++Дизайн-экраны можно собрать отдельно (Claude Design) и затем переложить в
++Avalonia axaml — скажите, если нужно.
++
++---
++
++## Этап 4 (опционально) — Разделение службы и UI
++
++Фирменная черта WireSock: туннель живёт в фоновой службе, UI можно закрыть.
++В v2rayN ядро привязано к процессу приложения. Это самый крупный рефакторинг:
++вынести управление ядром + kill switch в Windows-службу, UI общается с ней по
++named pipe/gRPC. Делать в последнюю очередь; на поведение kill switch этапа 1
++не влияет.
++
++---
++
++## Сборка и проверка (Windows, с правами администратора)
++
++```powershell
++# из каталога v2rayN/
++dotnet build v2rayN.sln -c Release
++# запускать от администратора (TUN + фаервол требуют прав)
++```
++
++Проверка kill switch:
++1. Включить в настройках Kill Switch, выбрать TUN-профиль, подключиться.
++2. `Get-NetFirewallProfile -All | ft Name,DefaultOutboundAction` → все `Block`.
++3. `Get-NetFirewallRule -Group 'v2rayN-KillSwitch'` → правила на месте.
++4. Снаружи туннеля (напр. убить `sing-box.exe`) — интернет пропадает, утечки нет.
++5. Disconnect / выход → политика и правила восстановлены.
++6. Симулировать краш (завершить приложение в диспетчере с активным замком) →
++   следующий запуск разблокирует сеть (recover).
++
++## Как завести форк на GitHub
++
++1. Сделать форк `2dust/v2rayN` в своём аккаунте (кнопка Fork).
++2. Склонировать, создать ветку `secure-connect`.
++3. Применить патч: `git am secure-connect-killswitch.patch`
++   (или `git apply` для варианта без commit-сообщения).
++4. Собрать и проверить по шагам выше.
++
++---
++
++_Этап 1 (Kill Switch) реализован. Дальше по приоритету: 2 (split tunneling) и 3
++(рескин UI). Нативный WFP (1b) и разделение службы (4) — упрочнение/«про»-версия._
+diff --git a/v2rayN/ServiceLib/Handler/ConfigHandler.cs b/v2rayN/ServiceLib/Handler/ConfigHandler.cs
+index 3bfa1f2..5f59da6 100644
+--- a/v2rayN/ServiceLib/Handler/ConfigHandler.cs
++++ b/v2rayN/ServiceLib/Handler/ConfigHandler.cs
+@@ -94,6 +94,7 @@ public static class ConfigHandler
+             IcmpRouting = Global.TunIcmpRoutingPolicies.First(),
+             EnableLegacyProtect = true,
+         };
++        config.KillSwitchItem ??= new();
+         config.GuiItem ??= new();
+         if (!Global.RootCertProviders.Contains(config.GuiItem.RootCertProvider))
+         {
+diff --git a/v2rayN/ServiceLib/Manager/AppManager.cs b/v2rayN/ServiceLib/Manager/AppManager.cs
+index 72d2930..a0cd755 100644
+--- a/v2rayN/ServiceLib/Manager/AppManager.cs
++++ b/v2rayN/ServiceLib/Manager/AppManager.cs
+@@ -133,6 +133,9 @@ public sealed class AppManager
+             await ProfileExManager.Instance.SaveTo();
+             await StatisticsManager.Instance.SaveTo();
+             await CoreManager.Instance.CoreStop();
++            // Restore networking on quit: the core is stopping, so the lock must
++            // come off or the user would be left offline with no app to fix it.
++            await KillSwitchManager.Instance.DisarmAsync();
+             StatisticsManager.Instance.Close();
+ 
+             Logging.SaveLog("AppExitAsync End");
+diff --git a/v2rayN/ServiceLib/Manager/CoreManager.cs b/v2rayN/ServiceLib/Manager/CoreManager.cs
+index b2da9c7..3c86b1a 100644
+--- a/v2rayN/ServiceLib/Manager/CoreManager.cs
++++ b/v2rayN/ServiceLib/Manager/CoreManager.cs
+@@ -100,6 +100,7 @@ public class CoreManager
+         if (_processService != null)
+         {
+             await UpdateFunc(true, $"{node.GetSummary()}");
++            await ArmKillSwitchIfNeeded(mainContext, preContext);
+         }
+     }
+ 
+@@ -216,6 +217,72 @@ public class CoreManager
+         await _updateFunc?.Invoke(notify, msg);
+     }
+ 
++    /// <summary>
++    /// Arms the kill switch after a successful TUN connect, when enabled in config.
++    /// Idempotent across reloads (re-arming refreshes rules), so a reconnect does
++    /// not open a leak window. Disarming is driven by the UI's Disconnect command
++    /// and by <see cref="AppManager.AppExitAsync"/>, never by the internal
++    /// <see cref="CoreStop"/> that a reload performs — so a mid-session core
++    /// restart stays fail-closed (no leak) until the tunnel is back up.
++    /// </summary>
++    private async Task ArmKillSwitchIfNeeded(CoreConfigContext? mainContext, CoreConfigContext? preContext)
++    {
++        try
++        {
++            var isTun = mainContext?.IsTunEnabled == true || preContext?.IsTunEnabled == true;
++            if (!isTun || _config.KillSwitchItem?.EnableKillSwitch != true)
++            {
++                return;
++            }
++
++            // Main core dials the VPN server over the physical NIC → must be allowed.
++            var coreExe = GetCoreExePath(mainContext);
++            if (coreExe.IsNullOrEmpty())
++            {
++                await UpdateFunc(false, "Kill switch: core executable not found, not armed");
++                return;
++            }
++
++            var ks = _config.KillSwitchItem;
++            var allowedPrograms = new List<string>(ks.BypassApps ?? new List<string>());
++
++            // When a separate sing-box TUN front runs (pre-socks model), allow it too.
++            // It normally only talks loopback, but allowing it is harmless and safer.
++            var preExe = GetCoreExePath(preContext);
++            if (!preExe.IsNullOrEmpty() && !string.Equals(preExe, coreExe, StringComparison.OrdinalIgnoreCase))
++            {
++                allowedPrograms.Add(preExe);
++            }
++
++            var ctx = new KillSwitchContext
++            {
++                CoreExePath = coreExe,
++                TunInterfaceName = "singbox_tun",
++                AllowLan = ks.AllowLan,
++                AllowedPrograms = allowedPrograms,
++                AllowedSubnets = ks.BypassSubnets ?? new List<string>(),
++            };
++
++            var ok = await KillSwitchManager.Instance.ArmAsync(ctx);
++            await UpdateFunc(false, ok ? "Kill switch armed" : "Kill switch failed to arm");
++        }
++        catch (Exception ex)
++        {
++            Logging.SaveLog(_tag, ex);
++        }
++    }
++
++    private static string GetCoreExePath(CoreConfigContext? context)
++    {
++        if (context?.Node is null)
++        {
++            return string.Empty;
++        }
++        var coreType = AppManager.Instance.GetCoreType(context.Node, context.Node.ConfigType);
++        var coreInfo = CoreInfoManager.Instance.GetCoreInfo(coreType);
++        return CoreInfoManager.Instance.GetCoreExecFile(coreInfo, out _);
++    }
++
+     private static async Task WaitForProxyPort(CoreConfigContext? preContext)
+     {
+         if (preContext is null)
+diff --git a/v2rayN/ServiceLib/Manager/KillSwitch/IKillSwitchService.cs b/v2rayN/ServiceLib/Manager/KillSwitch/IKillSwitchService.cs
+new file mode 100644
+index 0000000..4ba83c2
+--- /dev/null
++++ b/v2rayN/ServiceLib/Manager/KillSwitch/IKillSwitchService.cs
+@@ -0,0 +1,29 @@
++namespace ServiceLib.Manager;
++
++/// <summary>
++/// A platform backend that enforces the network lock ("kill switch"):
++/// while armed, no traffic may leave the machine except through the active
++/// tunnel, so nothing leaks if the core drops or during connect/disconnect.
++/// </summary>
++public interface IKillSwitchService
++{
++    /// <summary>True while the lock is currently enforced.</summary>
++    bool IsArmed { get; }
++
++    /// <summary>
++    /// Arm the lock for the given context. Idempotent: calling it again while
++    /// already armed refreshes the rules (used on reload) without opening a
++    /// leak window. Returns true on success.
++    /// </summary>
++    Task<bool> ArmAsync(KillSwitchContext context);
++
++    /// <summary>Remove the lock and restore the previous network state.</summary>
++    Task DisarmAsync();
++
++    /// <summary>
++    /// Called once at startup. If a previous run armed the lock and never
++    /// disarmed cleanly (e.g. the app crashed), restore the network state so
++    /// the user is never left without connectivity and no running app to fix it.
++    /// </summary>
++    Task RecoverIfNeededAsync();
++}
+diff --git a/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchContext.cs b/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchContext.cs
+new file mode 100644
+index 0000000..8d6965c
+--- /dev/null
++++ b/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchContext.cs
+@@ -0,0 +1,47 @@
++namespace ServiceLib.Manager;
++
++/// <summary>
++/// Immutable snapshot describing what the kill switch must permit while armed.
++/// Built at connect time from the running core and the active config so the
++/// firewall state and the launch mode always agree, even if settings are
++/// toggled while a reload is in flight.
++/// </summary>
++public class KillSwitchContext
++{
++    /// <summary>
++    /// Full path to the running core executable (e.g. sing-box.exe).
++    /// This is the only process allowed to make direct outbound connections
++    /// to the physical network while the lock is armed — it is what actually
++    /// dials the VPN server. Everything else must go through the TUN device
++    /// (and therefore through this process), or it is dropped.
++    /// </summary>
++    public string CoreExePath { get; set; } = string.Empty;
++
++    /// <summary>
++    /// TUN interface name created by the core (Windows: "singbox_tun").
++    /// Not needed by the Windows Firewall backend (all real egress is the core
++    /// process), but kept for the planned native-WFP backend and diagnostics.
++    /// </summary>
++    public string? TunInterfaceName { get; set; }
++
++    /// <summary>
++    /// When true, keep the local network reachable (printers, NAS, SSH to LAN)
++    /// while every other destination is forced through the tunnel.
++    /// Mirrors WireSock's "Allow access to local network" option.
++    /// </summary>
++    public bool AllowLan { get; set; }
++
++    /// <summary>
++    /// Extra programs allowed to bypass the lock (full paths). Populated from
++    /// the split-tunneling "bypass apps" list. NOTE: the firewall only *permits*
++    /// these; sing-box routing rules must also exclude them from the tunnel for
++    /// them to actually egress directly.
++    /// </summary>
++    public List<string> AllowedPrograms { get; set; } = new();
++
++    /// <summary>
++    /// Extra remote subnets allowed direct (CIDR). Populated from the
++    /// split-tunneling "bypass networks" list.
++    /// </summary>
++    public List<string> AllowedSubnets { get; set; } = new();
++}
+diff --git a/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchManager.cs b/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchManager.cs
+new file mode 100644
+index 0000000..9a001d5
+--- /dev/null
++++ b/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchManager.cs
+@@ -0,0 +1,37 @@
++namespace ServiceLib.Manager;
++
++/// <summary>
++/// Singleton entry point for the kill switch. Picks the platform backend and
++/// exposes a tiny surface (<see cref="ArmAsync"/> / <see cref="DisarmAsync"/> /
++/// <see cref="RecoverIfNeededAsync"/>) that the rest of the app calls without
++/// caring about the platform.
++/// </summary>
++public class KillSwitchManager
++{
++    private static readonly Lazy<KillSwitchManager> _instance = new(() => new());
++    public static KillSwitchManager Instance => _instance.Value;
++
++    private readonly IKillSwitchService _service;
++
++    private KillSwitchManager()
++    {
++        // if/else (not a ternary) is what the platform analyzer reliably
++        // recognises as an OS guard around the Windows-only backend.
++        if (OperatingSystem.IsWindows())
++        {
++            _service = new KillSwitchWindows();
++        }
++        else
++        {
++            _service = new KillSwitchNoop();
++        }
++    }
++
++    public bool IsArmed => _service.IsArmed;
++
++    public Task<bool> ArmAsync(KillSwitchContext context) => _service.ArmAsync(context);
++
++    public Task DisarmAsync() => _service.DisarmAsync();
++
++    public Task RecoverIfNeededAsync() => _service.RecoverIfNeededAsync();
++}
+diff --git a/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchNoop.cs b/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchNoop.cs
+new file mode 100644
+index 0000000..ebfd3c3
+--- /dev/null
++++ b/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchNoop.cs
+@@ -0,0 +1,17 @@
++namespace ServiceLib.Manager;
++
++/// <summary>
++/// No-op backend for platforms where the firewall kill switch is not yet
++/// implemented (Linux / macOS). The Windows backend is <see cref="KillSwitchWindows"/>.
++/// On Linux a future backend can use nftables; on macOS, pf.
++/// </summary>
++public class KillSwitchNoop : IKillSwitchService
++{
++    public bool IsArmed => false;
++
++    public Task<bool> ArmAsync(KillSwitchContext context) => Task.FromResult(false);
++
++    public Task DisarmAsync() => Task.CompletedTask;
++
++    public Task RecoverIfNeededAsync() => Task.CompletedTask;
++}
+diff --git a/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchState.cs b/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchState.cs
+new file mode 100644
+index 0000000..c37f743
+--- /dev/null
++++ b/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchState.cs
+@@ -0,0 +1,20 @@
++namespace ServiceLib.Manager;
++
++/// <summary>
++/// Persisted on disk while the lock is armed, so a crash can be recovered on
++/// the next launch (see <see cref="IKillSwitchService.RecoverIfNeededAsync"/>).
++/// Written BEFORE the firewall is modified and cleared AFTER it is restored.
++/// </summary>
++public class KillSwitchState
++{
++    public bool Armed { get; set; }
++
++    /// <summary>
++    /// The DefaultOutboundAction of each firewall profile before we armed, so
++    /// we can put it back exactly. Keys: "Domain", "Private", "Public".
++    /// Values: "Allow" / "Block" / "NotConfigured".
++    /// </summary>
++    public Dictionary<string, string> SavedOutboundAction { get; set; } = new();
++
++    public string TimestampUtc { get; set; } = string.Empty;
++}
+diff --git a/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchWindows.cs b/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchWindows.cs
+new file mode 100644
+index 0000000..dea17ea
+--- /dev/null
++++ b/v2rayN/ServiceLib/Manager/KillSwitch/KillSwitchWindows.cs
+@@ -0,0 +1,304 @@
++namespace ServiceLib.Manager;
++
++/// <summary>
++/// Windows kill switch implemented with the built-in Windows Firewall
++/// (Defender Firewall / WFP) through the NetSecurity PowerShell module.
++///
++/// Model (default-deny outbound + allow-list):
++///   1. Save each profile's current DefaultOutboundAction to a state file.
++///   2. Add a small group of Outbound/Allow rules:
++///        - the core process (sing-box.exe)  -> can reach the VPN server
++///        - loopback (127.0.0.1 / ::1)        -> local proxy + UI<->core
++///        - DHCP (UDP 67/68)                  -> keep the physical lease alive
++///        - optionally: LAN, bypass apps, bypass subnets (split tunneling)
++///   3. Flip DefaultOutboundAction to Block for all profiles.
++/// Result: in TUN mode the only process that egresses to the physical NIC is
++/// the core itself; every other destination (incl. IPv6 and direct DNS to :53)
++/// is dropped -> no leak if the core drops or during connect/disconnect.
++///
++/// Requires administrator rights — which TUN mode already requires, so the app
++/// is elevated whenever this runs.
++///
++/// KNOWN LIMITATION: because default-deny only drops traffic that matches no
++/// rule, a *pre-existing user Outbound/Allow rule* for some other program could
++/// in principle let that program egress directly. In TUN mode this is largely
++/// moot (apps hand packets to the TUN device, not to a direct socket — only the
++/// core dials out), but to be bullet-proof against that case the roadmap adds a
++/// native-WFP backend with its own high-weight sublayer (WireGuard-style),
++/// which overrides all other rules and auto-removes on process exit.
++/// </summary>
++[SupportedOSPlatform("windows")]
++public class KillSwitchWindows : IKillSwitchService
++{
++    private const string RuleGroup = "v2rayN-KillSwitch";
++    private const string StateFileName = "killswitch_state.json";
++    private static readonly string[] Profiles = { "Domain", "Private", "Public" };
++
++    private bool _isArmed;
++    private readonly SemaphoreSlim _lock = new(1, 1);
++
++    public bool IsArmed => _isArmed;
++
++    private static string StatePath => Utils.GetConfigPath(StateFileName);
++
++    public async Task<bool> ArmAsync(KillSwitchContext context)
++    {
++        if (context.CoreExePath.IsNullOrEmpty() || !File.Exists(context.CoreExePath))
++        {
++            Logging.SaveLog($"{RuleGroup}: core path not found, refusing to arm: {context.CoreExePath}");
++            return false;
++        }
++
++        await _lock.WaitAsync();
++        try
++        {
++            // 1) Capture and persist the current default outbound action BEFORE
++            //    touching anything, so a crash mid-arm is recoverable.
++            var saved = await ReadOutboundActionsAsync();
++            var state = new KillSwitchState
++            {
++                Armed = true,
++                SavedOutboundAction = saved,
++                TimestampUtc = DateTime.UtcNow.ToString("o")
++            };
++            await WriteStateAsync(state);
++
++            // 2) Build + apply the allow-list and flip the default to Block.
++            var ok = await RunPowerShellOkAsync(BuildArmScript(context));
++            if (!ok)
++            {
++                // Roll back anything partially applied, clear state.
++                await ApplyDisarmAsync(saved);
++                await DeleteStateAsync();
++                _isArmed = false;
++                return false;
++            }
++
++            _isArmed = true;
++            Logging.SaveLog($"{RuleGroup}: armed (core={Path.GetFileName(context.CoreExePath)}, allowLan={context.AllowLan})");
++            return true;
++        }
++        catch (Exception ex)
++        {
++            Logging.SaveLog(RuleGroup, ex);
++            return false;
++        }
++        finally
++        {
++            _lock.Release();
++        }
++    }
++
++    public async Task DisarmAsync()
++    {
++        await _lock.WaitAsync();
++        try
++        {
++            var state = await ReadStateAsync();
++            var saved = state?.SavedOutboundAction ?? DefaultAllowActions();
++            await ApplyDisarmAsync(saved);
++            await DeleteStateAsync();
++            _isArmed = false;
++            Logging.SaveLog($"{RuleGroup}: disarmed, outbound restored");
++        }
++        catch (Exception ex)
++        {
++            Logging.SaveLog(RuleGroup, ex);
++        }
++        finally
++        {
++            _lock.Release();
++        }
++    }
++
++    public async Task RecoverIfNeededAsync()
++    {
++        try
++        {
++            var state = await ReadStateAsync();
++            if (state is not { Armed: true })
++            {
++                return;
++            }
++
++            // The previous run armed the lock and never disarmed cleanly.
++            // Fail open on relaunch so the user is never bricked: restore the
++            // saved outbound action and remove our rules.
++            Logging.SaveLog($"{RuleGroup}: stale armed state from {state.TimestampUtc} found on startup — restoring network");
++            await ApplyDisarmAsync(state.SavedOutboundAction.Count > 0 ? state.SavedOutboundAction : DefaultAllowActions());
++            await DeleteStateAsync();
++            _isArmed = false;
++        }
++        catch (Exception ex)
++        {
++            Logging.SaveLog(RuleGroup, ex);
++        }
++    }
++
++    #region PowerShell scripts
++
++    private static string BuildArmScript(KillSwitchContext ctx)
++    {
++        var sb = new StringBuilder();
++        sb.AppendLine("$ErrorActionPreference='Stop'");
++        sb.AppendLine("try {");
++        // Clear any stale rules from a previous run first (idempotent re-arm).
++        sb.AppendLine($"  Remove-NetFirewallRule -Group {PsQuote(RuleGroup)} -ErrorAction SilentlyContinue");
++
++        // Core process — the only program allowed direct egress.
++        sb.AppendLine(NewRule("Core", $"-Direction Outbound -Action Allow -Program {PsQuote(ctx.CoreExePath)}"));
++
++        // Loopback — local proxy ports and UI<->core communication.
++        sb.AppendLine(NewRule("Loopback", "-Direction Outbound -Action Allow -RemoteAddress 127.0.0.1,::1"));
++
++        // DHCP — let the physical adapter keep/renew its lease under default-deny.
++        sb.AppendLine(NewRule("DHCP", "-Direction Outbound -Action Allow -Protocol UDP -RemotePort 67,68"));
++
++        // Optional: keep the local network reachable.
++        if (ctx.AllowLan)
++        {
++            sb.AppendLine(NewRule("LAN", "-Direction Outbound -Action Allow -RemoteAddress LocalSubnet"));
++        }
++
++        // Split-tunnel bypass: extra subnets allowed direct.
++        if (ctx.AllowedSubnets is { Count: > 0 })
++        {
++            var subnets = string.Join(",", ctx.AllowedSubnets.Select(s => s.Trim()).Where(s => !s.IsNullOrEmpty()));
++            if (!subnets.IsNullOrEmpty())
++            {
++                sb.AppendLine(NewRule("BypassNets", $"-Direction Outbound -Action Allow -RemoteAddress {subnets}"));
++            }
++        }
++
++        // Split-tunnel bypass: extra programs allowed direct.
++        var i = 0;
++        foreach (var prog in ctx.AllowedPrograms.Where(p => !p.IsNullOrEmpty()))
++        {
++            sb.AppendLine(NewRule($"BypassApp{i++}", $"-Direction Outbound -Action Allow -Program {PsQuote(prog)}"));
++        }
++
++        // Finally: default-deny all other outbound on every profile.
++        sb.AppendLine("  Set-NetFirewallProfile -All -DefaultOutboundAction Block");
++        sb.AppendLine("  'KS_OK'");
++        sb.AppendLine("} catch { 'KS_ERR:' + $_.Exception.Message }");
++        return sb.ToString();
++    }
++
++    private static string NewRule(string suffix, string extra)
++    {
++        var name = $"{RuleGroup} {suffix}";
++        return $"  New-NetFirewallRule -DisplayName {PsQuote(name)} -Group {PsQuote(RuleGroup)} -Profile Any {extra} -ErrorAction Stop | Out-Null";
++    }
++
++    private async Task<Dictionary<string, string>> ReadOutboundActionsAsync()
++    {
++        // Emits lines like "Domain=Allow". Robust to localisation (enum names are invariant).
++        const string script =
++            "$ErrorActionPreference='SilentlyContinue';" +
++            "Get-NetFirewallProfile -All | ForEach-Object { \"$($_.Name)=$($_.DefaultOutboundAction)\" }";
++        var output = await RunPowerShellAsync(script) ?? string.Empty;
++
++        var result = DefaultAllowActions();
++        foreach (var line in output.Split('\n'))
++        {
++            var parts = line.Trim().Split('=');
++            if (parts.Length == 2 && Profiles.Contains(parts[0]))
++            {
++                result[parts[0]] = parts[1].Trim();
++            }
++        }
++        return result;
++    }
++
++    private async Task ApplyDisarmAsync(Dictionary<string, string> saved)
++    {
++        var sb = new StringBuilder();
++        sb.AppendLine("$ErrorActionPreference='SilentlyContinue'");
++        foreach (var name in Profiles)
++        {
++            var action = saved.TryGetValue(name, out var a) && !a.IsNullOrEmpty() ? a : "Allow";
++            if (string.Equals(action, "NotConfigured", StringComparison.OrdinalIgnoreCase))
++            {
++                action = "Allow"; // sane fallback; system default behaves as Allow
++            }
++            sb.AppendLine($"Set-NetFirewallProfile -Name {name} -DefaultOutboundAction {action}");
++        }
++        // Remove our rules last, so there is never a moment of default-deny with no allow-list.
++        sb.AppendLine($"Remove-NetFirewallRule -Group {PsQuote(RuleGroup)} -ErrorAction SilentlyContinue");
++        await RunPowerShellAsync(sb.ToString());
++    }
++
++    #endregion PowerShell scripts
++
++    #region Helpers
++
++    private static Dictionary<string, string> DefaultAllowActions() =>
++        new() { ["Domain"] = "Allow", ["Private"] = "Allow", ["Public"] = "Allow" };
++
++    private static string PsQuote(string s) => "'" + (s ?? string.Empty).Replace("'", "''") + "'";
++
++    private static async Task<string?> RunPowerShellAsync(string script)
++    {
++        var args = new List<string> { "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script };
++        return await Utils.GetCliWrapOutput("powershell", args);
++    }
++
++    private static async Task<bool> RunPowerShellOkAsync(string script)
++    {
++        var output = await RunPowerShellAsync(script);
++        if (output is null)
++        {
++            return false;
++        }
++        if (output.Contains("KS_ERR:"))
++        {
++            Logging.SaveLog($"{RuleGroup}: {output.Trim()}");
++            return false;
++        }
++        return output.Contains("KS_OK");
++    }
++
++    private static async Task<KillSwitchState?> ReadStateAsync()
++    {
++        try
++        {
++            if (!File.Exists(StatePath))
++            {
++                return null;
++            }
++            var json = await File.ReadAllTextAsync(StatePath);
++            return JsonUtils.Deserialize<KillSwitchState>(json);
++        }
++        catch
++        {
++            return null;
++        }
++    }
++
++    private static async Task WriteStateAsync(KillSwitchState state)
++    {
++        try
++        {
++            await File.WriteAllTextAsync(StatePath, JsonUtils.Serialize(state));
++        }
++        catch (Exception ex)
++        {
++            Logging.SaveLog(RuleGroup, ex);
++        }
++    }
++
++    private static Task DeleteStateAsync()
++    {
++        try
++        {
++            if (File.Exists(StatePath))
++            {
++                File.Delete(StatePath);
++            }
++        }
++        catch { }
++        return Task.CompletedTask;
++    }
++
++    #endregion Helpers
++}
+diff --git a/v2rayN/ServiceLib/Models/Configs/Config.cs b/v2rayN/ServiceLib/Models/Configs/Config.cs
+index 834a13a..23d907f 100644
+--- a/v2rayN/ServiceLib/Models/Configs/Config.cs
++++ b/v2rayN/ServiceLib/Models/Configs/Config.cs
+@@ -14,6 +14,7 @@ public class Config
+ 
+     public CoreBasicItem CoreBasicItem { get; set; }
+     public TunModeItem TunModeItem { get; set; }
++    public KillSwitchItem KillSwitchItem { get; set; }
+     public KcpItem KcpItem { get; set; }
+     public GrpcItem GrpcItem { get; set; }
+     public RoutingBasicItem RoutingBasicItem { get; set; }
+diff --git a/v2rayN/ServiceLib/Models/Configs/ConfigItems.cs b/v2rayN/ServiceLib/Models/Configs/ConfigItems.cs
+index 4219b66..6a684c8 100644
+--- a/v2rayN/ServiceLib/Models/Configs/ConfigItems.cs
++++ b/v2rayN/ServiceLib/Models/Configs/ConfigItems.cs
+@@ -153,6 +153,26 @@ public class TunModeItem
+     public string IPv6Address { get; set; }
+ }
+ 
++[Serializable]
++public class KillSwitchItem
++{
++    /// <summary>
++    /// When on (and the active profile uses TUN), the Windows Firewall is put
++    /// into default-deny outbound while connected, so nothing can leave the
++    /// machine outside the tunnel — even if the core drops.
++    /// </summary>
++    public bool EnableKillSwitch { get; set; }
++
++    /// <summary>Keep the local network (LAN) reachable while the lock is armed.</summary>
++    public bool AllowLan { get; set; } = true;
++
++    /// <summary>Split tunneling: full paths of programs allowed to bypass the tunnel.</summary>
++    public List<string>? BypassApps { get; set; }
++
++    /// <summary>Split tunneling: remote subnets (CIDR) allowed to bypass the tunnel.</summary>
++    public List<string>? BypassSubnets { get; set; }
++}
++
+ [Serializable]
+ public class SpeedTestItem
+ {
+diff --git a/v2rayN/ServiceLib/ViewModels/MainWindowViewModel.cs b/v2rayN/ServiceLib/ViewModels/MainWindowViewModel.cs
+index d13ee64..f486a58 100644
+--- a/v2rayN/ServiceLib/ViewModels/MainWindowViewModel.cs
++++ b/v2rayN/ServiceLib/ViewModels/MainWindowViewModel.cs
+@@ -335,6 +335,8 @@ public partial class MainWindowViewModel : MyReactiveObject
+         await ConfigHandler.InitBuiltinFullConfigTemplate(_config);
+         await ProfileExManager.Instance.Init();
+         await CoreManager.Instance.Init(_config, UpdateHandler);
++        // If a previous run left the kill switch armed (e.g. a crash), unlock now.
++        await KillSwitchManager.Instance.RecoverIfNeededAsync();
+         await CertPemManager.Instance.Init(_config);
+         TaskManager.Instance.RegUpdateTask(_config, UpdateTaskHandler);
+ 
+-- 
+2.43.0
+

@@ -1,80 +1,140 @@
-# v2rayN
+# v2rayN — Secure Connect
 
-### A GUI client for Windows, Linux and macOS. Support [Xray](https://github.com/XTLS/Xray-core) and [sing-box](https://github.com/SagerNet/sing-box) and [others](https://github.com/2dust/v2rayN/wiki/List-of-supported-cores)
+Форк [v2rayN](https://github.com/2dust/v2rayN) (ветка v7, Avalonia) для **Windows** с
+функционалом туннелирования и контроля в духе
+[WireSock Secure Connect](https://www.wiresock.net/): системный **kill switch**
+(сетевой замок) и **split tunneling** (раздельное туннелирование) по приложениям и
+подсетям.
 
-[![CodeFactor](https://www.codefactor.io/repository/github/2dust/v2rayn/badge)](https://www.codefactor.io/repository/github/2dust/v2rayn)
-[![Release](https://img.shields.io/github/v/release/2dust/v2rayN?logo=github&label=Release)](https://github.com/2dust/v2rayN/releases)
-[![Downloads](https://img.shields.io/github/downloads/2dust/v2rayN/latest/total?logo=github&label=Downloads)](https://github.com/2dust/v2rayN/releases)
-[![Telegram](https://img.shields.io/badge/Telegram-Chat-26A5E4?logo=telegram)](https://t.me/v2rayn)
- 
-[![Windows](https://img.shields.io/badge/Windows-supported-0078D6?logo=windows)](https://github.com/2dust/v2rayN) 
-[![Linux](https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=000)](https://github.com/2dust/v2rayN) 
-[![macOS](https://img.shields.io/badge/macOS-supported-000000?logo=apple)](https://github.com/2dust/v2rayN) 
-[![GPG Signed](https://img.shields.io/badge/GPG-signed-4B32C3?logo=gnuprivacyguard)](https://github.com/2dust/v2rayN)
+Цель — когда профиль работает в режиме TUN, весь трафик ПК идёт через туннель и IP
+меняется целиком, а при обрыве ядра или в момент подключения/отключения ни один пакет
+не может «просочиться» мимо туннеля.
 
-
----
-
-## Download / 下载
-
-Download the latest release here:
-
-在这里下载最新版本：
-
-[https://github.com/2dust/v2rayN/releases](https://github.com/2dust/v2rayN/releases)
-
-
-> [!TIP]
-> v2rayN is the desktop version. For the mobile version, please visit the v2rayNG \
-> v2rayN 是电脑版，手机版请访问 v2rayNG
->
-> https://github.com/2dust/v2rayNG
+> Основано на v2rayN (© 2dust), лицензия **GPL-3.0**. Это неофициальный форк для личного
+> использования.
 
 ---
 
-## Documentation / 使用文档
+## Возможности поверх v2rayN
 
-Read the Wiki for usage guides and configuration details.
+- **Kill switch (сетевой замок).** При подключённом TUN-профиле Windows Firewall
+  переводится в режим «запрет всего исходящего по умолчанию». Наружу на физический
+  интерфейс ходит только процесс ядра (`sing-box.exe`), loopback и DHCP — всё остальное
+  (включая IPv6 и прямой DNS) отбрасывается. Утечки невозможны ни при падении ядра, ни
+  в переходных состояниях.
+- **Split tunneling.** Список приложений (по имени exe или полному пути) и подсетей
+  (CIDR), которые ходят в интернет **напрямую**, мимо туннеля. Такие приложения ещё и
+  пропускаются через замок, поэтому остаются рабочими, пока весь остальной трафик
+  туннелируется.
+- **Отказоустойчивость.** Замок идемпотентен при переподключении (нет «окна утечки»),
+  снимается при выходе из приложения и автоматически восстанавливает сеть при старте,
+  если прошлый запуск завершился аварийно с активным замком.
+- **Настройки в приложении.** Отдельная вкладка **Kill Switch** в окне настроек:
+  включение, «Allow LAN», списки bypass-приложений и подсетей.
 
-请阅读 Wiki 获取使用说明和配置教程。
-
-[https://github.com/2dust/v2rayN/wiki](https://github.com/2dust/v2rayN/wiki)
+Весь остальной функционал v2rayN (подписки, протоколы VLESS/VMess/Trojan/Shadowsocks,
+маршрутизация, профили) сохранён без изменений.
 
 ---
 
-## Supported Platforms / 支持平台
+## Интерфейс
 
-| Platform / 平台 | x64 | x86 | arm64 | riscv64 | loong64 |
-| --- | --- | --- | --- | --- | --- |
-| Windows | ✅ | ✅ | ✅ | - | - |
-| Linux | ✅ | - | ✅ | ✅ | ✅ |
-| macOS | ✅ | - | ✅ | - | - |
+Переработанный главный экран в стиле Secure Connect: крупная кнопка подключения,
+состояние туннеля, текущий IP, индикатор замка и список профилей.
 
-Minimum OS requirements: [Release files introduction](https://github.com/2dust/v2rayN/wiki/Release-files-introduction) / 最低系统要求：[发布文件介绍](https://github.com/2dust/v2rayN/wiki/Release-files-introduction)
+> ⚠️ Изображения ниже — **прототип** планируемого интерфейса (концепт для утверждения
+> вида перед переносом в Avalonia). Бэкенд kill switch и split tunneling и вкладка
+> настроек уже реализованы в коде; рескин главного окна — в работе.
+
+### Отключено
+
+Стартовое состояние: выбран профиль, показан реальный IP, kill switch выключен.
+
+![Главный экран, отключено](docs/screenshots/disconnected.png)
+
+### Подключено · сетевой замок активен
+
+TUN поднят, IP сменился на серверный, ядро `sing-box` работает, замок удерживает весь
+трафик внутри туннеля (чип «Network locked»).
+
+![Подключено, сетевой замок активен](docs/screenshots/connected-locked.png)
+
+### Настройки — Kill Switch и Split Tunneling
+
+Включение замка и «Allow LAN», списки приложений и подсетей, которые ходят мимо
+туннеля, а также тумблер режима TUN (на весь ПК).
+
+![Настройки: kill switch и split tunneling](docs/screenshots/settings.png)
 
 ---
 
-## GPG Verification / GPG 签名校验
+## Как работает kill switch
 
-Release files are signed with GPG to verify authenticity and integrity, helping prevent mirror, ISP, or CDN hijacking.
+Модель «запрет по умолчанию + белый список» (как у WireGuard):
 
-发布文件已使用 GPG 签名，可用于校验文件真实性与完整性，预防镜像站、运营商或 CDN 劫持。
+1. Текущий `DefaultOutboundAction` каждого профиля фаервола сохраняется в файл
+   состояния (для восстановления после сбоя).
+2. Добавляется группа Outbound/Allow-правил `v2rayN-KillSwitch`:
+   - процесс ядра (`sing-box.exe`) — единственный прямой выход в сеть;
+   - loopback (`127.0.0.1` / `::1`) — локальные прокси-порты и связь UI↔ядро;
+   - DHCP (UDP 67/68) — чтобы адаптер сохранял аренду;
+   - опционально: LAN, bypass-приложения и bypass-подсети.
+3. `DefaultOutboundAction` переключается в `Block` на всех профилях.
 
-### Fingerprint / 公钥指纹
+Требуются права администратора — которые режим TUN и так требует.
 
-```text
-7694 5E9F 3E9A 168F 8070 F195 805D 661C
-134D FAF6 8903 C199 463C 31E5 AE90 3AE0
+**Аварийная ручная разблокировка** (PowerShell от админа), если приложение было
+закрыто некорректно:
+
+```powershell
+Set-NetFirewallProfile -All -DefaultOutboundAction Allow
+Remove-NetFirewallRule -Group 'v2rayN-KillSwitch' -ErrorAction SilentlyContinue
 ```
 
 ---
 
-## Community / 社区
+## Сборка
 
-Telegram Group / Telegram 群组：
+Требуется **.NET 10 SDK** и Windows. Из каталога `v2rayN/`:
 
-[https://t.me/v2rayN](https://t.me/v2rayN)
+```powershell
+dotnet build v2rayN.sln -c Release
+```
 
-Telegram Channel / Telegram 频道：
+Запускать приложение **от имени администратора** (нужно для TUN и фаервола).
 
-[https://t.me/github_2dust](https://t.me/github_2dust)
+---
+
+## Использование
+
+1. Импортируйте профиль (подписка или из буфера обмена), как в обычном v2rayN.
+2. Включите режим **TUN** (настройки → вкладка Tun Mode).
+3. В настройках откройте вкладку **Kill Switch** и включите замок; при необходимости
+   добавьте приложения/подсети в списки bypass.
+4. Подключитесь. Проверка, что замок активен:
+   ```powershell
+   Get-NetFirewallProfile -All | Format-Table Name, DefaultOutboundAction   # все Block
+   Get-NetFirewallRule -Group 'v2rayN-KillSwitch'                           # правила на месте
+   ```
+
+---
+
+## Статус
+
+- [x] Kill switch (Windows Firewall) + интеграция в жизненный цикл ядра
+- [x] Split tunneling (маршрутизация sing-box + правила фаервола)
+- [x] Вкладка настроек Kill Switch (Avalonia)
+- [ ] Рескин главного экрана Secure Connect (прототип готов, перенос в Avalonia)
+- [ ] Команда явного Disconnect в UI
+- [ ] Нативный WFP-бэкенд замка (упрочнение против чужих Allow-правил)
+
+---
+
+## Лицензия и благодарности
+
+Проект наследует лицензию **GPL-3.0** от оригинального
+[v2rayN](https://github.com/2dust/v2rayN) (© 2dust). Ядра —
+[sing-box](https://github.com/SagerNet/sing-box) и [Xray-core](https://github.com/XTLS/Xray-core).
+
+Приложение предназначено для личного использования; ответственность за соблюдение
+применимого законодательства несёт пользователь.
