@@ -100,6 +100,7 @@ public class CoreManager
         if (_processService != null)
         {
             await UpdateFunc(true, $"{node.GetSummary()}");
+            await ArmKillSwitchIfNeeded(mainContext, preContext);
         }
     }
 
@@ -214,6 +215,72 @@ public class CoreManager
     private async Task UpdateFunc(bool notify, string msg)
     {
         await _updateFunc?.Invoke(notify, msg);
+    }
+
+    /// <summary>
+    /// Arms the kill switch after a successful TUN connect, when enabled in config.
+    /// Idempotent across reloads (re-arming refreshes rules), so a reconnect does
+    /// not open a leak window. Disarming is driven by the UI's Disconnect command
+    /// and by <see cref="AppManager.AppExitAsync"/>, never by the internal
+    /// <see cref="CoreStop"/> that a reload performs — so a mid-session core
+    /// restart stays fail-closed (no leak) until the tunnel is back up.
+    /// </summary>
+    private async Task ArmKillSwitchIfNeeded(CoreConfigContext? mainContext, CoreConfigContext? preContext)
+    {
+        try
+        {
+            var isTun = mainContext?.IsTunEnabled == true || preContext?.IsTunEnabled == true;
+            if (!isTun || _config.KillSwitchItem?.EnableKillSwitch != true)
+            {
+                return;
+            }
+
+            // Main core dials the VPN server over the physical NIC → must be allowed.
+            var coreExe = GetCoreExePath(mainContext);
+            if (coreExe.IsNullOrEmpty())
+            {
+                await UpdateFunc(false, "Kill switch: core executable not found, not armed");
+                return;
+            }
+
+            var ks = _config.KillSwitchItem;
+            var allowedPrograms = new List<string>(ks.BypassApps ?? new List<string>());
+
+            // When a separate sing-box TUN front runs (pre-socks model), allow it too.
+            // It normally only talks loopback, but allowing it is harmless and safer.
+            var preExe = GetCoreExePath(preContext);
+            if (!preExe.IsNullOrEmpty() && !string.Equals(preExe, coreExe, StringComparison.OrdinalIgnoreCase))
+            {
+                allowedPrograms.Add(preExe);
+            }
+
+            var ctx = new KillSwitchContext
+            {
+                CoreExePath = coreExe,
+                TunInterfaceName = "singbox_tun",
+                AllowLan = ks.AllowLan,
+                AllowedPrograms = allowedPrograms,
+                AllowedSubnets = ks.BypassSubnets ?? new List<string>(),
+            };
+
+            var ok = await KillSwitchManager.Instance.ArmAsync(ctx);
+            await UpdateFunc(false, ok ? "Kill switch armed" : "Kill switch failed to arm");
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(_tag, ex);
+        }
+    }
+
+    private static string GetCoreExePath(CoreConfigContext? context)
+    {
+        if (context?.Node is null)
+        {
+            return string.Empty;
+        }
+        var coreType = AppManager.Instance.GetCoreType(context.Node, context.Node.ConfigType);
+        var coreInfo = CoreInfoManager.Instance.GetCoreInfo(coreType);
+        return CoreInfoManager.Instance.GetCoreExecFile(coreInfo, out _);
     }
 
     private static async Task WaitForProxyPort(CoreConfigContext? preContext)

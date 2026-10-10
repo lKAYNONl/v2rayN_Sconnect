@@ -335,6 +335,8 @@ public partial class MainWindowViewModel : MyReactiveObject
         await ConfigHandler.InitBuiltinFullConfigTemplate(_config);
         await ProfileExManager.Instance.Init();
         await CoreManager.Instance.Init(_config, UpdateHandler);
+        // If a previous run left the kill switch armed (e.g. a crash), unlock now.
+        await KillSwitchManager.Instance.RecoverIfNeededAsync();
         await CertPemManager.Instance.Init(_config);
         TaskManager.Instance.RegUpdateTask(_config, UpdateTaskHandler);
 

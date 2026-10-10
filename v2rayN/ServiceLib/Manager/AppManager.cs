@@ -133,6 +133,9 @@ public sealed class AppManager
             await ProfileExManager.Instance.SaveTo();
             await StatisticsManager.Instance.SaveTo();
             await CoreManager.Instance.CoreStop();
+            // Restore networking on quit: the core is stopping, so the lock must
+            // come off or the user would be left offline with no app to fix it.
+            await KillSwitchManager.Instance.DisarmAsync();
             StatisticsManager.Instance.Close();
 
             Logging.SaveLog("AppExitAsync End");

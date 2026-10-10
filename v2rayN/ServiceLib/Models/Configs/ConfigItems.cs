@@ -154,6 +154,26 @@ public class TunModeItem
 }
 
 [Serializable]
+public class KillSwitchItem
+{
+    /// <summary>
+    /// When on (and the active profile uses TUN), the Windows Firewall is put
+    /// into default-deny outbound while connected, so nothing can leave the
+    /// machine outside the tunnel — even if the core drops.
+    /// </summary>
+    public bool EnableKillSwitch { get; set; }
+
+    /// <summary>Keep the local network (LAN) reachable while the lock is armed.</summary>
+    public bool AllowLan { get; set; } = true;
+
+    /// <summary>Split tunneling: full paths of programs allowed to bypass the tunnel.</summary>
+    public List<string>? BypassApps { get; set; }
+
+    /// <summary>Split tunneling: remote subnets (CIDR) allowed to bypass the tunnel.</summary>
+    public List<string>? BypassSubnets { get; set; }
+}
+
+[Serializable]
 public class SpeedTestItem
 {
     public int SpeedTestTimeout { get; set; }

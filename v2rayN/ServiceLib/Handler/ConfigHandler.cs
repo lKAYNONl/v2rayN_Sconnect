@@ -94,6 +94,7 @@ public static class ConfigHandler
             IcmpRouting = Global.TunIcmpRoutingPolicies.First(),
             EnableLegacyProtect = true,
         };
+        config.KillSwitchItem ??= new();
         config.GuiItem ??= new();
         if (!Global.RootCertProviders.Contains(config.GuiItem.RootCertProvider))
         {
