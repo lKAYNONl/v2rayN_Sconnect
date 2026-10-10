@@ -1273,6 +1273,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     {
         try
         {
+            // The window may be hidden in the tray (or not shown yet at startup):
+            // a dialog needs a visible owner.
+            ShowHideWindow(true);
             if (await UI.ShowYesNo(string.Format(ResUI.ScCoreMissingAsk, cores)) == ButtonResult.Yes)
             {
                 MenuCheckUpdate_Click(this, new RoutedEventArgs());

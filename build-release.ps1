@@ -19,13 +19,20 @@
     .\build-release.ps1                              # all six targets
     .\build-release.ps1 -Targets win-x64             # one target
     .\build-release.ps1 -Targets win-x64,linux-x64 -NoCores
+    .\build-release.ps1 -Targets win-x64 -Suffix _test -NoZip   # dist\v2rayN-windows-64_test
 #>
 param(
     [ValidateSet('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64')]
     [string[]]$Targets = @('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64'),
 
     # Skip downloading the cores (smaller zips; users add cores themselves).
-    [switch]$NoCores
+    [switch]$NoCores,
+
+    # Appended to the output folder/zip name, e.g. "_test" -> dist\v2rayN-windows-64_test.
+    [string]$Suffix = '',
+
+    # Only build the folder, no zip (handy for local test builds).
+    [switch]$NoZip
 )
 
 $ErrorActionPreference = 'Stop'
@@ -79,9 +86,10 @@ function Get-CoresBin([string]$pkg) {
 }
 
 foreach ($rid in $Targets) {
-    $pkg = "v2rayN-$($names[$rid])"
-    $out = Join-Path $dist $pkg
-    Write-Host "==> $rid -> $pkg" -ForegroundColor Cyan
+    $pkg = "v2rayN-$($names[$rid])"   # core bundle name
+    $name = "$pkg$Suffix"              # output folder / zip name
+    $out = Join-Path $dist $name
+    Write-Host "==> $rid -> $name" -ForegroundColor Cyan
     if (Test-Path $out) { Remove-Item $out -Recurse -Force }
 
     dotnet publish (Join-Path $src 'v2rayN.Desktop\v2rayN.Desktop.csproj') `
@@ -98,9 +106,14 @@ foreach ($rid in $Targets) {
         Copy-Item -Path (Get-CoresBin $pkg) -Destination $out -Recurse -Force
     }
 
+    if ($NoZip) {
+        Write-Host "    $out"
+        continue
+    }
+
     # .NET zip writes "/" separators, so Linux/macOS unzip the folders correctly
     # (Compress-Archive in Windows PowerShell 5.1 does not).
-    $zipPath = Join-Path $dist "$pkg.zip"
+    $zipPath = Join-Path $dist "$name.zip"
     if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
     [System.IO.Compression.ZipFile]::CreateFromDirectory(
         $out, $zipPath, [System.IO.Compression.CompressionLevel]::Optimal, $true)

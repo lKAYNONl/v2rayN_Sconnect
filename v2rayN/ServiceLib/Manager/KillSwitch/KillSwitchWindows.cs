@@ -140,23 +140,33 @@ public class KillSwitchWindows : IKillSwitchService
     private static string BuildArmScript(KillSwitchContext ctx)
     {
         var sb = new StringBuilder();
+        // UTF-8 output, so localized error messages reach the log readable.
+        sb.AppendLine("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8");
         sb.AppendLine("$ErrorActionPreference='Stop'");
+        sb.AppendLine("$step = 'init'");
         sb.AppendLine("try {");
         // Clear any stale rules from a previous run first (idempotent re-arm).
         sb.AppendLine($"  Remove-NetFirewallRule -Group {PsQuote(RuleGroup)} -ErrorAction SilentlyContinue");
 
         // Core process — the only program allowed direct egress.
+        sb.AppendLine("  $step = 'Core'");
         sb.AppendLine(NewRule("Core", $"-Direction Outbound -Action Allow -Program {PsQuote(ctx.CoreExePath)}"));
 
-        // Loopback — local proxy ports and UI<->core communication.
-        sb.AppendLine(NewRule("Loopback", "-Direction Outbound -Action Allow -RemoteAddress 127.0.0.1,::1"));
+        // Loopback — local proxy ports and UI<->core communication. Windows does not
+        // filter loopback traffic, so this rule is only a safeguard and must never
+        // fail the whole lock: Windows rejects loopback addresses in some rules
+        // (e.g. "::1": "unspecified, multicast, reserved or loopback IPv6 address").
+        sb.AppendLine("  $step = 'Loopback'");
+        sb.AppendLine($"  try {{ {NewRule("Loopback", "-Direction Outbound -Action Allow -RemoteAddress 127.0.0.1").Trim()} }} catch {{ }}");
 
         // DHCP — let the physical adapter keep/renew its lease under default-deny.
+        sb.AppendLine("  $step = 'DHCP'");
         sb.AppendLine(NewRule("DHCP", "-Direction Outbound -Action Allow -Protocol UDP -RemotePort 67,68"));
 
         // Optional: keep the local network reachable.
         if (ctx.AllowLan)
         {
+            sb.AppendLine("  $step = 'LAN'");
             sb.AppendLine(NewRule("LAN", "-Direction Outbound -Action Allow -RemoteAddress LocalSubnet"));
         }
 
@@ -166,6 +176,7 @@ public class KillSwitchWindows : IKillSwitchService
             var subnets = string.Join(",", ctx.AllowedSubnets.Select(s => s.Trim()).Where(s => !s.IsNullOrEmpty()));
             if (!subnets.IsNullOrEmpty())
             {
+                sb.AppendLine("  $step = 'BypassNets'");
                 sb.AppendLine(NewRule("BypassNets", $"-Direction Outbound -Action Allow -RemoteAddress {subnets}"));
             }
         }
@@ -176,6 +187,7 @@ public class KillSwitchWindows : IKillSwitchService
         var programs = ctx.AllowedPrograms.Where(p => !p.IsNullOrEmpty()).Select(PsQuote).ToList();
         if (programs.Count > 0)
         {
+            sb.AppendLine("  $step = 'BypassApps'");
             sb.AppendLine("  $fw = New-Object -ComObject HNetCfg.FwPolicy2");
             sb.AppendLine("  $i = 0");
             sb.AppendLine($"  foreach ($p in @({string.Join(",", programs)})) {{");
@@ -190,9 +202,10 @@ public class KillSwitchWindows : IKillSwitchService
         }
 
         // Finally: default-deny all other outbound on every profile.
+        sb.AppendLine("  $step = 'DefaultBlock'");
         sb.AppendLine("  Set-NetFirewallProfile -All -DefaultOutboundAction Block");
         sb.AppendLine("  'KS_OK'");
-        sb.AppendLine("} catch { 'KS_ERR:' + $_.Exception.Message }");
+        sb.AppendLine("} catch { 'KS_ERR:[' + $step + '] ' + $_.Exception.Message }");
         return sb.ToString();
     }
 
