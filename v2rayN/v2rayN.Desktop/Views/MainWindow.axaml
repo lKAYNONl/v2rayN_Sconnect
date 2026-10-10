@@ -14,7 +14,6 @@
     MinWidth="600"
     x:DataType="vms:MainWindowViewModel"
     Design.DataContext="{x:Static dd:DesignData.MainWindow}"
-    ExtendClientAreaChromeHints="PreferSystemChrome"
     ExtendClientAreaToDecorationsHint="True"
     Icon="/Assets/NotifyIcon1.ico"
     ShowInTaskbar="True"
