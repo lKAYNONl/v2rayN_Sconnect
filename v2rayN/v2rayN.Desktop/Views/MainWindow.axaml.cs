@@ -267,7 +267,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.OneWayBind(ViewModel, vm => vm.RoutesViewModel.Rules, v => v.lstRoutes.ItemsSource).DisposeWith(disposables);
             this.WhenAnyValue(v => v.ViewModel.RoutesViewModel.RuleCount).Subscribe(_ => UpdateRoutesSummary()).DisposeWith(disposables);
             this.WhenAnyValue(v => v.ViewModel.RoutesViewModel.RoutingName).Subscribe(_ => UpdateRoutesSummary()).DisposeWith(disposables);
-            this.WhenAnyValue(v => v.ViewModel.StatusBarViewModel.SelectedRouting).Subscribe(_ =>
+            this.WhenAnyValue(v => v.ViewModel.StatusBarViewModel.SelectedRouting).Subscribe(routing =>
             {
                 // Another routing set chosen in the Routes page: show its rules.
                 if (routesPanel.IsVisible)
