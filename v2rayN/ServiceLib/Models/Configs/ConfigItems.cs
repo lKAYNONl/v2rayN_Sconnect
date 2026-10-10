@@ -166,10 +166,19 @@ public class KillSwitchItem
     /// <summary>Keep the local network (LAN) reachable while the lock is armed.</summary>
     public bool AllowLan { get; set; } = true;
 
-    /// <summary>Split tunneling: full paths of programs allowed to bypass the tunnel.</summary>
+    /// <summary>
+    /// Split tunneling mode. On (default) - whitelist: only the listed programs
+    /// and subnets use the tunnel, everything else goes direct (empty lists = the
+    /// whole PC is tunneled). Off - bypass: the listed programs and subnets go
+    /// direct and are permitted through the kill switch, everything else is
+    /// tunneled.
+    /// </summary>
+    public bool SplitTunnelWhitelist { get; set; } = true;
+
+    /// <summary>Split tunneling programs: exe names, full paths or folders ("C:\Games\").</summary>
     public List<string>? BypassApps { get; set; }
 
-    /// <summary>Split tunneling: remote subnets (CIDR) allowed to bypass the tunnel.</summary>
+    /// <summary>Split tunneling destination subnets (CIDR).</summary>
     public List<string>? BypassSubnets { get; set; }
 
     /// <summary>

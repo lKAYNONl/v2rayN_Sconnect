@@ -82,14 +82,13 @@ public partial class CoreConfigSingboxService
                     });
                 }
 
-                // Split tunneling: apps / subnets the user chose to keep OUTSIDE the
-                // tunnel. Placed here - after the TUN anti-loop reject and the core's
-                // own direct rules, but before the generic DNS hijack and the final
-                // proxy - so a bypassed process also resolves DNS directly (no leak of
-                // its queries into the tunnel) and its traffic egresses on the physical
-                // NIC. The kill switch adds matching firewall Allow rules for the same
-                // lists, so this direct traffic is not blocked while the lock is armed.
-                GenRoutingSplitTunnel();
+                // Split tunneling, bypass mode: apps / subnets the user chose to keep
+                // OUTSIDE the tunnel. Placed here - after the TUN anti-loop reject and
+                // the core's own direct rules, but before the generic DNS hijack and
+                // the final proxy - so a bypassed process also resolves DNS directly
+                // and its traffic egresses on the physical NIC. The kill switch adds
+                // matching firewall Allow rules for the same lists.
+                GenRoutingSplitTunnelBypass();
 
                 // ICMP Routing
                 var icmpRouting = _config.TunModeItem.IcmpRouting ?? "";
@@ -164,6 +163,13 @@ public partial class CoreConfigSingboxService
                         tls_record_fragment = true,
                     });
                 }
+            }
+
+            // Split tunneling, whitelist mode: everything that enters the TUN and is
+            // not listed goes direct (after the DNS hijack above).
+            if (context.IsTunEnabled)
+            {
+                GenRoutingSplitTunnelWhitelist();
             }
 
             var hostsDomains = new List<string>();
@@ -308,34 +314,37 @@ public partial class CoreConfigSingboxService
     }
 
     /// <summary>
-    /// Adds "direct" route rules for the split-tunnel bypass lists
-    /// (<see cref="KillSwitchItem.BypassApps"/> / <see cref="KillSwitchItem.BypassSubnets"/>),
-    /// so the listed programs and destination subnets leave the tunnel and use the
-    /// physical connection. Mode: tunnel everything EXCEPT these (the case that is
-    /// consistent with the kill switch). Only meaningful in TUN mode.
+    /// Split tunneling matchers from <see cref="KillSwitchItem.BypassApps"/> /
+    /// <see cref="KillSwitchItem.BypassSubnets"/>, one sing-box rule per field:
+    /// sing-box ANDs different fields within one rule, so exe names
+    /// (process_name), full paths (process_path), whole folders
+    /// (process_path_regex) and subnets (ip_cidr) must be separate rules.
     /// </summary>
-    private void GenRoutingSplitTunnel()
+    private List<Rule4Sbox> BuildSplitTunnelMatchers()
     {
         var ks = _config.KillSwitchItem;
+        var matchers = new List<Rule4Sbox>();
         if (ks is null)
         {
-            return;
+            return matchers;
         }
 
-        // Programs: match by full path (process_path) when an entry looks like a
-        // path, otherwise by exe name (process_name). sing-box ANDs different
-        // fields within one rule, so names and paths go in SEPARATE rules.
         var procNames = new List<string>();
         var procPaths = new List<string>();
+        var procFolders = new List<string>();
         foreach (var app in ks.BypassApps ?? [])
         {
-            var entry = app?.Trim();
+            var entry = app?.Trim().Trim('"');
             if (entry.IsNullOrEmpty())
             {
                 continue;
             }
 
-            if (entry.Contains('/') || entry.Contains('\\'))
+            if (ProcessPathUtils.IsFolderEntry(entry))
+            {
+                procFolders.Add(ProcessPathUtils.FolderToPathRegex(entry));
+            }
+            else if (entry.Contains('/') || entry.Contains('\\'))
             {
                 procPaths.Add(Utils.IsWindows() ? entry.Replace('/', '\\') : entry);
             }
@@ -346,42 +355,84 @@ public partial class CoreConfigSingboxService
             }
         }
 
+        var subnets = (ks.BypassSubnets ?? [])
+            .Select(t => t?.Trim())
+            .Where(t => !t.IsNullOrEmpty())
+            .Select(t => t!)
+            .ToList();
+
         if (procNames.Count > 0)
         {
-            _coreConfig.route.rules.Add(new()
-            {
-                outbound = Global.DirectTag,
-                process_name = procNames,
-            });
+            matchers.Add(new() { process_name = procNames });
         }
         if (procPaths.Count > 0)
         {
-            _coreConfig.route.rules.Add(new()
-            {
-                outbound = Global.DirectTag,
-                process_path = procPaths,
-            });
+            matchers.Add(new() { process_path = procPaths });
         }
-
-        // Destination subnets (CIDR) routed direct.
-        var subnets = new List<string>();
-        foreach (var net in ks.BypassSubnets ?? [])
+        if (procFolders.Count > 0)
         {
-            var entry = net?.Trim();
-            if (!entry.IsNullOrEmpty())
-            {
-                subnets.Add(entry);
-            }
+            matchers.Add(new() { process_path_regex = procFolders });
         }
         if (subnets.Count > 0)
         {
-            _coreConfig.route.rules.Add(new()
-            {
-                outbound = Global.DirectTag,
-                ip_cidr = subnets,
-            });
+            matchers.Add(new() { ip_cidr = subnets });
+        }
+        return matchers;
+    }
+
+    /// <summary>
+    /// Bypass mode (<see cref="KillSwitchItem.SplitTunnelWhitelist"/> off): the
+    /// listed programs and subnets leave the tunnel and use the physical
+    /// connection. Placed before the DNS hijack, so a bypassed process also
+    /// resolves directly; the kill switch permits the same lists.
+    /// </summary>
+    private void GenRoutingSplitTunnelBypass()
+    {
+        if (_config.KillSwitchItem is not { SplitTunnelWhitelist: false })
+        {
+            return;
+        }
+        foreach (var matcher in BuildSplitTunnelMatchers())
+        {
+            matcher.outbound = Global.DirectTag;
+            _coreConfig.route.rules.Add(matcher);
         }
     }
+
+    /// <summary>
+    /// Whitelist mode (<see cref="KillSwitchItem.SplitTunnelWhitelist"/> on,
+    /// the default): only the listed programs and subnets use the tunnel - every
+    /// other connection that enters the TUN goes direct. Listed traffic then
+    /// follows the normal routing rules. Placed after the DNS hijack so DNS keeps
+    /// going through sing-box. Empty lists = no split: the whole PC is tunneled.
+    /// </summary>
+    private void GenRoutingSplitTunnelWhitelist()
+    {
+        if (_config.KillSwitchItem is not { SplitTunnelWhitelist: true })
+        {
+            return;
+        }
+        var matchers = BuildSplitTunnelMatchers();
+        if (matchers.Count == 0)
+        {
+            return;
+        }
+
+        _coreConfig.route.rules.Add(new()
+        {
+            type = "logical",
+            mode = "and",
+            rules =
+            [
+                new() { inbound = [TunInboundTag] },
+                new() { type = "logical", mode = "or", rules = matchers, invert = true },
+            ],
+            outbound = Global.DirectTag,
+        });
+    }
+
+    /// <summary>Tag of the TUN inbound (Sample/tun_singbox_inbound).</summary>
+    private const string TunInboundTag = "tun";
 
     private List<string> BuildRoutingDirectExe()
     {
@@ -544,12 +595,21 @@ public partial class CoreConfigSingboxService
                 ruleProcName.process_name ??= [];
                 var ruleProcPath = JsonUtils.DeepCopy(rule3);
                 ruleProcPath.process_path ??= [];
+                var ruleProcFolder = JsonUtils.DeepCopy(rule3);
+                ruleProcFolder.process_path_regex ??= [];
                 foreach (var process in item.Process)
                 {
                     // sing-box doesn't support this, fall back to process name match
                     if (process is "self/" or "xray/")
                     {
                         ruleProcName.process_name.Add(Utils.GetExeName("sing-box"));
+                        continue;
+                    }
+
+                    // A folder: every program inside it (Secure Connect app picker).
+                    if (ProcessPathUtils.IsFolderEntry(process))
+                    {
+                        ruleProcFolder.process_path_regex.Add(ProcessPathUtils.FolderToPathRegex(process));
                         continue;
                     }
 
@@ -579,6 +639,12 @@ public partial class CoreConfigSingboxService
                 if (ruleProcPath.process_path.Count > 0)
                 {
                     rules.Add(ruleProcPath);
+                    hasDomainIp = true;
+                }
+
+                if (ruleProcFolder.process_path_regex.Count > 0)
+                {
+                    rules.Add(ruleProcFolder);
                     hasDomainIp = true;
                 }
             }

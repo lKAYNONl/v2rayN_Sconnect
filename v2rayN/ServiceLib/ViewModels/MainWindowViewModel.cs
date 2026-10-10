@@ -17,6 +17,9 @@ public partial class MainWindowViewModel : MyReactiveObject
     public BackupAndRestoreViewModel BackupAndRestoreViewModel { get; } = new();
     public StatusBarViewModel StatusBarViewModel { get; } = StatusBarViewModel.Instance;
 
+    // Secure Connect "Routes" page; changes are applied to a running session.
+    public RoutesViewModel RoutesViewModel { get; }
+
     #region Menu
 
     //servers
@@ -133,6 +136,13 @@ public partial class MainWindowViewModel : MyReactiveObject
         PublicIp = string.Empty;
         CoreName = "sing-box";
         KillSwitchEnabled = _config.KillSwitchItem?.EnableKillSwitch == true;
+        RoutesViewModel = new RoutesViewModel(async () =>
+        {
+            if (IsRunning)
+            {
+                await Reload();
+            }
+        });
         MainGirdOrientation = _config.UiItem.MainGirdOrientation;
 
         #region WhenAnyValue && ReactiveCommand
@@ -892,11 +902,12 @@ public partial class MainWindowViewModel : MyReactiveObject
     /// Saves the in-window Secure Connect settings (kill switch, LAN access,
     /// split tunneling) and re-applies them to a running session.
     /// </summary>
-    public async Task SaveSecureConnectSettings(bool killSwitch, bool allowLan, List<string> bypassApps, List<string> bypassSubnets)
+    public async Task SaveSecureConnectSettings(bool killSwitch, bool allowLan, bool splitWhitelist, List<string> bypassApps, List<string> bypassSubnets)
     {
         var ks = _config.KillSwitchItem ??= new();
         var changed = ks.EnableKillSwitch != killSwitch
                       || ks.AllowLan != allowLan
+                      || ks.SplitTunnelWhitelist != splitWhitelist
                       || !(ks.BypassApps ?? []).SequenceEqual(bypassApps)
                       || !(ks.BypassSubnets ?? []).SequenceEqual(bypassSubnets);
         if (!changed)
@@ -906,6 +917,7 @@ public partial class MainWindowViewModel : MyReactiveObject
 
         ks.EnableKillSwitch = killSwitch;
         ks.AllowLan = allowLan;
+        ks.SplitTunnelWhitelist = splitWhitelist;
         ks.BypassApps = bypassApps;
         ks.BypassSubnets = bypassSubnets;
         await ConfigHandler.SaveConfig(_config);

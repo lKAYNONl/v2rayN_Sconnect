@@ -251,7 +251,13 @@ public class CoreManager
             }
 
             var ks = _config.KillSwitchItem;
-            var allowedPrograms = new List<string>(ks.BypassApps ?? new List<string>());
+            // Split tunneling in bypass mode: the listed programs/subnets go direct,
+            // so they are permitted too (firewall rules need concrete paths: expand
+            // folders and exe names). In whitelist mode nothing is exempt - the
+            // listed apps must stay in the tunnel, and all other traffic still
+            // leaves through the core, which is already allowed.
+            var bypassMode = !ks.SplitTunnelWhitelist;
+            var allowedPrograms = bypassMode ? ProcessPathUtils.ExpandForFirewall(ks.BypassApps) : new List<string>();
 
             // When a separate sing-box TUN front runs (pre-socks model), allow it too.
             // It normally only talks loopback, but allowing it is harmless and safer.
@@ -267,7 +273,7 @@ public class CoreManager
                 TunInterfaceName = "singbox_tun",
                 AllowLan = ks.AllowLan,
                 AllowedPrograms = allowedPrograms,
-                AllowedSubnets = ks.BypassSubnets ?? new List<string>(),
+                AllowedSubnets = bypassMode ? ks.BypassSubnets ?? new List<string>() : new List<string>(),
             };
 
             var ok = await KillSwitchManager.Instance.ArmAsync(ctx);
