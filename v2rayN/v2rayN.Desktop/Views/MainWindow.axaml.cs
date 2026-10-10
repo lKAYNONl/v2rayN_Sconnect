@@ -29,6 +29,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         menuBackupAndRestore.Click += MenuBackupAndRestore_Click;
         menuClose.Click += MenuClose_Click;
 
+        lstCards.DoubleTapped += LstCards_DoubleTapped;
+        lstCards.SelectionChanged += LstCards_SelectionChanged;
+
         conTheme.Content ??= new ThemeSettingView();
 
         this.WhenActivated(disposables =>
@@ -83,7 +86,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel, v => v.contentStatusBarView.Content).DisposeWith(disposables);
 
             // Secure Connect dashboard
-            this.OneWayBind(ViewModel, vm => vm.ProfilesViewModel, v => v.tabProfiles.Content).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.ProfilesViewModel.ProfileItems, v => v.lstCards.ItemsSource).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.ProfilesViewModel.SelectedProfile, v => v.lstCards.SelectedItem).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.AddServerViaClipboardCmd, v => v.btnImport).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.EditServerCmd, v => v.btnEdit).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.RemoveServerCmd, v => v.btnDelete).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.RealPingServerCmd, v => v.btnPing).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.ReloadCmd, v => v.btnConnect).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.StopCoreCmd, v => v.btnDisconnect).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.IsRunning, v => v.btnDisconnect.IsVisible).DisposeWith(disposables);
@@ -93,6 +101,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.OneWayBind(ViewModel, vm => vm.KillSwitchEnabled, v => v.txtKill.Text, b => b ? "Kill switch on" : "Kill switch off").DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.RunningServerDisplay, v => v.txtServerName.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.SpeedProxyDisplay, v => v.txtSpeed.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.RunningInfoDisplay, v => v.txtInfo.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.EnableTun, v => v.txtTun.Text, b => b ? "TUN on" : "TUN off").DisposeWith(disposables);
 
             ViewModel.ReadTextFromClipboardInteraction.RegisterHandler(async interaction =>
@@ -248,6 +257,20 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private void MenuPromotion_Click(object? sender, RoutedEventArgs e)
     {
         ProcUtils.ProcessStart($"{Utils.Base64Decode(Global.PromotionUrl)}?t={DateTime.Now.Ticks}");
+    }
+
+    private void LstCards_DoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+    {
+        // Double-click a profile card to make it the active server.
+        _ = ViewModel?.ProfilesViewModel?.SetDefaultServer();
+    }
+
+    private void LstCards_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (ViewModel?.ProfilesViewModel != null)
+        {
+            ViewModel.ProfilesViewModel.SelectedProfiles = lstCards.SelectedItems?.Cast<ProfileItemModel>().ToList() ?? new List<ProfileItemModel>();
+        }
     }
 
     private void MenuSettingsSetUWP_Click(object? sender, RoutedEventArgs e)
