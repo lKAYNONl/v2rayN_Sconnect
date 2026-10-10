@@ -171,6 +171,12 @@ public class KillSwitchItem
 
     /// <summary>Split tunneling: remote subnets (CIDR) allowed to bypass the tunnel.</summary>
     public List<string>? BypassSubnets { get; set; }
+
+    /// <summary>
+    /// Secure Connect UI defaults version, for one-time migrations of settings
+    /// the dashboard depends on (e.g. live speed in the status strip).
+    /// </summary>
+    public int UiVersion { get; set; }
 }
 
 [Serializable]

@@ -590,6 +590,33 @@ public partial class ProfilesViewModel : MyReactiveObject
         }
     }
 
+    /// <summary>
+    /// Secure Connect: single-click on a profile card makes it the active
+    /// server. While connected the session moves to it (reload); while
+    /// disconnected it is only marked for the next Connect.
+    /// </summary>
+    public async Task ActivateServer(string? indexId, bool reconnect)
+    {
+        if (indexId.IsNullOrEmpty() || indexId == _config.IndexId)
+        {
+            return;
+        }
+        var item = await AppManager.Instance.GetProfileItem(indexId);
+        if (item is null)
+        {
+            return;
+        }
+
+        if (await ConfigHandler.SetDefaultServerIndex(_config, indexId) == 0)
+        {
+            await RefreshServers();
+            if (reconnect)
+            {
+                Reload();
+            }
+        }
+    }
+
     public async Task ShareServerAsync()
     {
         var item = await AppManager.Instance.GetProfileItem(SelectedProfile.IndexId);

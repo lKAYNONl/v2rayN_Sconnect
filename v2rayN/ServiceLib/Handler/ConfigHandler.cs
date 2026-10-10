@@ -96,6 +96,18 @@ public static class ConfigHandler
         };
         config.KillSwitchItem ??= new();
         config.GuiItem ??= new();
+        // Secure Connect one-time UI migrations.
+        if (config.KillSwitchItem.UiVersion < 1)
+        {
+            // The dashboard's status strip shows live up/down speed.
+            config.GuiItem.DisplayRealTimeSpeed = true;
+        }
+        if (config.KillSwitchItem.UiVersion < 2)
+        {
+            // New dashboard proportions: open once at the design size.
+            config.UiItem?.WindowSizeItem?.RemoveAll(t => t.TypeName == "MainWindow");
+        }
+        config.KillSwitchItem.UiVersion = Math.Max(config.KillSwitchItem.UiVersion, 2);
         if (!Global.RootCertProviders.Contains(config.GuiItem.RootCertProvider))
         {
             config.GuiItem.RootCertProvider = Global.RootCertProviders.First();

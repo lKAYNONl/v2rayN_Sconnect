@@ -84,6 +84,30 @@ public partial class MainWindowViewModel : MyReactiveObject
     [Reactive]
     public partial bool KillSwitchEnabled { get; set; }
 
+    // Secure Connect dashboard state.
+    [Reactive]
+    public partial EConnState ConnState { get; set; }
+
+    // TUN mode of the running session (whole-PC tunnel) - "Protected" vs "proxy only".
+    [Reactive]
+    public partial bool TunActive { get; set; }
+
+    // The kill switch firewall lock is armed right now.
+    [Reactive]
+    public partial bool NetworkLocked { get; set; }
+
+    // Start of the current session, for the dial's timer.
+    [Reactive]
+    public partial DateTime ConnectedSince { get; set; }
+
+    // Egress IP as seen from the internet (tunnel exit when connected).
+    [Reactive]
+    public partial string PublicIp { get; set; }
+
+    // Running core, for the status strip ("sing-box" / "xray").
+    [Reactive]
+    public partial string CoreName { get; set; }
+
     [Reactive]
     public partial bool ShowClashUI { get; set; }
 
@@ -104,6 +128,11 @@ public partial class MainWindowViewModel : MyReactiveObject
     {
         _config = AppManager.Instance.Config;
         BlIsWindows = Utils.IsWindows();
+        ConnState = EConnState.Off;
+        ConnectedSince = DateTime.Now;
+        PublicIp = string.Empty;
+        CoreName = "sing-box";
+        KillSwitchEnabled = _config.KillSwitchItem?.EnableKillSwitch == true;
         MainGirdOrientation = _config.UiItem.MainGirdOrientation;
 
         #region WhenAnyValue && ReactiveCommand
@@ -702,6 +731,7 @@ public partial class MainWindowViewModel : MyReactiveObject
         try
         {
             SetReloadEnabled(false);
+            SetConnState(EConnState.Connecting);
 
             var killSwitchOn = _config.KillSwitchItem?.EnableKillSwitch == true;
             RxSchedulers.MainThreadScheduler.Schedule(() => KillSwitchEnabled = killSwitchOn);
@@ -731,7 +761,19 @@ public partial class MainWindowViewModel : MyReactiveObject
                 await SysProxyHandler.UpdateSysProxy(_config, false);
                 await Task.Delay(1000);
             });
-            RxSchedulers.MainThreadScheduler.Schedule(() => IsRunning = true);
+            var tunOn = _config.TunModeItem.EnableTun;
+            var locked = KillSwitchManager.Instance.IsArmed;
+            var coreName = GetRunningCoreName();
+            RxSchedulers.MainThreadScheduler.Schedule(() =>
+            {
+                IsRunning = true;
+                TunActive = tunOn;
+                NetworkLocked = locked;
+                CoreName = coreName;
+                ConnectedSince = DateTime.Now;
+                ConnState = EConnState.On;
+            });
+            _ = RefreshPublicIpAsync(true);
             RxSchedulers.MainThreadScheduler.Schedule(async () =>
             {
                 var result = await StatusBarViewModel.TestServerAvailability();
@@ -767,6 +809,14 @@ public partial class MainWindowViewModel : MyReactiveObject
         }
         finally
         {
+            // An aborted reload (no server, invalid config) falls back to the previous state.
+            RxSchedulers.MainThreadScheduler.Schedule(() =>
+            {
+                if (ConnState == EConnState.Connecting)
+                {
+                    ConnState = IsRunning ? EConnState.On : EConnState.Off;
+                }
+            });
             SetReloadEnabled(true);
             _reloadSemaphore.Release();
             //If there is a next reload job, execute it.
@@ -795,6 +845,79 @@ public partial class MainWindowViewModel : MyReactiveObject
         RxSchedulers.MainThreadScheduler.Schedule(() => BlReloadEnabled = enabled);
     }
 
+    private void SetConnState(EConnState state)
+    {
+        RxSchedulers.MainThreadScheduler.Schedule(() => ConnState = state);
+    }
+
+    private static string GetRunningCoreName()
+    {
+        if (AppManager.Instance.IsRunningCore(ECoreType.sing_box))
+        {
+            return "sing-box";
+        }
+        if (AppManager.Instance.IsRunningCore(ECoreType.Xray))
+        {
+            return "xray";
+        }
+        return AppManager.Instance.RunningCoreType.ToString().Replace('_', '-');
+    }
+
+    private int _publicIpRequest;
+
+    /// <summary>
+    /// Refreshes the IP chip: the tunnel's exit IP while connected, the real IP
+    /// after a disconnect. Only the latest request wins.
+    /// </summary>
+    private async Task RefreshPublicIpAsync(bool viaProxy)
+    {
+        var request = Interlocked.Increment(ref _publicIpRequest);
+        RxSchedulers.MainThreadScheduler.Schedule(() => PublicIp = string.Empty);
+        try
+        {
+            var ip = await GeoLookupManager.Instance.GetPublicIpAsync(viaProxy);
+            if (request != Volatile.Read(ref _publicIpRequest))
+            {
+                return;
+            }
+            RxSchedulers.MainThreadScheduler.Schedule(() => PublicIp = ip);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("RefreshPublicIp", ex);
+        }
+    }
+
+    /// <summary>
+    /// Saves the in-window Secure Connect settings (kill switch, LAN access,
+    /// split tunneling) and re-applies them to a running session.
+    /// </summary>
+    public async Task SaveSecureConnectSettings(bool killSwitch, bool allowLan, List<string> bypassApps, List<string> bypassSubnets)
+    {
+        var ks = _config.KillSwitchItem ??= new();
+        var changed = ks.EnableKillSwitch != killSwitch
+                      || ks.AllowLan != allowLan
+                      || !(ks.BypassApps ?? []).SequenceEqual(bypassApps)
+                      || !(ks.BypassSubnets ?? []).SequenceEqual(bypassSubnets);
+        if (!changed)
+        {
+            return;
+        }
+
+        ks.EnableKillSwitch = killSwitch;
+        ks.AllowLan = allowLan;
+        ks.BypassApps = bypassApps;
+        ks.BypassSubnets = bypassSubnets;
+        await ConfigHandler.SaveConfig(_config);
+        KillSwitchEnabled = killSwitch;
+
+        // Split tunneling and the firewall lock are applied at connect time.
+        if (IsRunning)
+        {
+            await Reload();
+        }
+    }
+
     private async Task LoadCore(CoreConfigContext? mainContext, CoreConfigContext? preContext)
     {
         await CoreManager.Instance.LoadCore(mainContext, preContext);
@@ -816,13 +939,21 @@ public partial class MainWindowViewModel : MyReactiveObject
         try
         {
             SetReloadEnabled(false);
+            SetConnState(EConnState.Stopping);
             await Task.Run(async () =>
             {
                 await CoreManager.Instance.CoreStop();
                 await KillSwitchManager.Instance.DisarmAsync();
                 await SysProxyHandler.UpdateSysProxy(_config, true);
             });
-            RxSchedulers.MainThreadScheduler.Schedule(() => IsRunning = false);
+            RxSchedulers.MainThreadScheduler.Schedule(() =>
+            {
+                IsRunning = false;
+                NetworkLocked = false;
+                ConnState = EConnState.Off;
+                StatusBarViewModel.ResetSpeed();
+            });
+            _ = RefreshPublicIpAsync(false);
             NoticeManager.Instance.Enqueue(ResUI.OperationSuccess);
         }
         catch (Exception ex)
@@ -831,6 +962,13 @@ public partial class MainWindowViewModel : MyReactiveObject
         }
         finally
         {
+            RxSchedulers.MainThreadScheduler.Schedule(() =>
+            {
+                if (ConnState == EConnState.Stopping)
+                {
+                    ConnState = IsRunning ? EConnState.On : EConnState.Off;
+                }
+            });
             SetReloadEnabled(true);
         }
     }

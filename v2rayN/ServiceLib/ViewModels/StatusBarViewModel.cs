@@ -98,6 +98,13 @@ public partial class StatusBarViewModel : MyReactiveObject
     [Reactive]
     public partial bool EnableTun { get; set; }
 
+    // Secure Connect status strip: tunnel throughput in Mbps ("0.0").
+    [Reactive]
+    public partial string SpeedUpDisplay { get; set; }
+
+    [Reactive]
+    public partial string SpeedDownDisplay { get; set; }
+
     [Reactive]
     public partial bool BlIsNonWindows { get; set; }
 
@@ -108,6 +115,7 @@ public partial class StatusBarViewModel : MyReactiveObject
         _config = AppManager.Instance.Config;
         SelectedRouting = new();
         SelectedServer = new();
+        ResetSpeed();
         RunningServerToolTipText = GetRunningServerToolTipText("-");
         BlSystemProxyPacVisible = Utils.IsWindows();
         BlIsNonWindows = Utils.IsNonWindows();
@@ -515,6 +523,9 @@ public partial class StatusBarViewModel : MyReactiveObject
 
         try
         {
+            SpeedUpDisplay = ToMbps(update.ProxyUp);
+            SpeedDownDisplay = ToMbps(update.ProxyDown);
+
             if (AppManager.Instance.IsRunningCore(ECoreType.sing_box))
             {
                 SpeedProxyDisplay = string.Format(ResUI.SpeedDisplayText, EInboundProtocol.mixed, Utils.HumanFy(update.ProxyUp), Utils.HumanFy(update.ProxyDown));
@@ -531,6 +542,17 @@ public partial class StatusBarViewModel : MyReactiveObject
         }
         await Task.CompletedTask;
     }
+
+    /// <summary>Clears the status strip speeds (on disconnect).</summary>
+    public void ResetSpeed()
+    {
+        SpeedUpDisplay = "0.0";
+        SpeedDownDisplay = "0.0";
+    }
+
+    // Statistics report KB/s (sing-box: bytes/1000, Xray: per-second delta in KB).
+    private static string ToMbps(long kbPerSecond)
+        => (Math.Max(0, kbPerSecond) * 8 / 1000.0).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
 
     #endregion UI
 }

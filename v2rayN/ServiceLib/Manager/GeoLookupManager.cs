@@ -14,6 +14,47 @@ public class GeoLookupManager
     private readonly ConcurrentDictionary<string, string> _cache = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _throttle = new(3, 3);
 
+    /// <summary>Cached country code for a host, if it was already resolved.</summary>
+    public bool TryGetCached(string? address, out string code)
+    {
+        code = string.Empty;
+        var host = address?.Trim();
+        if (host.IsNullOrEmpty() || !_cache.TryGetValue(host, out var cached) || cached.IsNullOrEmpty())
+        {
+            return false;
+        }
+        code = cached;
+        return true;
+    }
+
+    /// <summary>
+    /// Public (egress) IP as the internet sees it - shown in the dashboard's IP
+    /// chip. Through the local SOCKS inbound while connected (so it is the
+    /// tunnel's exit IP), directly otherwise (the machine's real IP). Returns an
+    /// empty string on any failure.
+    /// </summary>
+    public async Task<string> GetPublicIpAsync(bool viaProxy)
+    {
+        try
+        {
+            IWebProxy? proxy = viaProxy
+                ? new WebProxy($"socks5://{Global.Loopback}:{AppManager.Instance.GetLocalPort(EInboundProtocol.socks)}")
+                : null;
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var json = await new DownloadService().TryDownloadString("http://ip-api.com/json/?fields=status,query,countryCode", proxy, "", cts.Token);
+            if (json.IsNullOrEmpty())
+            {
+                return string.Empty;
+            }
+            var info = JsonUtils.Deserialize<IPAPIInfo>(json);
+            return info?.query ?? info?.ip ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
     public async Task<string> GetCountryCodeAsync(string? address)
     {
         var host = address?.Trim();

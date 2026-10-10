@@ -232,6 +232,13 @@ public class CoreManager
             var isTun = mainContext?.IsTunEnabled == true || preContext?.IsTunEnabled == true;
             if (!isTun || _config.KillSwitchItem?.EnableKillSwitch != true)
             {
+                // The lock is no longer wanted (kill switch turned off, or the
+                // session left TUN mode): lift it now that the core is up.
+                if (KillSwitchManager.Instance.IsArmed)
+                {
+                    await KillSwitchManager.Instance.DisarmAsync();
+                    await UpdateFunc(false, "Kill switch disarmed");
+                }
                 return;
             }
 
