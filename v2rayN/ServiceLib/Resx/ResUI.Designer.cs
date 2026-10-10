@@ -6677,5 +6677,59 @@ namespace ServiceLib.Resx {
                 return ResourceManager.GetString("ScKsHint", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   查找类似 Routing rules 的本地化字符串。
+        /// </summary>
+        public static string ScUseRoutingRules {
+            get {
+                return ResourceManager.GetString("ScUseRoutingRules", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Off — no routes: all traffic goes through the tunnel, only the local network stays direct. 的本地化字符串。
+        /// </summary>
+        public static string ScUseRoutingRulesSub {
+            get {
+                return ResourceManager.GetString("ScUseRoutingRulesSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Not applied — all traffic goes through the tunnel. 的本地化字符串。
+        /// </summary>
+        public static string ScRoutesOffSummary {
+            get {
+                return ResourceManager.GetString("ScRoutesOffSummary", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Core not found: {0}. Without it there is nothing to connect with. Download the cores now (Check Update)? 的本地化字符串。
+        /// </summary>
+        public static string ScCoreMissingAsk {
+            get {
+                return ResourceManager.GetString("ScCoreMissingAsk", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 The core failed to start. Details are in the log (guiLogs folder). 的本地化字符串。
+        /// </summary>
+        public static string ScCoreFailed {
+            get {
+                return ResourceManager.GetString("ScCoreFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 TUN mode is off: it needs administrator rights. 的本地化字符串。
+        /// </summary>
+        public static string ScTunNeedsAdmin {
+            get {
+                return ResourceManager.GetString("ScTunNeedsAdmin", resourceCulture);
+            }
+        }
     }
 }

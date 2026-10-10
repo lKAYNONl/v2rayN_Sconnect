@@ -182,6 +182,13 @@ public class KillSwitchItem
     public List<string>? BypassSubnets { get; set; }
 
     /// <summary>
+    /// Routing rules of the active routing set. Off - "no routes" mode: the rules
+    /// are ignored and all traffic goes through the tunnel (only the local
+    /// network stays direct). Split tunneling still applies.
+    /// </summary>
+    public bool UseRoutingRules { get; set; } = true;
+
+    /// <summary>
     /// Secure Connect UI defaults version, for one-time migrations of settings
     /// the dashboard depends on (e.g. live speed in the status strip).
     /// </summary>

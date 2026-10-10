@@ -237,6 +237,8 @@ public class KillSwitchWindows : IKillSwitchService
         }
         // Remove our rules last, so there is never a moment of default-deny with no allow-list.
         sb.AppendLine($"Remove-NetFirewallRule -Group {PsQuote(RuleGroup)} -ErrorAction SilentlyContinue");
+        // "No rules to remove" is not a failure (and must not be logged as one).
+        sb.AppendLine("exit 0");
         await RunPowerShellAsync(sb.ToString());
     }
 

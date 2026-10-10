@@ -11,6 +11,9 @@ public partial class StatusBarViewModel : MyReactiveObject
     private static readonly Lazy<StatusBarViewModel> _instance = new(() => new());
     public static StatusBarViewModel Instance => _instance.Value;
 
+    // TUN is saved as on, but this (non-elevated) session cannot run it yet.
+    private bool _tunAwaitingAdmin;
+
     public EventChannel<string> SetDefaultServerRequested { get; } = new();
     public EventChannel<RxVoid> ReloadRequested { get; } = new();
     public EventChannel<RxVoid> AddServerViaScanRequested { get; } = new();
@@ -123,6 +126,13 @@ public partial class StatusBarViewModel : MyReactiveObject
         if (_config.TunModeItem.EnableTun && AllowEnableTun())
         {
             EnableTun = true;
+        }
+        else if (_config.TunModeItem.EnableTun && Utils.IsWindows()
+                 && !Environment.GetCommandLineArgs().Contains(Global.RebootAs))
+        {
+            // Secure Connect: TUN is remembered. Without admin rights keep the saved
+            // choice; MainWindowViewModel restarts the app elevated before connecting.
+            _tunAwaitingAdmin = true;
         }
         else
         {
@@ -437,6 +447,19 @@ public partial class StatusBarViewModel : MyReactiveObject
 
     private async Task DoEnableTun()
     {
+        if (_tunAwaitingAdmin)
+        {
+            // The saved TUN choice waits for the elevated restart; switching TUN on
+            // again in the meantime asks for it right away.
+            if (!EnableTun)
+            {
+                return;
+            }
+            _tunAwaitingAdmin = false;
+            await RestartAsAdminForTunAsync();
+            return;
+        }
+
         if (_config.TunModeItem.EnableTun == EnableTun)
         {
             return;
@@ -446,11 +469,12 @@ public partial class StatusBarViewModel : MyReactiveObject
 
         if (EnableTun && AllowEnableTun() == false)
         {
-            // When running as a non-administrator, reboot to administrator mode
+            // When running as a non-administrator, reboot to administrator mode.
+            // Secure Connect: TUN stays on in the config, so the elevated instance
+            // starts with it (the state is remembered).
             if (Utils.IsWindows())
             {
-                _config.TunModeItem.EnableTun = false;
-                await AppManager.Instance.RebootAsAdmin();
+                await RestartAsAdminForTunAsync();
                 return;
             }
             else
@@ -466,6 +490,50 @@ public partial class StatusBarViewModel : MyReactiveObject
 
         await ConfigHandler.SaveConfig(_config);
         ReloadRequested.Publish();
+    }
+
+    /// <summary>
+    /// Startup: TUN is saved as on but the app runs without admin rights (Windows),
+    /// so restart elevated. Returns true when the app is restarting.
+    /// </summary>
+    public async Task<bool> RestartAsAdminForSavedTunAsync()
+    {
+        if (!_tunAwaitingAdmin)
+        {
+            return false;
+        }
+        _tunAwaitingAdmin = false;
+        return await RestartAsAdminForTunAsync();
+    }
+
+    /// <summary>
+    /// Restarts the app as administrator with TUN on. Declining the UAC prompt
+    /// turns TUN off (and remembers that) instead of closing the app.
+    /// </summary>
+    private async Task<bool> RestartAsAdminForTunAsync()
+    {
+        _config.TunModeItem.EnableTun = true;
+        await ConfigHandler.SaveConfig(_config);
+        if (ProcUtils.RebootAsAdmin())
+        {
+            // The new instance waits for this one to stop the core and lift the
+            // kill switch before it starts its own session.
+            await AppManager.Instance.AppExitAsync(true);
+            // Fallback for a very early startup, before the window listens for the
+            // shutdown request: never leave this instance running next to the new one.
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(10));
+                Environment.Exit(0);
+            });
+            return true;
+        }
+
+        _config.TunModeItem.EnableTun = false;
+        await ConfigHandler.SaveConfig(_config);
+        RxSchedulers.MainThreadScheduler.Schedule(() => EnableTun = false);
+        NoticeManager.Instance.Enqueue(ResUI.ScTunNeedsAdmin);
+        return false;
     }
 
     private bool AllowEnableTun()

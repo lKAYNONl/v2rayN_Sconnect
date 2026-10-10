@@ -20,6 +20,10 @@ public partial class MainWindowViewModel : MyReactiveObject
     // Secure Connect "Routes" page; changes are applied to a running session.
     public RoutesViewModel RoutesViewModel { get; }
 
+    // A connect failed because core executables are missing (names, comma separated);
+    // the window offers to download them.
+    public EventChannel<string> CoreMissingRequested { get; } = new();
+
     #region Menu
 
     //servers
@@ -401,6 +405,13 @@ public partial class MainWindowViewModel : MyReactiveObject
         }
         await RefreshServersDispatcherAsync();
 
+        // Secure Connect: TUN is remembered between launches. Without admin rights
+        // it cannot start, so restart elevated (UAC prompt) before connecting.
+        if (await StatusBarViewModel.RestartAsAdminForSavedTunAsync())
+        {
+            return;
+        }
+
         await Reload();
     }
 
@@ -771,6 +782,14 @@ public partial class MainWindowViewModel : MyReactiveObject
                 await SysProxyHandler.UpdateSysProxy(_config, false);
                 await Task.Delay(1000);
             });
+
+            // Only report "connected" when the core really runs.
+            var preContext = allResult.PreSocksResult?.Context;
+            if (!CoreManager.Instance.IsCoreRunning(preContext != null))
+            {
+                await OnCoreStartFailedAsync(allResult.MainResult.Context, preContext);
+                return;
+            }
             var tunOn = _config.TunModeItem.EnableTun;
             var locked = KillSwitchManager.Instance.IsArmed;
             var coreName = GetRunningCoreName();
@@ -838,6 +857,47 @@ public partial class MainWindowViewModel : MyReactiveObject
         }
     }
 
+    /// <summary>
+    /// The core did not start (missing executable, bad config, crash): show the
+    /// session as disconnected instead of a fake "connected", and say why.
+    /// </summary>
+    private async Task OnCoreStartFailedAsync(CoreConfigContext? mainContext, CoreConfigContext? preContext)
+    {
+        var missing = CoreManager.GetMissingCores(mainContext, preContext);
+        await Task.Run(async () =>
+        {
+            // Do not leave half a session (e.g. the core up but its TUN front missing).
+            await CoreManager.Instance.CoreStop();
+            await SysProxyHandler.UpdateSysProxy(_config, true);
+            // A missing core does not come back by itself: lift a lock left by an
+            // earlier session, otherwise the core could not even be downloaded.
+            if (missing.Count > 0 && KillSwitchManager.Instance.IsArmed)
+            {
+                await KillSwitchManager.Instance.DisarmAsync();
+            }
+        });
+
+        var locked = KillSwitchManager.Instance.IsArmed;
+        RxSchedulers.MainThreadScheduler.Schedule(() =>
+        {
+            IsRunning = false;
+            TunActive = false;
+            NetworkLocked = locked;
+            ConnState = EConnState.Off;
+            StatusBarViewModel.ResetSpeed();
+        });
+        _ = RefreshPublicIpAsync(false);
+
+        if (missing.Count > 0)
+        {
+            CoreMissingRequested.Publish(string.Join(", ", missing));
+        }
+        else
+        {
+            NoticeManager.Instance.Enqueue(ResUI.ScCoreFailed);
+        }
+    }
+
     private void ReloadResult(bool showClashUI)
     {
         RxSchedulers.MainThreadScheduler.Schedule(() =>
@@ -902,12 +962,13 @@ public partial class MainWindowViewModel : MyReactiveObject
     /// Saves the in-window Secure Connect settings (kill switch, LAN access,
     /// split tunneling) and re-applies them to a running session.
     /// </summary>
-    public async Task SaveSecureConnectSettings(bool killSwitch, bool allowLan, bool splitWhitelist, List<string> bypassApps, List<string> bypassSubnets)
+    public async Task SaveSecureConnectSettings(bool killSwitch, bool allowLan, bool splitWhitelist, List<string> bypassApps, List<string> bypassSubnets, bool useRoutingRules)
     {
         var ks = _config.KillSwitchItem ??= new();
         var changed = ks.EnableKillSwitch != killSwitch
                       || ks.AllowLan != allowLan
                       || ks.SplitTunnelWhitelist != splitWhitelist
+                      || ks.UseRoutingRules != useRoutingRules
                       || !(ks.BypassApps ?? []).SequenceEqual(bypassApps)
                       || !(ks.BypassSubnets ?? []).SequenceEqual(bypassSubnets);
         if (!changed)
@@ -918,6 +979,7 @@ public partial class MainWindowViewModel : MyReactiveObject
         ks.EnableKillSwitch = killSwitch;
         ks.AllowLan = allowLan;
         ks.SplitTunnelWhitelist = splitWhitelist;
+        ks.UseRoutingRules = useRoutingRules;
         ks.BypassApps = bypassApps;
         ks.BypassSubnets = bypassSubnets;
         await ConfigHandler.SaveConfig(_config);
@@ -927,6 +989,13 @@ public partial class MainWindowViewModel : MyReactiveObject
         if (IsRunning)
         {
             await Reload();
+        }
+        else if (!killSwitch && KillSwitchManager.Instance.IsArmed)
+        {
+            // A lock left by a session whose core failed: turning the kill switch
+            // off must also lift it, not only change the setting.
+            await Task.Run(async () => await KillSwitchManager.Instance.DisarmAsync());
+            NetworkLocked = false;
         }
     }
 

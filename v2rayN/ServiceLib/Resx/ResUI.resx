@@ -2325,4 +2325,22 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="ScKsHint" xml:space="preserve">
     <value>Whitelist mode (default): only the listed apps and subnets use the tunnel, everything else goes direct; empty lists tunnel the whole PC. Bypass mode: the listed apps and subnets go direct and are permitted through the kill switch.</value>
   </data>
+  <data name="ScUseRoutingRules" xml:space="preserve">
+    <value>Routing rules</value>
+  </data>
+  <data name="ScUseRoutingRulesSub" xml:space="preserve">
+    <value>Off — no routes: all traffic goes through the tunnel, only the local network stays direct.</value>
+  </data>
+  <data name="ScRoutesOffSummary" xml:space="preserve">
+    <value>Not applied — all traffic goes through the tunnel.</value>
+  </data>
+  <data name="ScCoreMissingAsk" xml:space="preserve">
+    <value>Core not found: {0}. Without it there is nothing to connect with. Download the cores now (Check Update)?</value>
+  </data>
+  <data name="ScCoreFailed" xml:space="preserve">
+    <value>The core failed to start. Details are in the log (guiLogs folder).</value>
+  </data>
+  <data name="ScTunNeedsAdmin" xml:space="preserve">
+    <value>TUN mode is off: it needs administrator rights.</value>
+  </data>
 </root>

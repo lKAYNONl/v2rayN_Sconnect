@@ -1363,6 +1363,16 @@
                                 <Border Classes="section">
                                     <StackPanel>
                                         <TextBlock Classes="eyebrow" Text="{x:Static resx:ResUI.ScRoutingSection}" />
+                                        <Grid Margin="0,7" ColumnDefinitions="*,Auto">
+                                            <StackPanel Margin="0,0,12,0">
+                                                <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScUseRoutingRules}" />
+                                                <TextBlock Classes="sub" Text="{x:Static resx:ResUI.ScUseRoutingRulesSub}" />
+                                            </StackPanel>
+                                            <ToggleButton
+                                                x:Name="tglRoutingRules"
+                                                Grid.Column="1"
+                                                Classes="sct" />
+                                        </Grid>
                                         <Button x:Name="btnOpenRoutes" Classes="sc row">
                                             <Grid ColumnDefinitions="*,Auto">
                                                 <StackPanel Margin="0,0,12,0">

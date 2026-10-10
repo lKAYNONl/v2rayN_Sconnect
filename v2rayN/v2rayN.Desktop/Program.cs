@@ -35,6 +35,10 @@ internal class Program
                 ProgramStarted.Set();
                 return false;
             }
+            if (rebootas)
+            {
+                WaitForPreviousInstance();
+            }
         }
         else
         {
@@ -52,6 +56,45 @@ internal class Program
 
         AppManager.Instance.WindowDialog = new WindowDialog();
         return true;
+    }
+
+    /// <summary>
+    /// A restart ("rebootas": run as administrator, language change) starts this
+    /// instance before the old one has quit. Let the old one stop its core and lift
+    /// the kill switch first, so the two sessions never overlap.
+    /// </summary>
+    private static void WaitForPreviousInstance()
+    {
+        try
+        {
+            using var current = System.Diagnostics.Process.GetCurrentProcess();
+            var exePath = Utils.GetExePath();
+            foreach (var other in System.Diagnostics.Process.GetProcessesByName(current.ProcessName))
+            {
+                using (other)
+                {
+                    if (other.Id == current.Id)
+                    {
+                        continue;
+                    }
+                    try
+                    {
+                        // Only this copy of the app (another v2rayN elsewhere is not ours).
+                        if (string.Equals(other.MainModule?.FileName, exePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            other.WaitForExit(15000);
+                        }
+                    }
+                    catch
+                    {
+                        // No access to that process: nothing to wait for.
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.

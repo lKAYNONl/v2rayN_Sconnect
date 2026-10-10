@@ -2325,4 +2325,22 @@
   <data name="ScKsHint" xml:space="preserve">
     <value>Белый список (по умолчанию): через туннель идут только указанные приложения и подсети, остальное — напрямую; при пустых списках через туннель идёт весь ПК. Режим исключений: указанные приложения и подсети идут напрямую и пропускаются kill switch.</value>
   </data>
+  <data name="ScUseRoutingRules" xml:space="preserve">
+    <value>Правила маршрутизации</value>
+  </data>
+  <data name="ScUseRoutingRulesSub" xml:space="preserve">
+    <value>Выкл. — без маршрутов: весь трафик идёт через туннель, напрямую — только локальная сеть.</value>
+  </data>
+  <data name="ScRoutesOffSummary" xml:space="preserve">
+    <value>Не применяются — весь трафик идёт через туннель.</value>
+  </data>
+  <data name="ScCoreMissingAsk" xml:space="preserve">
+    <value>Не найдено ядро: {0} — без него подключиться нельзя. Скачать ядра сейчас (окно «Проверить обновления»)?</value>
+  </data>
+  <data name="ScCoreFailed" xml:space="preserve">
+    <value>Не удалось запустить ядро. Подробности — в журнале (папка guiLogs).</value>
+  </data>
+  <data name="ScTunNeedsAdmin" xml:space="preserve">
+    <value>Режим TUN выключен: для него нужны права администратора.</value>
+  </data>
 </root>

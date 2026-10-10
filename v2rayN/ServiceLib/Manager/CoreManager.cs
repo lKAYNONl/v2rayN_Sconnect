@@ -145,6 +145,37 @@ public class CoreManager
         return await RunProcess(coreInfo, fileName, true, false);
     }
 
+    /// <summary>
+    /// True when the core process (and the TUN front, if this session needs one)
+    /// actually started and is still running.
+    /// </summary>
+    public bool IsCoreRunning(bool withPreCore)
+    {
+        return _processService is { HasExited: false }
+               && (!withPreCore || _processPreService is { HasExited: false });
+    }
+
+    /// <summary>Cores a session needs whose executables are missing from the bin folder.</summary>
+    public static List<string> GetMissingCores(params CoreConfigContext?[] contexts)
+    {
+        var missing = new List<string>();
+        foreach (var context in contexts)
+        {
+            if (context?.Node is null)
+            {
+                continue;
+            }
+            var coreType = AppManager.Instance.GetCoreType(context.Node, context.Node.ConfigType);
+            var coreInfo = CoreInfoManager.Instance.GetCoreInfo(coreType);
+            var name = coreType.ToString().Replace('_', '-');
+            if (CoreInfoManager.Instance.GetCoreExecFile(coreInfo, out _).IsNullOrEmpty() && !missing.Contains(name))
+            {
+                missing.Add(name);
+            }
+        }
+        return missing;
+    }
+
     public async Task CoreStop()
     {
         try

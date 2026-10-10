@@ -87,9 +87,11 @@ public static class ConfigHandler
             PermitWithoutStream = false,
             InitialWindowsSize = 0,
         };
+        // Secure Connect: a fresh install starts in TUN mode (the whole PC through
+        // sing-box's singbox_tun); afterwards the saved state is used.
         config.TunModeItem ??= new TunModeItem
         {
-            EnableTun = false,
+            EnableTun = true,
             Mtu = 9000,
             IcmpRouting = Global.TunIcmpRoutingPolicies.First(),
             EnableLegacyProtect = true,

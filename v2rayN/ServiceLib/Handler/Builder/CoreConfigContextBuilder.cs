@@ -28,6 +28,38 @@ public record CoreConfigContextBuilderAllResult(
 public class CoreConfigContextBuilder
 {
     /// <summary>
+    ///     The routing set the core config is built from. In Secure Connect's
+    ///     "no routes" mode (<see cref="KillSwitchItem.UseRoutingRules" /> off) the
+    ///     set's rules are replaced by a single one that keeps the local network
+    ///     direct, so all other traffic goes through the tunnel. The stored set is
+    ///     not changed.
+    /// </summary>
+    private static async Task<RoutingItem?> GetEffectiveRoutingAsync(Config config)
+    {
+        var routing = await ConfigHandler.GetDefaultRouting(config);
+        if (routing is null || config.KillSwitchItem?.UseRoutingRules != false)
+        {
+            return routing;
+        }
+
+        var noRules = JsonUtils.DeepCopy(routing) ?? routing;
+        List<RulesItem> rules =
+        [
+            new()
+            {
+                Id = Utils.GetGuid(false),
+                Remarks = "LAN direct",
+                OutboundTag = Global.DirectTag,
+                Ip = [$"{Global.GeoIPPrefix}private"],
+                Enabled = true,
+            },
+        ];
+        noRules.RuleSet = JsonUtils.Serialize(rules, false);
+        noRules.RuleNum = rules.Count;
+        return noRules;
+    }
+
+    /// <summary>
     ///     Builds a <see cref="CoreConfigContext" /> for the given node, resolves its proxy map,
     ///     and processes outbound nodes referenced by routing rules.
     /// </summary>
@@ -46,7 +78,7 @@ public class CoreConfigContextBuilder
             SimpleDnsItem = config.SimpleDNSItem,
             ProtectDomainList = [],
             RawDnsItem = await AppManager.Instance.GetDNSItem(coreType),
-            RoutingItem = await ConfigHandler.GetDefaultRouting(config),
+            RoutingItem = await GetEffectiveRoutingAsync(config),
             IsWindows = Utils.IsWindows(),
             IsMacOS = Utils.IsMacOS(),
             IsLinux = Utils.IsLinux(),

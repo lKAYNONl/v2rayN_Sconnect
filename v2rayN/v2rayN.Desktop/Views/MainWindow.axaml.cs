@@ -109,6 +109,13 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         txtAddSubnet.AddHandler(KeyDownEvent, (_, e) => OnAddKey(e, txtAddSubnet, _bypassSubnets, NormalizeSubnet), RoutingStrategies.Tunnel);
         tglKill.IsCheckedChanged += (_, _) => OnSettingToggled();
         tglLan.IsCheckedChanged += (_, _) => OnSettingToggled();
+        // "No routes" mode: the routing set's rules are ignored, all traffic is tunneled.
+        tglRoutingRules.IsChecked = _config.KillSwitchItem?.UseRoutingRules != false;
+        tglRoutingRules.IsCheckedChanged += (_, _) =>
+        {
+            UpdateRoutesSummary();
+            OnSettingToggled();
+        };
         rbSplitWhitelist.IsCheckedChanged += (_, _) =>
         {
             UpdateSplitTexts();
@@ -378,6 +385,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
               .ObserveOn(RxSchedulers.MainThreadScheduler)
               .Subscribe(Shutdown)
               .DisposeWith(disposables);
+
+            ViewModel.CoreMissingRequested
+              .AsObservable()
+              .ObserveOn(RxSchedulers.MainThreadScheduler)
+              .Subscribe(async cores => await OfferCoreDownloadAsync(cores))
+              .DisposeWith(disposables);
         });
 
         if (Utils.IsWindows())
@@ -465,7 +478,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         txtIp.Text = vm.PublicIp.IsNullOrEmpty() ? "—" : vm.PublicIp;
 
         // Kill switch chip
-        if (on && vm.NetworkLocked)
+        if (vm.NetworkLocked)
         {
             chipLock.BorderBrush = BrLockOn;
             dotLock.Background = BrWarn;
@@ -641,6 +654,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             tglLan.IsChecked = ks.AllowLan;
             rbSplitWhitelist.IsChecked = ks.SplitTunnelWhitelist;
             rbSplitBypass.IsChecked = !ks.SplitTunnelWhitelist;
+            tglRoutingRules.IsChecked = ks.UseRoutingRules;
             UpdateSplitTexts();
             _bypassApps.Clear();
             foreach (var app in ks.BypassApps ?? [])
@@ -701,7 +715,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 tglLan.IsChecked == true,
                 rbSplitWhitelist.IsChecked == true,
                 _bypassApps.ToList(),
-                _bypassSubnets.ToList());
+                _bypassSubnets.ToList(),
+                tglRoutingRules.IsChecked == true);
             UpdateStage();
         }
         catch (Exception ex)
@@ -966,9 +981,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             return;
         }
         var count = routes.RuleCount;
-        txtRoutesSummary.Text = routes.RoutingName.IsNullOrEmpty()
-            ? ResUI.ScRoutesSub
-            : string.Format(count == 1 ? ResUI.ScRoutesSummaryOne : ResUI.ScRoutesSummaryMany, count, routes.RoutingName);
+        var rulesOn = tglRoutingRules.IsChecked == true;
+        txtRoutesSummary.Text = !rulesOn
+            ? ResUI.ScRoutesOffSummary
+            : routes.RoutingName.IsNullOrEmpty()
+                ? ResUI.ScRoutesSub
+                : string.Format(count == 1 ? ResUI.ScRoutesSummaryOne : ResUI.ScRoutesSummaryMany, count, routes.RoutingName);
+        // The rules stay editable in "no routes" mode, they are just not applied.
+        btnOpenRoutes.Opacity = rulesOn ? 1 : 0.55;
         txtRoutesEmpty.IsVisible = count == 0;
     }
 
@@ -1244,6 +1264,25 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     #endregion Rule editor
 
     #region Settings menu
+
+    /// <summary>
+    /// Connect failed because core executables are missing from the bin folder:
+    /// offer the "Check update" window, which downloads them.
+    /// </summary>
+    private async Task OfferCoreDownloadAsync(string cores)
+    {
+        try
+        {
+            if (await UI.ShowYesNo(string.Format(ResUI.ScCoreMissingAsk, cores)) == ButtonResult.Yes)
+            {
+                MenuCheckUpdate_Click(this, new RoutedEventArgs());
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("OfferCoreDownload", ex);
+        }
+    }
 
     private void MenuAppearance_Click(object? sender, RoutedEventArgs e)
     {
