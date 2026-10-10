@@ -149,19 +149,32 @@
                             Text="DISCONNECTED" />
                         <TextBlock
                             x:Name="txtServerName"
+                            MaxWidth="360"
                             HorizontalAlignment="Center"
                             FontSize="20"
                             FontWeight="Bold"
                             Foreground="#E8EBF6"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap"
                             Text="-" />
 
                         <Panel
-                            Width="196"
-                            Height="196"
+                            Width="210"
+                            Height="210"
                             HorizontalAlignment="Center">
+                            <Ellipse
+                                x:Name="ringGlow"
+                                Width="208"
+                                Height="208"
+                                Fill="Transparent"
+                                IsVisible="False"
+                                Stroke="#37D3C2"
+                                StrokeThickness="2" />
                             <Ellipse
                                 Width="196"
                                 Height="196"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
                                 Fill="#161C35"
                                 Stroke="#273055"
                                 StrokeThickness="1" />
@@ -174,10 +187,20 @@
                                 HorizontalContentAlignment="Center"
                                 VerticalContentAlignment="Center"
                                 Background="#1D2647"
-                                Foreground="#37D3C2"
-                                CornerRadius="75"
-                                FontWeight="Bold"
-                                Content="Connect" />
+                                CornerRadius="75">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
+                                    <Viewbox Width="34" Height="34" HorizontalAlignment="Center">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Fill="#37D3C2" Data="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0 1 19 12a7 7 0 0 1-14 0c0-2.21 1.03-4.18 2.59-5.42L6.17 5.17A8.96 8.96 0 0 0 3 12a9 9 0 0 0 18 0c0-2.74-1.23-5.18-3.17-6.83z" />
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        FontWeight="Bold"
+                                        Foreground="#37D3C2"
+                                        Text="Connect" />
+                                </StackPanel>
+                            </Button>
                             <Button
                                 x:Name="btnDisconnect"
                                 Width="150"
@@ -187,32 +210,58 @@
                                 HorizontalContentAlignment="Center"
                                 VerticalContentAlignment="Center"
                                 Background="#1D2647"
-                                Foreground="#37D3C2"
                                 CornerRadius="75"
-                                FontWeight="Bold"
-                                IsVisible="False"
-                                Content="Disconnect" />
+                                IsVisible="False">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
+                                    <Viewbox Width="34" Height="34" HorizontalAlignment="Center">
+                                        <Canvas Width="24" Height="24">
+                                            <Path Fill="#37D3C2" Data="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0 1 19 12a7 7 0 0 1-14 0c0-2.21 1.03-4.18 2.59-5.42L6.17 5.17A8.96 8.96 0 0 0 3 12a9 9 0 0 0 18 0c0-2.74-1.23-5.18-3.17-6.83z" />
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        FontWeight="Bold"
+                                        Foreground="#37D3C2"
+                                        Text="Disconnect" />
+                                </StackPanel>
+                            </Button>
                         </Panel>
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="8">
+                            <Border
+                                Background="#161C35"
+                                BorderBrush="#273055"
+                                BorderThickness="1"
+                                CornerRadius="999"
+                                Padding="12,7">
+                                <TextBlock
+                                    x:Name="txtTun"
+                                    FontSize="12"
+                                    Foreground="#8B95B4"
+                                    Text="TUN off" />
+                            </Border>
+                            <Border
+                                Background="#161C35"
+                                BorderBrush="#273055"
+                                BorderThickness="1"
+                                CornerRadius="999"
+                                Padding="12,7">
+                                <TextBlock
+                                    x:Name="txtKill"
+                                    FontSize="12"
+                                    Foreground="#8B95B4"
+                                    Text="Kill switch off" />
+                            </Border>
+                        </StackPanel>
 
                         <TextBlock
                             x:Name="txtSpeed"
                             HorizontalAlignment="Center"
                             Foreground="#8B95B4"
                             Text="" />
-
-                        <Border
-                            Background="#161C35"
-                            BorderBrush="#273055"
-                            BorderThickness="1"
-                            CornerRadius="999"
-                            Padding="12,7"
-                            HorizontalAlignment="Center">
-                            <TextBlock
-                                x:Name="txtTun"
-                                FontSize="12"
-                                Foreground="#8B95B4"
-                                Text="TUN off" />
-                        </Border>
                     </StackPanel>
                 </Grid>
             </Grid>

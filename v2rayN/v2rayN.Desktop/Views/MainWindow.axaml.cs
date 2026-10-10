@@ -88,7 +88,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.BindCommand(ViewModel, vm => vm.StopCoreCmd, v => v.btnDisconnect).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.IsRunning, v => v.btnDisconnect.IsVisible).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.IsRunning, v => v.btnConnect.IsVisible, b => !b).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.IsRunning, v => v.ringGlow.IsVisible).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.IsRunning, v => v.txtState.Text, b => b ? "PROTECTED" : "DISCONNECTED").DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.KillSwitchEnabled, v => v.txtKill.Text, b => b ? "Kill switch on" : "Kill switch off").DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.RunningServerDisplay, v => v.txtServerName.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.SpeedProxyDisplay, v => v.txtSpeed.Text).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.StatusBarViewModel.EnableTun, v => v.txtTun.Text, b => b ? "TUN on" : "TUN off").DisposeWith(disposables);

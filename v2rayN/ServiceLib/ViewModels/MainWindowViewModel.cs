@@ -79,6 +79,11 @@ public partial class MainWindowViewModel : MyReactiveObject
     [Reactive]
     public partial bool IsRunning { get; set; }
 
+    // Mirrors KillSwitchItem.EnableKillSwitch for the dashboard indicator.
+    // Refreshed on each Reload (which runs on startup and after settings save).
+    [Reactive]
+    public partial bool KillSwitchEnabled { get; set; }
+
     [Reactive]
     public partial bool ShowClashUI { get; set; }
 
@@ -697,6 +702,9 @@ public partial class MainWindowViewModel : MyReactiveObject
         try
         {
             SetReloadEnabled(false);
+
+            var killSwitchOn = _config.KillSwitchItem?.EnableKillSwitch == true;
+            RxSchedulers.MainThreadScheduler.Schedule(() => KillSwitchEnabled = killSwitchOn);
 
             RxSchedulers.MainThreadScheduler.Schedule(() =>
             {
