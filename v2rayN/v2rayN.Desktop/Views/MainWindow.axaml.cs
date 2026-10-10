@@ -362,6 +362,22 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 interaction.SetOutput(RxVoid.Default);
             }).DisposeWith(disposables);
 
+            // Linux/macOS: TUN needs the sudo password (was asked by the old status bar view).
+            ViewModel.StatusBarViewModel.PasswordInputInteraction.RegisterHandler(async interaction =>
+            {
+                var result = await DialogHost.Show(new SudoPasswordInputView());
+                var password = result?.ToString();
+                if (password.IsNullOrEmpty())
+                {
+                    ViewModel.StatusBarViewModel.EnableTun = false;
+                }
+                else
+                {
+                    AppManager.Instance.LinuxSudoPwd = password;
+                }
+                interaction.SetOutput(password);
+            }).DisposeWith(disposables);
+
             ViewModel.StatusBarViewModel.DispatcherRefreshIconInteraction.RegisterHandler(interaction =>
             {
                 Dispatcher.UIThread.Post(RefreshIcon, DispatcherPriority.Default);
