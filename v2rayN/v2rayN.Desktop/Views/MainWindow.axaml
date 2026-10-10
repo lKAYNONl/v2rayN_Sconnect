@@ -125,46 +125,95 @@
 
             <ContentControl x:Name="contentStatusBarView" DockPanel.Dock="Bottom" />
 
-            <Grid>
-                <Grid
-                    x:Name="gridMain"
-                    ColumnDefinitions="1*,10,1*"
-                    IsVisible="False">
-                    <ContentControl x:Name="tabProfiles" Grid.Column="0" />
-                    <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
-                    <TabControl
-                        x:Name="tabMain"
-                        Grid.Column="2"
-                        Classes="logPane"
-                        HorizontalContentAlignment="Left">
-                        <TabItem x:Name="tabMsgView" Header="{x:Static resx:ResUI.MsgInformationTitle}" />
-                        <TabItem x:Name="tabClashProxies" Header="{x:Static resx:ResUI.TbProxies}" />
-                        <TabItem x:Name="tabClashConnections" Header="{x:Static resx:ResUI.TbConnections}" />
-                    </TabControl>
-                </Grid>
-                <Grid
-                    x:Name="gridMain1"
-                    IsVisible="False"
-                    RowDefinitions="1*,10,1*">
-                    <ContentControl x:Name="tabProfiles1" Grid.Row="0" />
-                    <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" />
-                    <TabControl
-                        x:Name="tabMain1"
-                        Grid.Row="2"
-                        Classes="logPane"
-                        TabStripPlacement="Left">
-                        <TabItem x:Name="tabMsgView1" Header="{x:Static resx:ResUI.MsgInformationTitle}" />
-                        <TabItem x:Name="tabClashProxies1" Header="{x:Static resx:ResUI.TbProxies}" />
-                        <TabItem x:Name="tabClashConnections1" Header="{x:Static resx:ResUI.TbConnections}" />
-                    </TabControl>
-                </Grid>
-                <Grid x:Name="gridMain2" IsVisible="False">
-                    <TabControl x:Name="tabMain2" TabStripPlacement="Left">
-                        <TabItem x:Name="tabProfiles2" Header="{x:Static resx:ResUI.menuServers}" />
-                        <TabItem x:Name="tabMsgView2" Header="{x:Static resx:ResUI.MsgInformationTitle}" />
-                        <TabItem x:Name="tabClashProxies2" Header="{x:Static resx:ResUI.TbProxies}" />
-                        <TabItem x:Name="tabClashConnections2" Header="{x:Static resx:ResUI.TbConnections}" />
-                    </TabControl>
+            <!-- Secure Connect dashboard: profiles list (reused) + connect stage -->
+            <Grid Background="#0C1020" ColumnDefinitions="300,*">
+                <Border
+                    Grid.Column="0"
+                    Background="#11162A"
+                    BorderBrush="#273055"
+                    BorderThickness="0,0,1,0">
+                    <ContentControl x:Name="tabProfiles" />
+                </Border>
+
+                <Grid Grid.Column="1">
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="18">
+                        <TextBlock
+                            x:Name="txtState"
+                            HorizontalAlignment="Center"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            Foreground="#8B95B4"
+                            Text="DISCONNECTED" />
+                        <TextBlock
+                            x:Name="txtServerName"
+                            HorizontalAlignment="Center"
+                            FontSize="20"
+                            FontWeight="Bold"
+                            Foreground="#E8EBF6"
+                            Text="-" />
+
+                        <Panel
+                            Width="196"
+                            Height="196"
+                            HorizontalAlignment="Center">
+                            <Ellipse
+                                Width="196"
+                                Height="196"
+                                Fill="#161C35"
+                                Stroke="#273055"
+                                StrokeThickness="1" />
+                            <Button
+                                x:Name="btnConnect"
+                                Width="150"
+                                Height="150"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                Background="#1D2647"
+                                Foreground="#37D3C2"
+                                CornerRadius="75"
+                                FontWeight="Bold"
+                                Content="Connect" />
+                            <Button
+                                x:Name="btnDisconnect"
+                                Width="150"
+                                Height="150"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                Background="#1D2647"
+                                Foreground="#37D3C2"
+                                CornerRadius="75"
+                                FontWeight="Bold"
+                                IsVisible="False"
+                                Content="Disconnect" />
+                        </Panel>
+
+                        <TextBlock
+                            x:Name="txtSpeed"
+                            HorizontalAlignment="Center"
+                            Foreground="#8B95B4"
+                            Text="" />
+
+                        <Border
+                            Background="#161C35"
+                            BorderBrush="#273055"
+                            BorderThickness="1"
+                            CornerRadius="999"
+                            Padding="12,7"
+                            HorizontalAlignment="Center">
+                            <TextBlock
+                                x:Name="txtTun"
+                                FontSize="12"
+                                Foreground="#8B95B4"
+                                Text="TUN off" />
+                        </Border>
+                    </StackPanel>
                 </Grid>
             </Grid>
         </DockPanel>

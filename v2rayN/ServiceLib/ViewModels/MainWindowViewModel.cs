@@ -73,6 +73,12 @@ public partial class MainWindowViewModel : MyReactiveObject
     [Reactive]
     public partial bool BlReloadEnabled { get; set; }
 
+    // True while a core is running (connected). Drives the Secure Connect
+    // dashboard's Connect/Disconnect state. Set after a successful Reload and
+    // cleared by StopCore.
+    [Reactive]
+    public partial bool IsRunning { get; set; }
+
     [Reactive]
     public partial bool ShowClashUI { get; set; }
 
@@ -717,6 +723,7 @@ public partial class MainWindowViewModel : MyReactiveObject
                 await SysProxyHandler.UpdateSysProxy(_config, false);
                 await Task.Delay(1000);
             });
+            RxSchedulers.MainThreadScheduler.Schedule(() => IsRunning = true);
             RxSchedulers.MainThreadScheduler.Schedule(async () =>
             {
                 var result = await StatusBarViewModel.TestServerAvailability();
@@ -807,6 +814,7 @@ public partial class MainWindowViewModel : MyReactiveObject
                 await KillSwitchManager.Instance.DisarmAsync();
                 await SysProxyHandler.UpdateSysProxy(_config, true);
             });
+            RxSchedulers.MainThreadScheduler.Schedule(() => IsRunning = false);
             NoticeManager.Instance.Enqueue(ResUI.OperationSuccess);
         }
         catch (Exception ex)
