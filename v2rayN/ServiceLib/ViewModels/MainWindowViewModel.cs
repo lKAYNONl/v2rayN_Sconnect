@@ -373,8 +373,17 @@ public partial class MainWindowViewModel : MyReactiveObject
             .ObserveOn(RxSchedulers.MainThreadScheduler)
             .SubscribeAsync(async blProxy => await UpdateSubscriptionProcess("", blProxy));
 
-        _ = Init();
+        InitTask = Init();
     }
+
+    /// <summary>
+    /// Completes when startup (core manager, statistics, first server list) is
+    /// done. Android awaits it before its first connect.
+    /// </summary>
+    public Task InitTask { get; }
+
+    /// <summary>A reload (core restart) is in progress.</summary>
+    public bool IsReloading => _reloadSemaphore.CurrentCount == 0;
 
     private async Task Init()
     {
@@ -738,6 +747,15 @@ public partial class MainWindowViewModel : MyReactiveObject
             return;
         }
 
+        // A host that runs the core only inside its own tunnel (Android
+        // VpnService) keeps it stopped until a session is requested.
+        if (PlatformHost.CanRunCore is { } canRunCore && !canRunCore())
+        {
+            _hasNextReloadJob = false;
+            _reloadSemaphore.Release();
+            return;
+        }
+
         try
         {
             SetReloadEnabled(false);
@@ -771,6 +789,15 @@ public partial class MainWindowViewModel : MyReactiveObject
                 await SysProxyHandler.UpdateSysProxy(_config, false);
                 await Task.Delay(1000);
             });
+
+            // The host's session ended while the core was starting (Android:
+            // disconnect during a server switch): do not leave a core behind.
+            if (PlatformHost.CanRunCore is { } stillWanted && !stillWanted())
+            {
+                await CoreManager.Instance.CoreStop();
+                return;
+            }
+
             var tunOn = _config.TunModeItem.EnableTun;
             var locked = KillSwitchManager.Instance.IsArmed;
             var coreName = GetRunningCoreName();

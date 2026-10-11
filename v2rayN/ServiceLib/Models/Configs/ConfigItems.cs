@@ -182,6 +182,14 @@ public class KillSwitchItem
     public List<string>? BypassSubnets { get; set; }
 
     /// <summary>
+    /// Android split tunneling: package names (com.example.app). Same mode as
+    /// <see cref="SplitTunnelWhitelist"/>; applied with VpnService.Builder
+    /// addAllowedApplication / addDisallowedApplication. Kept apart from
+    /// <see cref="BypassApps"/> because desktop exe names mean nothing there.
+    /// </summary>
+    public List<string>? AndroidApps { get; set; }
+
+    /// <summary>
     /// Secure Connect UI defaults version, for one-time migrations of settings
     /// the dashboard depends on (e.g. live speed in the status strip).
     /// </summary>

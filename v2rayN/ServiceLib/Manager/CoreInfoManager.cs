@@ -33,6 +33,13 @@ public sealed class CoreInfoManager
     {
         var fileName = string.Empty;
         msg = string.Empty;
+
+        // A host that ships its own cores (Android: lib*.so in the APK) resolves them first.
+        if (coreInfo != null && PlatformHost.CoreExecResolver?.Invoke(coreInfo) is { Length: > 0 } hosted && File.Exists(hosted))
+        {
+            return hosted;
+        }
+
         foreach (var name in coreInfo?.CoreExes)
         {
             var vName = Utils.GetBinPath(Utils.GetExeName(name), coreInfo.CoreType.ToString());

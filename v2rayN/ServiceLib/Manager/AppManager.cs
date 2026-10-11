@@ -62,7 +62,7 @@ public sealed class AppManager
 
     public bool InitApp()
     {
-        if (Utils.HasWritePermission() == false)
+        if (!PlatformHost.HasDataDir && Utils.HasWritePermission() == false)
         {
             Environment.SetEnvironmentVariable(Global.LocalAppData, "1", EnvironmentVariableTarget.Process);
         }

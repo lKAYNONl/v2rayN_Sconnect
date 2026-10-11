@@ -1176,6 +1176,12 @@ public class Utils
 
     public static string StartupPath()
     {
+        // Android (and any other host) keeps everything in its own data dir.
+        if (PlatformHost.HasDataDir)
+        {
+            return PlatformHost.DataDir!;
+        }
+
         if (Environment.GetEnvironmentVariable(Global.LocalAppData) == "1")
         {
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "v2rayN");

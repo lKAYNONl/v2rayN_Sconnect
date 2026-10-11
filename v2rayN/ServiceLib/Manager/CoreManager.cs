@@ -18,6 +18,23 @@ public class CoreManager
     private Func<bool, string, Task>? _updateFunc;
     private const string _tag = "CoreHandler";
 
+    /// <summary>The main core process is up (it may still exit right after start on a bad config).</summary>
+    public bool IsCoreRunning
+    {
+        get
+        {
+            try
+            {
+                return _processService is { HasExited: false };
+            }
+            catch (InvalidOperationException)
+            {
+                // CoreStop is disposing the process right now.
+                return false;
+            }
+        }
+    }
+
     public async Task Init(Config config, Func<bool, string, Task> updateFunc)
     {
         _config = config;
