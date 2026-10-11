@@ -44,6 +44,13 @@
 Hysteria2/TUIC/WireGuard и др., полные настройки, DNS, обновления ядер) сохранён и
 доступен из меню ☰ в правом верхнем углу.
 
+### Android
+
+В ветке `android` — версия для Android на том же коде (Avalonia + общий
+`ServiceLib`): VpnService + ядро sing-box/Xray + hev-socks5-tunnel, системный
+kill switch Android, раздельное туннелирование по приложениям и подсетям,
+маршруты. Сборка, установка и устройство — в [docs/ANDROID.md](docs/ANDROID.md).
+
 ---
 
 ## Интерфейс

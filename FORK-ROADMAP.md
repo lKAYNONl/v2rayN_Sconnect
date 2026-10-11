@@ -146,6 +146,27 @@ named pipe/gRPC. Делать в последнюю очередь; на пов�
 
 ---
 
+## Этап 5 — Android (Avalonia + общий ServiceLib)
+
+Ветка `android`, проект `v2rayN/v2rayN.Android` (net10.0-android, Avalonia.Android).
+Подробности, сборка и ограничения — [docs/ANDROID.md](docs/ANDROID.md).
+
+- VPN: `SecureVpnService` (VpnService) даёт TUN, ядро работает локальным прокси
+  через тот же `CoreManager`, пакеты в SOCKS переводит hev-socks5-tunnel (P/Invoke).
+- Kill switch — системный («Постоянная VPN» + «Блокировать без VPN»); приложение
+  показывает его состояние и открывает настройки.
+- Split tunneling — `KillSwitchItem.AndroidApps` (пакеты) и общий `BypassSubnets`,
+  режим — общий `SplitTunnelWhitelist`; на Android приложения и подсети
+  сочетаются через И.
+- Общий код: `PlatformHost` (каталог данных, путь к ядру, допуск запуска ядра) —
+  на ПК не задан, поведение не меняется.
+- Сборка: `.github/workflows/build-android.yml` или `build-android.ps1`.
+
+Дальше по Android: редактор правил маршрутизации, сканер QR камерой, редактор
+профиля, иконки приложений в выборе, плитка быстрых настроек.
+
+---
+
 ## Сборка и проверка (Windows, с правами администратора)
 
 ```powershell
