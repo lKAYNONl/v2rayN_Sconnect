@@ -1,0 +1,261 @@
+<UserControl
+    x:Class="v2rayN.Mobile.Views.HomePage"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Connect stage: state, server, dial, IP / kill switch chips, status strip. -->
+    <Grid RowDefinitions="*,Auto">
+        <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel
+                Margin="20,28,20,24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="24">
+                <StackPanel HorizontalAlignment="Center" Spacing="6">
+                    <TextBlock
+                        x:Name="txtState"
+                        HorizontalAlignment="Center"
+                        FontSize="12.5"
+                        FontWeight="Bold"
+                        Foreground="#8B95B4"
+                        LetterSpacing="2.2" />
+                    <Button
+                        x:Name="btnServer"
+                        HorizontalAlignment="Center"
+                        Classes="sc">
+                        <StackPanel HorizontalAlignment="Center" Spacing="3">
+                            <TextBlock
+                                x:Name="txtServerName"
+                                MaxWidth="320"
+                                HorizontalAlignment="Center"
+                                FontSize="21"
+                                FontWeight="Bold"
+                                Foreground="#E8EBF6"
+                                TextAlignment="Center"
+                                TextTrimming="CharacterEllipsis" />
+                            <TextBlock
+                                x:Name="txtServerInfo"
+                                HorizontalAlignment="Center"
+                                Classes="mono"
+                                FontSize="12"
+                                Foreground="#8B95B4" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <Button
+                    x:Name="btnDial"
+                    Width="232"
+                    Height="232"
+                    HorizontalAlignment="Center"
+                    Classes="sc"
+                    CornerRadius="116">
+                    <Panel Width="232" Height="232">
+                        <Border
+                            x:Name="dialGlow"
+                            Width="214"
+                            Height="214"
+                            Background="#161C35"
+                            BoxShadow="0 0 44 0 #2E37D3C2, 0 0 0 4 #1437D3C2"
+                            CornerRadius="107"
+                            IsVisible="False" />
+                        <Ellipse
+                            x:Name="dialDisc"
+                            Width="214"
+                            Height="214"
+                            Stroke="#273055"
+                            StrokeThickness="1">
+                            <Ellipse.Fill>
+                                <RadialGradientBrush
+                                    Center="50%,42%"
+                                    GradientOrigin="50%,42%"
+                                    RadiusX="62%"
+                                    RadiusY="62%">
+                                    <GradientStop Offset="0" Color="#1D294D" />
+                                    <GradientStop Offset="1" Color="#161C35" />
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <Ellipse
+                            x:Name="ringOn"
+                            Width="228"
+                            Height="228"
+                            IsVisible="False"
+                            Stroke="#37D3C2"
+                            StrokeThickness="2" />
+                        <Ellipse
+                            x:Name="ringBusy"
+                            Width="228"
+                            Height="228"
+                            IsVisible="False"
+                            Stroke="#4F8CFF"
+                            StrokeDashArray="268,90"
+                            StrokeThickness="2" />
+                        <Ellipse
+                            Width="164"
+                            Height="164"
+                            Stroke="#273055"
+                            StrokeThickness="1">
+                            <Ellipse.Fill>
+                                <RadialGradientBrush
+                                    Center="50%,35%"
+                                    GradientOrigin="50%,35%"
+                                    RadiusX="70%"
+                                    RadiusY="70%">
+                                    <GradientStop Offset="0" Color="#1D2647" />
+                                    <GradientStop Offset="1" Color="#11162A" />
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
+                        </Ellipse>
+                        <StackPanel
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Spacing="5">
+                            <Viewbox
+                                Width="44"
+                                Height="44"
+                                HorizontalAlignment="Center">
+                                <Canvas Width="24" Height="24">
+                                    <Path
+                                        x:Name="iconPower"
+                                        Data="M 12 3 V 12 M 6.5 7 A 8 8 0 1 0 17.5 7"
+                                        Stroke="#8B95B4"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="2" />
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock
+                                x:Name="txtVerb"
+                                HorizontalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="Bold"
+                                Foreground="#8B95B4"
+                                LetterSpacing="1" />
+                            <TextBlock
+                                x:Name="txtTimer"
+                                HorizontalAlignment="Center"
+                                Classes="mono"
+                                FontSize="16"
+                                FontWeight="SemiBold"
+                                Foreground="#37D3C2"
+                                IsVisible="False"
+                                LetterSpacing="0.5"
+                                Text="00:00:00" />
+                        </StackPanel>
+                    </Panel>
+                </Button>
+
+                <WrapPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                    <Border Margin="5" Classes="chip">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Border x:Name="dotIp" Classes="dot" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="12.5"
+                                FontWeight="SemiBold"
+                                Foreground="#8B95B4"
+                                Text="IP" />
+                            <TextBlock
+                                x:Name="txtIp"
+                                VerticalAlignment="Center"
+                                Classes="mono"
+                                FontSize="12.5"
+                                FontWeight="SemiBold"
+                                Foreground="#E8EBF6"
+                                Text="—" />
+                        </StackPanel>
+                    </Border>
+                    <Button
+                        x:Name="btnKill"
+                        Margin="5"
+                        Classes="sc">
+                        <Border x:Name="chipKill" Classes="chip">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Border x:Name="dotKill" Classes="dot" />
+                                <TextBlock
+                                    x:Name="txtKill"
+                                    VerticalAlignment="Center"
+                                    FontSize="12.5"
+                                    FontWeight="SemiBold"
+                                    Foreground="#8B95B4" />
+                            </StackPanel>
+                        </Border>
+                    </Button>
+                </WrapPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Status strip -->
+        <Border
+            Grid.Row="1"
+            Padding="16,11"
+            Background="#0E1325"
+            BorderBrush="#273055"
+            BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                <StackPanel
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="7">
+                    <Border x:Name="dotCore" Classes="dot" />
+                    <TextBlock
+                        x:Name="txtCoreLabel"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="#8B95B4" />
+                    <TextBlock
+                        x:Name="txtCore"
+                        VerticalAlignment="Center"
+                        Classes="mono"
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Foreground="#E8EBF6" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Column="2"
+                    Margin="0,0,14,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="5">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="#5B648A"
+                        Text="↓" />
+                    <TextBlock
+                        x:Name="txtDown"
+                        VerticalAlignment="Center"
+                        Classes="mono"
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Foreground="#E8EBF6"
+                        Text="0.0" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Column="3"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="5">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="#5B648A"
+                        Text="↑" />
+                    <TextBlock
+                        x:Name="txtUp"
+                        VerticalAlignment="Center"
+                        Classes="mono"
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Foreground="#E8EBF6"
+                        Text="0.0" />
+                    <TextBlock
+                        x:Name="txtMbps"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="#8B95B4" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

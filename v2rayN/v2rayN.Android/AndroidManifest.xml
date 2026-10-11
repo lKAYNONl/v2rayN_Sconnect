@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:installLocation="internalOnly">
+
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+	<!-- Split tunneling app picker: list every installed app, not only launchable ones. -->
+	<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+	<!--
+		extractNativeLibs: the cores are executables packaged as lib*.so; they must be
+		unpacked to nativeLibraryDir (the only app location Android lets us exec from).
+		usesCleartextTraffic: http:// subscriptions and the ip-api.com lookups.
+	-->
+	<application
+		android:label="Secure Connect"
+		android:icon="@mipmap/ic_launcher"
+		android:roundIcon="@mipmap/ic_launcher_round"
+		android:allowBackup="false"
+		android:extractNativeLibs="true"
+		android:usesCleartextTraffic="true"
+		android:supportsRtl="true">
+
+		<!--
+			The tunnel. Declared here (not with [Service]) for the specialUse
+			foreground-service subtype that Android 14+ requires.
+		-->
+		<service
+			android:name="io.github.lkaynonl.secureconnect.SecureVpnService"
+			android:exported="false"
+			android:foregroundServiceType="specialUse"
+			android:permission="android.permission.BIND_VPN_SERVICE">
+			<intent-filter>
+				<action android:name="android.net.VpnService" />
+			</intent-filter>
+			<meta-data
+				android:name="android.net.VpnService.SUPPORTS_ALWAYS_ON"
+				android:value="true" />
+			<property
+				android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+				android:value="vpn" />
+		</service>
+	</application>
+</manifest>

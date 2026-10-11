@@ -1,0 +1,209 @@
+<UserControl
+    x:Class="v2rayN.Mobile.Views.MainView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:views="clr-namespace:v2rayN.Mobile.Views"
+    Background="#11162A"
+    FontFamily="{StaticResource ScSans}">
+    <Panel>
+        <DockPanel x:Name="shell">
+            <!-- ===== Brand bar ===== -->
+            <Border
+                Height="56"
+                Background="#11162A"
+                BorderBrush="#273055"
+                BorderThickness="0,0,0,1"
+                DockPanel.Dock="Top">
+                <Grid Margin="16,0" ColumnDefinitions="Auto,*,Auto">
+                    <StackPanel
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="10">
+                        <Border
+                            Width="24"
+                            Height="24"
+                            CornerRadius="7">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                    <GradientStop Offset="0" Color="#37D3C2" />
+                                    <GradientStop Offset="1" Color="#4F8CFF" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            Foreground="#E8EBF6"
+                            Text="Secure Connect" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            Foreground="#5B648A"
+                            Text="v2rayN" />
+                    </StackPanel>
+                    <Border
+                        x:Name="dotTop"
+                        Grid.Column="2"
+                        Classes="dot" />
+                </Grid>
+            </Border>
+
+            <!-- ===== Bottom navigation ===== -->
+            <Border
+                Background="#0E1325"
+                BorderBrush="#273055"
+                BorderThickness="0,1,0,0"
+                DockPanel.Dock="Bottom">
+                <Grid ColumnDefinitions="*,*,*">
+                    <Button
+                        x:Name="navHome"
+                        Grid.Column="0"
+                        Classes="sc nav active">
+                        <StackPanel HorizontalAlignment="Center" Spacing="4">
+                            <Viewbox
+                                Width="22"
+                                Height="22"
+                                HorizontalAlignment="Center">
+                                <Canvas Width="24" Height="24">
+                                    <Path
+                                        Data="M 12 3 V 12 M 6.5 7 A 8 8 0 1 0 17.5 7"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="2" />
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock
+                                x:Name="navHomeText"
+                                HorizontalAlignment="Center"
+                                FontSize="11.5"
+                                FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Button>
+                    <Button
+                        x:Name="navProfiles"
+                        Grid.Column="1"
+                        Classes="sc nav">
+                        <StackPanel HorizontalAlignment="Center" Spacing="4">
+                            <Viewbox
+                                Width="22"
+                                Height="22"
+                                HorizontalAlignment="Center">
+                                <Canvas Width="24" Height="24">
+                                    <Path
+                                        Data="M 4 6 H 20 M 4 12 H 20 M 4 18 H 14"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="2" />
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock
+                                x:Name="navProfilesText"
+                                HorizontalAlignment="Center"
+                                FontSize="11.5"
+                                FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Button>
+                    <Button
+                        x:Name="navSettings"
+                        Grid.Column="2"
+                        Classes="sc nav">
+                        <StackPanel HorizontalAlignment="Center" Spacing="4">
+                            <Viewbox
+                                Width="22"
+                                Height="22"
+                                HorizontalAlignment="Center">
+                                <Canvas Width="24" Height="24">
+                                    <Path
+                                        Data="M 4 7 H 14 M 18 7 H 20 M 4 17 H 6 M 10 17 H 20 M 16 5 V 9 M 8 15 V 19"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="2" />
+                                </Canvas>
+                            </Viewbox>
+                            <TextBlock
+                                x:Name="navSettingsText"
+                                HorizontalAlignment="Center"
+                                FontSize="11.5"
+                                FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- ===== Pages ===== -->
+            <Panel x:Name="pages">
+                <views:HomePage x:Name="pageHome" />
+                <views:ProfilesPage x:Name="pageProfiles" IsVisible="False" />
+                <views:SettingsPage x:Name="pageSettings" IsVisible="False" />
+            </Panel>
+        </DockPanel>
+
+        <!-- Startup failure (settings could not be loaded) -->
+        <Border
+            x:Name="startupError"
+            Padding="20"
+            Background="#11162A"
+            IsVisible="False">
+            <StackPanel VerticalAlignment="Center" Spacing="14">
+                <TextBlock
+                    x:Name="startupErrorText"
+                    Classes="label"
+                    TextWrapping="Wrap" />
+                <Button
+                    x:Name="btnStartupLog"
+                    HorizontalAlignment="Left"
+                    Classes="sc ghost">
+                    <TextBlock x:Name="btnStartupLogText" />
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- Full-screen sheets (app picker, routes, log) -->
+        <Panel
+            x:Name="sheetHost"
+            Background="#11162A"
+            IsVisible="False" />
+
+        <!-- Dialog: confirm / input -->
+        <Border
+            x:Name="dialogLayer"
+            Padding="20"
+            Background="#B8080B18"
+            IsVisible="False">
+            <Border
+                MaxWidth="440"
+                Padding="18"
+                VerticalAlignment="Center"
+                Background="#11162A"
+                BorderBrush="#273055"
+                BorderThickness="1"
+                BoxShadow="0 24 60 0 #73000000"
+                CornerRadius="14">
+                <StackPanel Spacing="12">
+                    <TextBlock
+                        x:Name="dlgText"
+                        Classes="label"
+                        TextWrapping="Wrap" />
+                    <TextBox
+                        x:Name="dlgInput1"
+                        Classes="field"
+                        IsVisible="False" />
+                    <TextBox
+                        x:Name="dlgInput2"
+                        Classes="field"
+                        IsVisible="False" />
+                    <StackPanel
+                        Margin="0,4,0,0"
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal"
+                        Spacing="10">
+                        <Button x:Name="dlgCancel" Classes="sc ghost">
+                            <TextBlock x:Name="dlgCancelText" />
+                        </Button>
+                        <Button x:Name="dlgOk" Classes="sc primary">
+                            <TextBlock x:Name="dlgOkText" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Panel>
+</UserControl>

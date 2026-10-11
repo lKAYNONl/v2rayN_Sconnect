@@ -1,0 +1,151 @@
+<UserControl
+    x:Class="v2rayN.Mobile.Views.ProfilesPage"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:dto="clr-namespace:ServiceLib.Models.Dto;assembly=ServiceLib"
+    xmlns:ent="clr-namespace:ServiceLib.Models.Entities;assembly=ServiceLib">
+    <Grid RowDefinitions="Auto,*">
+        <StackPanel
+            Grid.Row="0"
+            Margin="16,14,16,10"
+            Spacing="10">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock
+                    x:Name="txtTitle"
+                    Classes="eyebrow"
+                    Margin="0" />
+                <TextBlock
+                    x:Name="txtCount"
+                    Grid.Column="1"
+                    Classes="mono"
+                    FontSize="11.5"
+                    Foreground="#5B648A" />
+            </Grid>
+
+            <ComboBox
+                x:Name="cmbGroup"
+                MinHeight="44"
+                HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="ent:SubItem">
+                        <TextBlock Text="{Binding Remarks}" TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <Grid ColumnDefinitions="*,8,*,8,*,8,*">
+                <Button
+                    x:Name="btnImport"
+                    Grid.Column="0"
+                    HorizontalAlignment="Stretch"
+                    Classes="sc tool">
+                    <TextBlock x:Name="btnImportText" TextTrimming="CharacterEllipsis" />
+                </Button>
+                <Button
+                    x:Name="btnAddSub"
+                    Grid.Column="2"
+                    HorizontalAlignment="Stretch"
+                    Classes="sc tool">
+                    <TextBlock x:Name="btnAddSubText" TextTrimming="CharacterEllipsis" />
+                </Button>
+                <Button
+                    x:Name="btnUpdateSubs"
+                    Grid.Column="4"
+                    HorizontalAlignment="Stretch"
+                    Classes="sc tool">
+                    <TextBlock x:Name="btnUpdateSubsText" TextTrimming="CharacterEllipsis" />
+                </Button>
+                <Button
+                    x:Name="btnPingAll"
+                    Grid.Column="6"
+                    HorizontalAlignment="Stretch"
+                    Classes="sc tool">
+                    <TextBlock x:Name="btnPingAllText" TextTrimming="CharacterEllipsis" />
+                </Button>
+            </Grid>
+
+            <TextBox x:Name="txtSearch" Classes="field" />
+        </StackPanel>
+
+        <ListBox
+            x:Name="lstProfiles"
+            Grid.Row="1"
+            Margin="16,0,16,0"
+            Classes="cards"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            SelectionMode="Single">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="dto:ProfileItemModel">
+                    <Border Classes="card pcard" Padding="12,10,4,10">
+                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                            <Border
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                Classes="badge">
+                                <TextBlock Text="{Binding CountryCode}" />
+                            </Border>
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="12,0,8,0"
+                                VerticalAlignment="Center"
+                                Spacing="2">
+                                <TextBlock
+                                    FontSize="14.5"
+                                    FontWeight="SemiBold"
+                                    Foreground="#E8EBF6"
+                                    Text="{Binding Remarks}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    Classes="mono"
+                                    FontSize="11.5"
+                                    Foreground="#8B95B4"
+                                    Text="{Binding ProtocolInfo}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <StackPanel
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal">
+                                <TextBlock
+                                    Classes="mono"
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    Foreground="#37D3C2"
+                                    Text="{Binding DelayVal}" />
+                                <TextBlock
+                                    Classes="mono"
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    Foreground="#8B95B4"
+                                    IsVisible="{Binding DelayVal, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                    Text=" ms" />
+                            </StackPanel>
+                            <Button
+                                Grid.Column="3"
+                                Classes="sc icon more"
+                                Tag="{Binding IndexId}">
+                                <Viewbox Width="18" Height="18">
+                                    <Canvas Width="24" Height="24">
+                                        <Path
+                                            Data="M 12 5 V 5.01 M 12 12 V 12.01 M 12 19 V 19.01"
+                                            StrokeLineCap="Round"
+                                            StrokeThickness="3" />
+                                    </Canvas>
+                                </Viewbox>
+                            </Button>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <TextBlock
+            x:Name="txtEmpty"
+            Grid.Row="1"
+            Margin="28,24"
+            VerticalAlignment="Top"
+            Classes="sub"
+            IsVisible="False"
+            TextAlignment="Center" />
+    </Grid>
+</UserControl>

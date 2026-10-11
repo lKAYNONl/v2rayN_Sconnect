@@ -1,0 +1,109 @@
+<UserControl
+    x:Class="v2rayN.Mobile.Views.AppPickerSheet"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:platform="clr-namespace:v2rayN.Mobile.Platform"
+    Background="#11162A">
+    <Grid RowDefinitions="Auto,Auto,*">
+        <!-- Header -->
+        <Border
+            Height="56"
+            BorderBrush="#273055"
+            BorderThickness="0,0,0,1">
+            <Grid Margin="4,0,12,0" ColumnDefinitions="Auto,*,Auto">
+                <Button x:Name="btnBack" Classes="sc icon">
+                    <Path
+                        Data="M 7 0 L 0 7 L 7 14"
+                        StrokeLineCap="Round"
+                        StrokeThickness="2" />
+                </Button>
+                <TextBlock
+                    x:Name="txtTitle"
+                    Grid.Column="1"
+                    Margin="4,0,0,0"
+                    VerticalAlignment="Center"
+                    FontSize="17"
+                    FontWeight="Bold"
+                    Foreground="#E8EBF6" />
+                <Button
+                    x:Name="btnDone"
+                    Grid.Column="2"
+                    Height="38"
+                    Classes="sc primary">
+                    <TextBlock x:Name="btnDoneText" />
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Search + system apps -->
+        <Grid
+            Grid.Row="1"
+            Margin="16,12,16,10"
+            ColumnDefinitions="*,10,Auto">
+            <TextBox x:Name="txtSearch" Classes="field" />
+            <StackPanel
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="8">
+                <TextBlock
+                    x:Name="txtSystem"
+                    VerticalAlignment="Center"
+                    FontSize="12.5"
+                    Foreground="#8B95B4" />
+                <ToggleButton x:Name="tglSystem" Classes="sct" />
+            </StackPanel>
+        </Grid>
+
+        <ListBox
+            x:Name="lstApps"
+            Grid.Row="2"
+            Margin="16,0"
+            Classes="cards"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            SelectionMode="Single">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="platform:AppEntry">
+                    <Border Classes="card" Padding="12,10">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Border Classes="badge" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Initial}" />
+                            </Border>
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="12,0,8,0"
+                                VerticalAlignment="Center"
+                                Spacing="2">
+                                <TextBlock
+                                    FontSize="14.5"
+                                    FontWeight="SemiBold"
+                                    Foreground="#E8EBF6"
+                                    Text="{Binding Label}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    Classes="mono"
+                                    FontSize="11"
+                                    Foreground="#8B95B4"
+                                    Text="{Binding Package}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <CheckBox
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                IsHitTestVisible="False" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <TextBlock
+            x:Name="txtLoading"
+            Grid.Row="2"
+            Margin="0,40,0,0"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Classes="sub" />
+    </Grid>
+</UserControl>

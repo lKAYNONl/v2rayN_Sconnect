@@ -1,0 +1,206 @@
+<UserControl
+    x:Class="v2rayN.Mobile.Views.SettingsPage"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:views="clr-namespace:v2rayN.Mobile.Views">
+    <UserControl.Resources>
+        <!-- Removable tag (app or subnet) -->
+        <DataTemplate x:Key="TagTemplate" x:DataType="views:TagItem">
+            <Border Classes="tag">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock
+                        MaxWidth="220"
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        Foreground="#E8EBF6"
+                        Text="{Binding Label}"
+                        TextTrimming="CharacterEllipsis" />
+                    <Button
+                        Classes="sc tagx"
+                        Tag="{Binding Key}">
+                        <Viewbox Width="10" Height="10">
+                            <Canvas Width="10" Height="10">
+                                <Path
+                                    Data="M 1 1 L 9 9 M 9 1 L 1 9"
+                                    Stroke="#8B95B4"
+                                    StrokeLineCap="Round"
+                                    StrokeThickness="1.6" />
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
+            <!-- ===== Kill switch ===== -->
+            <Border Classes="section">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Name="txtSecKill" Classes="eyebrow" />
+                    <StackPanel>
+                        <TextBlock x:Name="txtKillTitle" Classes="label" />
+                        <TextBlock x:Name="txtKillText" Classes="sub" />
+                        <TextBlock
+                            x:Name="txtKillStatus"
+                            Margin="0,8,0,0"
+                            Classes="sub"
+                            Foreground="#E8EBF6" />
+                    </StackPanel>
+                    <Button
+                        x:Name="btnVpnSettings"
+                        HorizontalAlignment="Left"
+                        Classes="sc ghost">
+                        <TextBlock x:Name="btnVpnSettingsText" />
+                    </Button>
+                    <Grid Margin="0,6,0,0" ColumnDefinitions="*,Auto">
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock x:Name="txtLan" Classes="label" />
+                            <TextBlock x:Name="txtLanText" Classes="sub" />
+                        </StackPanel>
+                        <ToggleButton
+                            x:Name="tglLan"
+                            Grid.Column="1"
+                            Classes="sct" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== Split tunneling ===== -->
+            <Border Classes="section">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Name="txtSecSplit" Classes="eyebrow" />
+                    <WrapPanel>
+                        <RadioButton
+                            x:Name="rbWhitelist"
+                            Classes="seg"
+                            GroupName="splitMode" />
+                        <RadioButton
+                            x:Name="rbBypass"
+                            Classes="seg"
+                            GroupName="splitMode" />
+                    </WrapPanel>
+                    <TextBlock
+                        x:Name="txtModeHint"
+                        Margin="0,-6,0,0"
+                        Classes="sub" />
+
+                    <!-- Apps -->
+                    <Grid Margin="0,6,0,0" ColumnDefinitions="*,Auto">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="txtApps" Classes="label" />
+                            <TextBlock x:Name="txtAppsCount" Classes="sub" />
+                        </StackPanel>
+                        <Button
+                            x:Name="btnChooseApps"
+                            Grid.Column="1"
+                            Classes="sc tool">
+                            <TextBlock x:Name="btnChooseAppsText" />
+                        </Button>
+                    </Grid>
+                    <ItemsControl x:Name="lstApps" ItemTemplate="{StaticResource TagTemplate}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+
+                    <!-- Subnets -->
+                    <TextBlock x:Name="txtSubnets" Classes="label" />
+                    <ItemsControl x:Name="lstSubnets" ItemTemplate="{StaticResource TagTemplate}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                    <Grid ColumnDefinitions="*,8,Auto">
+                        <TextBox x:Name="txtAddSubnet" Classes="field" />
+                        <Button
+                            x:Name="btnAddSubnet"
+                            Grid.Column="2"
+                            Width="48"
+                            Classes="sc tool">
+                            <Viewbox Width="16" Height="16">
+                                <Canvas Width="16" Height="16">
+                                    <Path
+                                        Data="M 8 2 V 14 M 2 8 H 14"
+                                        StrokeLineCap="Round"
+                                        StrokeThickness="2" />
+                                </Canvas>
+                            </Viewbox>
+                        </Button>
+                    </Grid>
+                    <TextBlock
+                        x:Name="txtSplitAnd"
+                        Classes="sub"
+                        Foreground="#5B648A" />
+                </StackPanel>
+            </Border>
+
+            <!-- ===== Routes ===== -->
+            <Border Classes="section">
+                <StackPanel Spacing="4">
+                    <TextBlock x:Name="txtSecRoutes" Classes="eyebrow" />
+                    <Button x:Name="btnRoutes" Classes="sc row">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel>
+                                <TextBlock x:Name="txtRoutes" Classes="label" />
+                                <TextBlock x:Name="txtRoutesInfo" Classes="sub" />
+                            </StackPanel>
+                            <Path
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Data="M 0 0 L 6 6 L 0 12"
+                                StrokeLineCap="Round"
+                                StrokeThickness="1.6" />
+                        </Grid>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== App ===== -->
+            <Border Classes="section" BorderThickness="0">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Name="txtSecApp" Classes="eyebrow" />
+                    <StackPanel>
+                        <TextBlock x:Name="txtLanguage" Classes="label" />
+                        <WrapPanel Margin="0,8,0,0">
+                            <RadioButton
+                                x:Name="rbRu"
+                                Classes="seg"
+                                Content="Русский"
+                                GroupName="lang" />
+                            <RadioButton
+                                x:Name="rbEn"
+                                Classes="seg"
+                                Content="English"
+                                GroupName="lang" />
+                        </WrapPanel>
+                    </StackPanel>
+                    <Button x:Name="btnLog" Classes="sc row">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel>
+                                <TextBlock x:Name="txtLog" Classes="label" />
+                                <TextBlock x:Name="txtLogText" Classes="sub" />
+                            </StackPanel>
+                            <Path
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Data="M 0 0 L 6 6 L 0 12"
+                                StrokeLineCap="Round"
+                                StrokeThickness="1.6" />
+                        </Grid>
+                    </Button>
+                    <TextBlock
+                        x:Name="txtVersion"
+                        Classes="mono"
+                        FontSize="12"
+                        Foreground="#5B648A" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

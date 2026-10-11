@@ -1,0 +1,337 @@
+<Application
+    x:Class="v2rayN.Mobile.App"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:semi="https://irihi.tech/semi"
+    Name="Secure Connect"
+    RequestedThemeVariant="Dark">
+    <!--
+        Secure Connect palette (same as the desktop dashboard):
+        bg #0C1020 · window #11162A · surface #161C35 · elevated #1D2647
+        line #273055 · fg #E8EBF6 · muted #8B95B4 · faint #5B648A
+        accent #37D3C2 · accent-2 #4F8CFF · warn #F5B83D · danger #FF5D6C
+        Touch targets are at least 44 px high.
+    -->
+    <Application.Resources>
+        <FontFamily x:Key="ScSans">avares://v2rayN.Android/Assets/Fonts#Manrope</FontFamily>
+        <FontFamily x:Key="ScMono">avares://v2rayN.Android/Assets/Fonts#IBM Plex Mono</FontFamily>
+    </Application.Resources>
+
+    <Application.Styles>
+        <semi:SemiTheme />
+
+        <!-- Flat button: no theme chrome, just our own background/border. -->
+        <Style Selector="Button.sc">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <ContentPresenter
+                        Name="PART_ContentPresenter"
+                        Padding="{TemplateBinding Padding}"
+                        HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        Content="{TemplateBinding Content}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                        CornerRadius="{TemplateBinding CornerRadius}" />
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Button.sc:pressed">
+            <Setter Property="Opacity" Value="0.75" />
+        </Style>
+        <Style Selector="Button.sc:disabled">
+            <Setter Property="Opacity" Value="0.4" />
+        </Style>
+
+        <!-- Bottom navigation -->
+        <Style Selector="Button.nav">
+            <Setter Property="Height" Value="58" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="Button.nav Path">
+            <Setter Property="Stroke" Value="#5B648A" />
+        </Style>
+        <Style Selector="Button.nav TextBlock">
+            <Setter Property="Foreground" Value="#5B648A" />
+        </Style>
+        <Style Selector="Button.nav.active Path">
+            <Setter Property="Stroke" Value="#37D3C2" />
+        </Style>
+        <Style Selector="Button.nav.active TextBlock">
+            <Setter Property="Foreground" Value="#E8EBF6" />
+        </Style>
+
+        <!-- Text -->
+        <Style Selector="TextBlock.eyebrow">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LetterSpacing" Value="1.5" />
+            <Setter Property="Foreground" Value="#5B648A" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#E8EBF6" />
+        </Style>
+        <Style Selector="TextBlock.sub">
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="Foreground" Value="#8B95B4" />
+            <Setter Property="Margin" Value="0,3,0,0" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="LineHeight" Value="18" />
+        </Style>
+        <Style Selector="TextBlock.mono">
+            <Setter Property="FontFamily" Value="{StaticResource ScMono}" />
+        </Style>
+
+        <!-- Sections and cards -->
+        <Style Selector="Border.section">
+            <Setter Property="Padding" Value="16,16" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
+        <Style Selector="Border.card">
+            <Setter Property="Padding" Value="14,12" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Background" Value="#161C35" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Border.badge">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Background" Value="#1D2647" />
+        </Style>
+        <Style Selector="Border.badge TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontFamily" Value="{StaticResource ScMono}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#4F8CFF" />
+        </Style>
+        <Style Selector="Border.chip">
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="Background" Value="#161C35" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Border.tag">
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Padding" Value="10,6,4,6" />
+            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="Background" Value="#1D2647" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Border.dot">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="#5B648A" />
+        </Style>
+
+        <!-- Pill toggle: teal when on (amber with .warn). -->
+        <Style Selector="ToggleButton.sct">
+            <Setter Property="Width" Value="48" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border
+                        Name="track"
+                        Width="48"
+                        Height="28"
+                        Background="#161C35"
+                        BorderBrush="#273055"
+                        BorderThickness="1"
+                        CornerRadius="14">
+                        <Ellipse
+                            Name="knob"
+                            Width="20"
+                            Height="20"
+                            Margin="3,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Fill="#5B648A" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="ToggleButton.sct:checked /template/ Border#track">
+            <Setter Property="Background" Value="#1F4F5C" />
+            <Setter Property="BorderBrush" Value="#319296" />
+        </Style>
+        <Style Selector="ToggleButton.sct:checked /template/ Ellipse#knob">
+            <Setter Property="Margin" Value="23,0,0,0" />
+            <Setter Property="Fill" Value="#37D3C2" />
+        </Style>
+
+        <!-- Segmented choice -->
+        <Style Selector="RadioButton.seg">
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border
+                        Name="segBox"
+                        MinHeight="40"
+                        Padding="14,0"
+                        Background="#161C35"
+                        BorderBrush="#273055"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                        <ContentPresenter
+                            Name="PART_ContentPresenter"
+                            VerticalAlignment="Center"
+                            Content="{TemplateBinding Content}"
+                            FontSize="13"
+                            FontWeight="SemiBold"
+                            Foreground="#8B95B4" />
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="RadioButton.seg:checked /template/ Border#segBox">
+            <Setter Property="Background" Value="#1D2647" />
+            <Setter Property="BorderBrush" Value="#3D63B3" />
+        </Style>
+        <Style Selector="RadioButton.seg:checked /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Foreground" Value="#E8EBF6" />
+        </Style>
+
+        <!-- Buttons with text -->
+        <Style Selector="Button.primary">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="18,0" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Background" Value="#37D3C2" />
+        </Style>
+        <Style Selector="Button.primary TextBlock">
+            <Setter Property="Foreground" Value="#0C1020" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+        <Style Selector="Button.ghost">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Background" Value="#161C35" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button.ghost TextBlock">
+            <Setter Property="Foreground" Value="#E8EBF6" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="13.5" />
+        </Style>
+        <Style Selector="Button.ghost.danger TextBlock">
+            <Setter Property="Foreground" Value="#FF5D6C" />
+        </Style>
+        <Style Selector="Button.tool">
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Background" Value="#161C35" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Button.tool TextBlock">
+            <Setter Property="Foreground" Value="#8B95B4" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12.5" />
+        </Style>
+        <Style Selector="Button.tool Path">
+            <Setter Property="Stroke" Value="#8B95B4" />
+        </Style>
+        <Style Selector="Button.icon">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="44" />
+            <Setter Property="CornerRadius" Value="10" />
+        </Style>
+        <Style Selector="Button.icon Path">
+            <Setter Property="Stroke" Value="#8B95B4" />
+        </Style>
+        <Style Selector="Button.row">
+            <Setter Property="Padding" Value="0,10" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="Button.row Path">
+            <Setter Property="Stroke" Value="#5B648A" />
+        </Style>
+        <Style Selector="Button.tagx">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+
+        <!-- Inputs -->
+        <Style Selector="TextBox.field">
+            <Setter Property="FontFamily" Value="{StaticResource ScMono}" />
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Background" Value="#161C35" />
+            <Setter Property="BorderBrush" Value="#273055" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#E8EBF6" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <!-- Lists of cards (profiles, apps, rules): no theme selection chrome. -->
+        <Style Selector="ListBox.cards">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+        <Style Selector="ListBox.cards ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+        <Style Selector="ListBox.cards ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+        <Style Selector="ListBox.cards ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.cards ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <!-- The active profile -->
+        <Style Selector="ListBox.cards ListBoxItem:selected Border.pcard">
+            <Setter Property="BorderBrush" Value="#3D63B3" />
+            <Setter Property="Background" Value="#1A2240" />
+        </Style>
+
+        <!-- Connect dial: spinning arc while connecting -->
+        <Style Selector="Ellipse.spin">
+            <Style.Animations>
+                <Animation IterationCount="Infinite" Duration="0:0:1">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="RotateTransform.Angle" Value="0" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="RotateTransform.Angle" Value="360" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+    </Application.Styles>
+</Application>

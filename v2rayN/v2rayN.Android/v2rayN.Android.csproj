@@ -1,0 +1,115 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		Secure Connect for Android: Avalonia UI + the shared ServiceLib (profiles,
+		subscriptions, routing, core config generation). The VPN itself is an
+		Android VpnService: the core (sing-box / Xray) runs as a local proxy and
+		hev-socks5-tunnel moves packets between the TUN fd and that proxy.
+
+		Native parts are not in git. Put them in natives/<abi>/ and
+		AndroidAssets/geo/ with build-android.ps1 (Windows) or
+		v2rayN.Android/natives/fetch-natives.sh (CI), see docs/ANDROID.md.
+	-->
+
+	<PropertyGroup>
+		<TargetFramework>net10.0-android</TargetFramework>
+		<SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
+		<OutputType>Exe</OutputType>
+		<AssemblyName>v2rayN.Android</AssemblyName>
+		<RootNamespace>v2rayN.Mobile</RootNamespace>
+
+		<ApplicationId>io.github.lkaynonl.secureconnect</ApplicationId>
+		<ApplicationTitle>Secure Connect</ApplicationTitle>
+		<ApplicationDisplayVersion>$(Version)</ApplicationDisplayVersion>
+		<!-- versionCode from Version: 7.25.5 -> 72505 (CI may override with -p:ApplicationVersion=...). -->
+		<ApplicationVersion>$([System.Version]::Parse('$(Version)').Major)$([System.Version]::Parse('$(Version)').Minor.ToString('00'))$([System.Version]::Parse('$(Version)').Build.ToString('00'))</ApplicationVersion>
+
+		<AndroidManifest>AndroidManifest.xml</AndroidManifest>
+		<AndroidPackageFormat>apk</AndroidPackageFormat>
+		<!-- ABIs: the SDK default (android-arm64;android-x64) - the ones the cores and
+		     hev-socks5-tunnel are shipped for. Not set here, so that
+		     "dotnet publish -r android-arm64" builds a single-ABI APK. -->
+		<!-- Android assets (geo files) live apart from the Avalonia assets (fonts). -->
+		<MonoAndroidAssetsPrefix>AndroidAssets</MonoAndroidAssetsPrefix>
+
+		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<Nullable>annotations</Nullable>
+
+		<!-- Directory.Build.props targets the desktop; these do not apply to an APK. -->
+		<PublishSingleFile>false</PublishSingleFile>
+		<!-- ServiceLib relies on reflection (System.Text.Json, sqlite-net, YamlDotNet):
+		     no trimming, and keep reflection-based JSON on. -->
+		<PublishTrimmed>false</PublishTrimmed>
+		<JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+		<!-- Readable exceptions (texts and stack traces) in the in-app log. -->
+		<UseSystemResourceKeys>false</UseSystemResourceKeys>
+		<StackTraceSupport>true</StackTraceSupport>
+	</PropertyGroup>
+
+	<!-- ImplicitUsings (Directory.Build.props) makes the Android SDK import
+	     Android.App and Android.Widget globally; their Application, Button,
+	     ToggleButton... clash with Avalonia. Platform code imports them per file. -->
+	<ItemGroup>
+		<Using Remove="Android.App" />
+		<Using Remove="Android.Widget" />
+		<Using Remove="Android.OS.Bundle" />
+	</ItemGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<AndroidKeyStore Condition="'$(AndroidSigningKeyStore)' != ''">true</AndroidKeyStore>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Avalonia.Android" />
+		<PackageReference Include="ReactiveUI.Avalonia" />
+		<PackageReference Include="ReactiveUI">
+			<TreatAsUsed>true</TreatAsUsed>
+		</PackageReference>
+		<PackageReference Include="ReactiveUI.SourceGenerators">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Semi.Avalonia" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\ServiceLib\ServiceLib.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<AvaloniaResource Include="Assets\**" />
+	</ItemGroup>
+
+	<!-- Cores (executables packaged as lib*.so so Android installs them executable)
+	     and hev-socks5-tunnel (loaded in-process via P/Invoke). A single-RID build
+	     (dotnet publish -r android-arm64) only packs that ABI. -->
+	<PropertyGroup>
+		<_ScWantArm64 Condition="'$(RuntimeIdentifier)' == '' Or '$(RuntimeIdentifier)' == 'android-arm64'">true</_ScWantArm64>
+		<_ScWantX64 Condition="'$(RuntimeIdentifier)' == '' Or '$(RuntimeIdentifier)' == 'android-x64'">true</_ScWantX64>
+	</PropertyGroup>
+	<ItemGroup>
+		<!-- The SDK's default **\*.so glob would add these a second time, for every ABI. -->
+		<AndroidNativeLibrary Remove="natives\**" />
+		<AndroidNativeLibrary Condition="'$(_ScWantArm64)' == 'true'" Include="natives\arm64-v8a\*.so" Abi="arm64-v8a" />
+		<AndroidNativeLibrary Condition="'$(_ScWantX64)' == 'true'" Include="natives\x86_64\*.so" Abi="x86_64" />
+		<!-- .NET for Android preloads libraries that export JNI_OnLoad. hev's JNI glue
+		     expects a Java class we do not have (the build script also renames it). -->
+		<AndroidNativeLibraryNoJniPreload Include="libhev-socks5-tunnel.so" />
+	</ItemGroup>
+
+	<!-- A missing core would only show up on the phone as "core not found":
+	     fail the build instead. -p:AllowMissingNatives=true builds the UI anyway. -->
+	<Target Name="ScCheckNatives" BeforeTargets="Build" Condition="'$(AllowMissingNatives)' != 'true'">
+		<ItemGroup>
+			<_ScRequiredNative Condition="'$(_ScWantArm64)' == 'true'" Include="natives\arm64-v8a\libsingbox.so;natives\arm64-v8a\libxray.so;natives\arm64-v8a\libhev-socks5-tunnel.so" />
+			<_ScRequiredNative Condition="'$(_ScWantX64)' == 'true'" Include="natives\x86_64\libsingbox.so;natives\x86_64\libxray.so;natives\x86_64\libhev-socks5-tunnel.so" />
+			<_ScMissingNative Include="@(_ScRequiredNative)" Condition="!Exists('%(FullPath)')" />
+		</ItemGroup>
+		<Error Condition="'@(_ScMissingNative)' != ''"
+		       Text="Secure Connect: native parts are missing: @(_ScMissingNative, ', '). Run build-android.ps1 from the repository root (or v2rayN.Android/natives/fetch-natives.sh), or build in GitHub Actions (build-android.yml). To build the UI only, pass -p:AllowMissingNatives=true." />
+		<Warning Condition="!Exists('AndroidAssets\geo\geosite.dat')"
+		         Text="Secure Connect: AndroidAssets\geo\geo*.dat missing - Xray routing by geosite/geoip will not work until the geo files are updated in the app." />
+	</Target>
+
+</Project>

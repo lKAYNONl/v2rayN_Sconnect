@@ -1,0 +1,3 @@
+# Downloaded / built by build-android.ps1 or natives/fetch-natives.sh
+natives/*/
+AndroidAssets/geo/

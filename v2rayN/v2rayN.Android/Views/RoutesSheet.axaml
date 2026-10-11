@@ -1,0 +1,125 @@
+<UserControl
+    x:Class="v2rayN.Mobile.Views.RoutesSheet"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:dto="clr-namespace:ServiceLib.Models.Dto;assembly=ServiceLib"
+    xmlns:ent="clr-namespace:ServiceLib.Models.Entities;assembly=ServiceLib"
+    Background="#11162A">
+    <UserControl.Styles>
+        <Style Selector="TextBlock.act">
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#4F8CFF" />
+        </Style>
+        <Style Selector="TextBlock.act.direct">
+            <Setter Property="Foreground" Value="#37D3C2" />
+        </Style>
+        <Style Selector="TextBlock.act.block">
+            <Setter Property="Foreground" Value="#FF5D6C" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+        <!-- Header -->
+        <Border
+            Height="56"
+            BorderBrush="#273055"
+            BorderThickness="0,0,0,1">
+            <Grid Margin="4,0,12,0" ColumnDefinitions="Auto,*,Auto">
+                <Button x:Name="btnBack" Classes="sc icon">
+                    <Path
+                        Data="M 7 0 L 0 7 L 7 14"
+                        StrokeLineCap="Round"
+                        StrokeThickness="2" />
+                </Button>
+                <TextBlock
+                    x:Name="txtTitle"
+                    Grid.Column="1"
+                    Margin="4,0,0,0"
+                    VerticalAlignment="Center"
+                    FontSize="17"
+                    FontWeight="Bold"
+                    Foreground="#E8EBF6" />
+                <Button
+                    x:Name="btnPresets"
+                    Grid.Column="2"
+                    Classes="sc tool">
+                    <TextBlock x:Name="btnPresetsText" />
+                </Button>
+            </Grid>
+        </Border>
+
+        <StackPanel
+            Grid.Row="1"
+            Margin="16,12,16,10"
+            Spacing="8">
+            <TextBlock x:Name="txtSet" Classes="eyebrow" Margin="0" />
+            <ComboBox
+                x:Name="cmbRouting"
+                MinHeight="44"
+                HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="ent:RoutingItem">
+                        <TextBlock Text="{Binding Remarks}" TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock x:Name="txtHint" Classes="sub" Foreground="#5B648A" />
+        </StackPanel>
+
+        <ScrollViewer
+            Grid.Row="2"
+            HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl x:Name="lstRules" Margin="16,0,16,16">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="dto:RouteRuleModel">
+                        <Border Margin="0,0,0,8" Classes="card" Padding="14,12,6,12">
+                            <Grid ColumnDefinitions="*,Auto,Auto">
+                                <StackPanel Margin="0,0,8,0" Spacing="4">
+                                    <TextBlock
+                                        FontSize="14.5"
+                                        FontWeight="SemiBold"
+                                        Foreground="#E8EBF6"
+                                        Text="{Binding Title}"
+                                        TextTrimming="CharacterEllipsis" />
+                                    <TextBlock
+                                        Classes="mono"
+                                        FontSize="11.5"
+                                        Foreground="#8B95B4"
+                                        Text="{Binding Summary}"
+                                        TextWrapping="Wrap" />
+                                    <TextBlock
+                                        Classes="act"
+                                        Classes.direct="{Binding IsDirect}"
+                                        Classes.block="{Binding IsBlock}"
+                                        Text="{Binding ActionText}" />
+                                </StackPanel>
+                                <ToggleButton
+                                    Grid.Column="1"
+                                    VerticalAlignment="Top"
+                                    Classes="sct rule"
+                                    IsChecked="{Binding Enabled, Mode=OneWay}"
+                                    Tag="{Binding Id}" />
+                                <Button
+                                    Grid.Column="2"
+                                    Margin="2,-8,0,0"
+                                    VerticalAlignment="Top"
+                                    Classes="sc icon more"
+                                    Tag="{Binding Id}">
+                                    <Viewbox Width="18" Height="18">
+                                        <Canvas Width="24" Height="24">
+                                            <Path
+                                                Data="M 12 5 V 5.01 M 12 12 V 12.01 M 12 19 V 19.01"
+                                                StrokeLineCap="Round"
+                                                StrokeThickness="3" />
+                                        </Canvas>
+                                    </Viewbox>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

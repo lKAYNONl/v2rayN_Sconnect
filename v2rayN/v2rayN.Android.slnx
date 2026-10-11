@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/Solution Files/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="../build-android.ps1" />
+    <File Path="../.github/workflows/build-android.yml" />
+  </Folder>
+  <Project Path="ServiceLib/ServiceLib.csproj" />
+  <Project Path="ServiceLib.UdpTest/ServiceLib.UdpTest.csproj" />
+  <Project Path="v2rayN.Android/v2rayN.Android.csproj" />
+</Solution>

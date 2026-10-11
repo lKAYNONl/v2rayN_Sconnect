@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<!-- AvaloniaActivity is an AppCompatActivity: an AppCompat theme is required. -->
+	<style name="ScTheme" parent="@style/Theme.AppCompat.NoActionBar">
+		<item name="android:windowActionBar">false</item>
+		<item name="android:windowNoTitle">true</item>
+		<item name="android:windowBackground">@color/sc_window</item>
+		<item name="android:statusBarColor">@color/sc_window</item>
+		<item name="android:navigationBarColor">@color/sc_window</item>
+		<item name="colorAccent">@color/sc_accent</item>
+	</style>
+</resources>

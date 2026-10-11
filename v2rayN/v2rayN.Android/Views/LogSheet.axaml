@@ -1,0 +1,54 @@
+<UserControl
+    x:Class="v2rayN.Mobile.Views.LogSheet"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="#11162A">
+    <Grid RowDefinitions="Auto,*">
+        <Border
+            Height="56"
+            BorderBrush="#273055"
+            BorderThickness="0,0,0,1">
+            <Grid Margin="4,0,12,0" ColumnDefinitions="Auto,*,Auto,8,Auto">
+                <Button x:Name="btnBack" Classes="sc icon">
+                    <Path
+                        Data="M 7 0 L 0 7 L 7 14"
+                        StrokeLineCap="Round"
+                        StrokeThickness="2" />
+                </Button>
+                <TextBlock
+                    x:Name="txtTitle"
+                    Grid.Column="1"
+                    Margin="4,0,0,0"
+                    VerticalAlignment="Center"
+                    FontSize="17"
+                    FontWeight="Bold"
+                    Foreground="#E8EBF6" />
+                <Button
+                    x:Name="btnClear"
+                    Grid.Column="2"
+                    Classes="sc tool">
+                    <TextBlock x:Name="btnClearText" />
+                </Button>
+                <Button
+                    x:Name="btnCopy"
+                    Grid.Column="4"
+                    Classes="sc tool">
+                    <TextBlock x:Name="btnCopyText" />
+                </Button>
+            </Grid>
+        </Border>
+        <ScrollViewer
+            x:Name="scroll"
+            Grid.Row="1"
+            HorizontalScrollBarVisibility="Disabled">
+            <SelectableTextBlock
+                x:Name="txtLog"
+                Margin="14,12"
+                FontFamily="{StaticResource ScMono}"
+                FontSize="11"
+                Foreground="#C9CFE3"
+                LineHeight="16"
+                TextWrapping="Wrap" />
+        </ScrollViewer>
+    </Grid>
+</UserControl>
