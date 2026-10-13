@@ -23,7 +23,9 @@ import os
 import pwd
 import re
 import shutil
+import subprocess
 import time
+from collections import Counter
 
 import decky
 
@@ -376,6 +378,243 @@ def _list_programs(uid, exclude_prefixes):
     return result
 
 
+# ----- connection check (the "Check" button) ----------------------------------
+
+DIAG_FILE = "secure-connect-diag.txt"
+LOG_ROTATE_BYTES = 8 * 1024 * 1024
+LOG_ANALYZE_BYTES = 1024 * 1024
+TEST_SITES = (
+    ("Google", "https://www.google.com/generate_204"),
+    ("YouTube", "https://www.youtube.com/generate_204"),
+    ("Discord", "https://discord.com/api/v9/gateway"),
+)
+TEST_HOST = "discord.com"
+PROXY_ENV_KEYS = ("http_proxy", "https_proxy", "all_proxy", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY")
+LOG_LINE = re.compile(r"\b(TRACE|DEBUG|INFO|WARN|ERROR|FATAL|PANIC)\b.*?\[(\d+) [^\]]*\] (.+)$")
+
+
+def _rotate_core_log():
+    """The log grows with every session (a lot with the detailed log on)."""
+    try:
+        if os.path.getsize(CORE_LOG) > LOG_ROTATE_BYTES:
+            os.replace(CORE_LOG, CORE_LOG + ".old")
+    except OSError:
+        pass
+
+
+def _run(argv, timeout=10):
+    """A root command for the report: its output, or why it failed."""
+    try:
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=timeout,
+                           env={"PATH": SYSTEM_PATH, "LANG": "C"})
+        return (r.stdout + r.stderr).strip()
+    except (OSError, subprocess.SubprocessError) as e:
+        return f"<{e}>"
+
+
+def _session_log():
+    """The current session's part of the sing-box log (after the last marker)."""
+    try:
+        with open(CORE_LOG, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            f.seek(max(0, f.tell() - LOG_ANALYZE_BYTES))
+            text = f.read().decode("utf-8", errors="replace")
+    except OSError:
+        return ""
+    mark = text.rfind("\n===== ")
+    return text[mark + 1:] if mark >= 0 else text
+
+
+def _analyze_log(text):
+    """Connections of the current session grouped by program: how many, which
+    outbound they took, and their errors. Needs the detailed (info) log."""
+    conns = {}
+    order = []
+    errors = []
+    for line in text.splitlines():
+        m = LOG_LINE.search(line)
+        if not m:
+            continue
+        level, cid, msg = m.groups()
+        c = conns.get(cid)
+        if c is None:
+            c = conns[cid] = {"proc": "", "dest": "", "domain": "", "out": "", "err": ""}
+            order.append(cid)
+        if "inbound connection to " in msg or "inbound packet connection to " in msg:
+            c["dest"] = msg.rsplit(" to ", 1)[-1].strip()
+        elif "found process path: " in msg:
+            c["proc"] = msg.split("found process path: ", 1)[1].split(", user:", 1)[0].strip()
+        elif "domain: " in msg and "sniffed" in msg:
+            c["domain"] = msg.rsplit("domain: ", 1)[-1].strip()
+        elif msg.startswith("outbound/") and " connection to " in msg:
+            c["out"] = msg.split("]", 1)[0].split("[", 1)[-1]
+        if level in ("ERROR", "FATAL", "PANIC", "WARN"):
+            c["err"] = c["err"] or msg[:200]
+            errors.append(msg[:200])
+    procs = {}
+    for cid in order:
+        c = conns[cid]
+        if not (c["dest"] or c["out"]):
+            continue
+        key = c["proc"] or "(программа не определена)"
+        p = procs.setdefault(key, {"count": 0, "out": Counter(), "errors": Counter(), "sites": Counter()})
+        p["count"] += 1
+        dns = c["dest"].endswith(":53")
+        p["out"]["dns" if dns and not c["out"] else (c["out"] or "без исхода")] += 1
+        if c["err"]:
+            p["errors"][re.sub(r"\d+\.\d+\.\d+\.\d+(:\d+)?", "<ip>", c["err"])[-120:]] += 1
+        if not dns:
+            p["sites"][c["domain"] or c["dest"].rsplit(":", 1)[0]] += 1
+    return procs, errors[-30:]
+
+
+def _describe_proc(path, p):
+    outs = ", ".join(f"{name} {n}" for name, n in p["out"].most_common())
+    line = f"{path}: {p['count']} соедин. ({outs})"
+    if p["errors"]:
+        line += f"; ошибок {sum(p['errors'].values())}: {p['errors'].most_common(1)[0][0]}"
+    return line
+
+
+def _read_ini(path, section):
+    values = {}
+    current = ""
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("["):
+                    current = line
+                elif current == section and "=" in line:
+                    key, value = line.split("=", 1)
+                    values[key.strip()] = value.strip()
+    except OSError:
+        pass
+    return values
+
+
+def _disable_kde_proxy_file():
+    """ProxyType=0 in the deck user's kioslaverc, when kwriteconfig is missing."""
+    uid, gid, home = _deck_user()
+    path = os.path.join(home, ".config", "kioslaverc")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return False
+    section = ""
+    changed = False
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("["):
+            section = stripped
+        elif section == "[Proxy Settings]" and stripped.startswith("ProxyType=") and stripped != "ProxyType=0":
+            lines[i] = "ProxyType=0"
+            changed = True
+    if changed:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+        os.chown(path, uid, gid)
+    return changed
+
+
+def _collect_root_facts(uid, home):
+    """Everything the check reads as root: network, DNS, proxies, Flatpak apps."""
+    facts = {}
+    facts["addr"] = _run(["ip", "-brief", "address"])
+    v6 = _run(["ip", "-6", "-o", "address", "show", "scope", "global"])
+    facts["global_v6"] = [f"{m.group(1)} {m.group(2)}" for m in
+                          (re.match(r"^\d+:\s+(\S+)\s+inet6\s+(\S+)", line) for line in v6.splitlines())
+                          if m and not m.group(1).startswith("singbox")]
+    facts["rules4"] = _run(["ip", "rule"])
+    facts["rules6"] = _run(["ip", "-6", "rule"])
+    facts["v6_blocked"] = "unreachable" in facts["rules6"]
+    facts["routes"] = _run(["ip", "route", "show", "default"]) + "\n" + _run(["ip", "-6", "route", "show", "default"])
+    try:
+        facts["resolv_link"] = os.path.realpath("/etc/resolv.conf")
+        with open("/etc/resolv.conf", "r", encoding="utf-8", errors="replace") as f:
+            facts["resolv"] = "\n".join(l for l in f.read().splitlines() if l.strip() and not l.startswith("#"))
+    except OSError as e:
+        facts["resolv"] = f"<{e}>"
+    facts["resolvectl"] = _run(["resolvectl", "dns"], timeout=5)
+
+    # Proxy settings the desktop app may have left (it sets both KDE and GNOME
+    # ones for 127.0.0.1:<port> and clears them only on a clean exit).
+    kde = _read_ini(os.path.join(home, ".config", "kioslaverc"), "[Proxy Settings]")
+    facts["kde_proxy"] = (f"ProxyType={kde.get('ProxyType', '0')} http={kde.get('httpProxy', '')}"
+                          if kde else "")
+    facts["kde_proxy_on"] = kde.get("ProxyType", "0") not in ("", "0")
+
+    # Running programs: Flatpak apps and proxy variables in their environment.
+    flatpaks = {}
+    env_proxies = {}
+    for name in os.listdir("/proc"):
+        if not name.isdigit():
+            continue
+        try:
+            if os.stat(f"/proc/{name}").st_uid != uid:
+                continue
+            exe = os.readlink(f"/proc/{name}/exe")
+        except OSError:
+            continue
+        app_id = _flatpak_app(name) if exe.startswith("/app/") else ""
+        if app_id and not app_id.startswith("com.steampowered."):
+            flatpaks.setdefault(app_id, set()).add(exe)
+        try:
+            with open(f"/proc/{name}/environ", "rb") as f:
+                environ = f.read(65536).split(b"\0")
+        except OSError:
+            continue
+        for item in environ:
+            key, _, value = item.decode("utf-8", errors="replace").partition("=")
+            if key in PROXY_ENV_KEYS and value:
+                env_proxies.setdefault(f"{key}={value}", set()).add(app_id or os.path.basename(exe))
+    facts["flatpaks"] = {k: sorted(v) for k, v in flatpaks.items()}
+    facts["env_proxies"] = {k: sorted(v)[:5] for k, v in env_proxies.items()}
+
+    overrides = {}
+    for folder in (os.path.join(home, ".local", "share", "flatpak", "overrides"), "/var/lib/flatpak/overrides"):
+        for app_id in ["global"] + sorted(flatpaks):
+            path = os.path.join(folder, app_id)
+            try:
+                with open(path, "r", encoding="utf-8", errors="replace") as f:
+                    overrides[path] = f.read().strip()
+            except OSError:
+                pass
+    facts["overrides"] = overrides
+    return facts
+
+
+def _config_summary(path):
+    """The running sing-box config without credentials: TUN, DNS, routing."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+    except (OSError, ValueError) as e:
+        return [f"<{e}>"], {}
+    lines = []
+    tun = next((i for i in config.get("inbounds") or [] if i.get("type") == "tun"), {})
+    lines.append("tun: " + json.dumps({k: tun.get(k) for k in (
+        "address", "auto_route", "strict_route", "stack", "mtu", "route_exclude_address")}, ensure_ascii=False))
+    lines.append("inbounds: " + ", ".join(f"{i.get('type')}[{i.get('tag')}]" for i in config.get("inbounds") or []))
+    lines.append("outbounds: " + ", ".join(f"{o.get('type')}[{o.get('tag')}]" for o in config.get("outbounds") or []))
+    dns = config.get("dns") or {}
+    for server in dns.get("servers") or []:
+        shown = {k: server.get(k) for k in ("tag", "type", "address", "server", "detour") if server.get(k) is not None}
+        lines.append("dns server: " + json.dumps(shown, ensure_ascii=False))
+    lines.append(f"dns final: {dns.get('final')}, strategy: {dns.get('strategy')}, rules: {len(dns.get('rules') or [])}")
+    route = config.get("route") or {}
+    lines.append(f"route final: {route.get('final')}, rules: {len(route.get('rules') or [])}")
+    for rule in (route.get("rules") or [])[:40]:
+        text = json.dumps(rule, ensure_ascii=False)
+        lines.append("  rule: " + (text if len(text) < 300 else text[:300] + "…"))
+    # The servers' own addresses also appear in DNS / routing rules.
+    servers = {str(o.get("server")) for o in config.get("outbounds") or [] if o.get("server")}
+    for server in sorted(servers, key=len, reverse=True):
+        lines = [line.replace(server, "<server>") for line in lines]
+    return lines, tun
+
+
 def _parse_answer(stdout, stderr):
     """v2rayN prints one JSON line; anything else on stdout is ignored."""
     for line in reversed(stdout.decode("utf-8", errors="replace").splitlines()):
@@ -462,13 +701,15 @@ class Plugin:
             "profile_id": self.profile_id,
             "profile_name": self.profile_name,
             "error": self.error,
+            "verbose": self._load_settings().get("verbose") is True,
         }
 
     @staticmethod
-    def _prepare_config(source):
+    def _prepare_config(source, verbose=False):
         """The generated config, adjusted for the plugin: log to our log file,
         sing-box cache in the plugin's runtime folder (root-owned files must not
-        end up in the deck user's v2rayN folder), only the TUN inbound."""
+        end up in the deck user's v2rayN folder), only the TUN inbound, no IPv6
+        around the tunnel. verbose: every connection in the log (for the check)."""
         with open(source, "r", encoding="utf-8") as f:
             config = json.load(f)
         log = config.setdefault("log", {})
@@ -476,7 +717,10 @@ class Plugin:
         # Our log file (stdout), not the app's guiLogs: a root-owned file there
         # would block the app's own sing-box.
         log.pop("output", None)
-        log.setdefault("level", "warn")
+        if verbose:
+            log["level"] = "info"
+        else:
+            log.setdefault("level", "warn")
         log["timestamp"] = True
         experimental = config.get("experimental")
         if isinstance(experimental, dict):
@@ -491,6 +735,12 @@ class Plugin:
         inbounds = config.get("inbounds")
         if isinstance(inbounds, list):
             config["inbounds"] = [i for i in inbounds if isinstance(i, dict) and i.get("type") == "tun"]
+            for tun in config["inbounds"]:
+                if not any(":" in str(a) for a in tun.get("address") or []):
+                    # No IPv6 on the TUN: without strict_route IPv6 connections go
+                    # around the tunnel (browsers and Electron apps prefer IPv6),
+                    # with it IPv6 is unreachable and they fall back to IPv4.
+                    tun["strict_route"] = True
         os.makedirs(os.path.dirname(RUN_CONFIG), exist_ok=True)
         with open(RUN_CONFIG, "w", encoding="utf-8") as f:
             json.dump(config, f)
@@ -540,9 +790,10 @@ class Plugin:
         return CORE_COPY
 
     async def _start_core(self, answer):
-        run_config = self._prepare_config(answer["config"])
+        run_config = self._prepare_config(answer["config"], self._load_settings().get("verbose") is True)
         core = self._core_copy()
         os.makedirs(os.path.dirname(CORE_LOG), exist_ok=True)
+        _rotate_core_log()
         with open(CORE_LOG, "ab") as log:
             log.write(f"\n===== {self.profile_name} =====\n".encode("utf-8"))
             log.flush()
@@ -734,6 +985,208 @@ class Plugin:
             finally:
                 self.busy = False
         return self._status()
+
+    # ----- connection check -------------------------------------------------
+
+    async def _as_user(self, *argv, timeout=20):
+        """A command as the deck user in their session (D-Bus for gsettings)."""
+        uid, gid, home = _deck_user()
+        env = _user_env(home)
+        env["XDG_RUNTIME_DIR"] = f"/run/user/{uid}"
+        env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path=/run/user/{uid}/bus"
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *argv, cwd=home, env=env, user=uid, group=gid, extra_groups=[],
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            )
+        except OSError as e:
+            return 127, "", str(e)
+        try:
+            out, err = await asyncio.wait_for(proc.communicate(), timeout)
+        except asyncio.TimeoutError:
+            proc.kill()
+            await proc.wait()
+            return 124, "", "timeout"
+        return (proc.returncode,
+                out.decode("utf-8", errors="replace").strip(),
+                err.decode("utf-8", errors="replace").strip())
+
+    async def set_verbose(self, on):
+        """The detailed sing-box log (every connection with its program and
+        outbound) for the check; a running session is reconnected."""
+        async with self.lock:
+            self.busy = True
+            self.error = ""
+            try:
+                self._save_settings(verbose=bool(on))
+                if self._running() and self.profile_id:
+                    await self._connect(self.profile_id)
+            except Exception as e:  # noqa: BLE001 - shown in the panel
+                self.error = str(e)
+                decky.logger.error(f"verbose log: {e}")
+            finally:
+                self.busy = False
+        return self._status()
+
+    async def reset_system_proxy(self):
+        """Turns off the system proxy the desktop app may have left behind
+        (GNOME and KDE settings of the deck user)."""
+        done = []
+        rc, _, err = await self._as_user("gsettings", "set", "org.gnome.system.proxy", "mode", "none", timeout=10)
+        if rc == 0:
+            done.append("GNOME")
+        elif rc != 127:
+            decky.logger.warning(f"gsettings: {err}")
+        for tool in ("kwriteconfig6", "kwriteconfig5"):
+            if shutil.which(tool, path=SYSTEM_PATH):
+                rc, _, err = await self._as_user(tool, "--file", "kioslaverc", "--group", "Proxy Settings",
+                                                 "--key", "ProxyType", "0", timeout=10)
+                if rc == 0:
+                    done.append("KDE")
+                    break
+                decky.logger.warning(f"{tool}: {err}")
+        else:
+            if _disable_kde_proxy_file():
+                done.append("KDE")
+        if not done:
+            return {"ok": False, "message": "Не удалось изменить настройки прокси."}
+        return {"ok": True, "message": "Системный прокси выключен (" + ", ".join(done) +
+                                       "). Перезапустите приложения, которые висели."}
+
+    async def diagnose(self):
+        """Checks what an app's traffic hits: the tunnel, IPv6 around it, a
+        dead system proxy, DNS; with the detailed log - where each program's
+        connections went. Writes a full report to ~/Desktop."""
+        uid, gid, home = _deck_user()
+        status = self._status()
+        split = self._split_view(await self._v2rayn("split"))
+        mode = split.get("mode", "?")
+        running = status["running"]
+
+        async def site(name, url, family):
+            rc, out, err = await self._as_user(
+                "curl", "-sS", "-o", "/dev/null", "-m", "12", f"-{family}",
+                "-w", "%{http_code} %{remote_ip} %{time_total}s", url, timeout=20)
+            ok = rc == 0 and out[:1] in ("2", "3")
+            return name, family, ok, out if rc == 0 else (err.splitlines()[-1] if err else f"exit {rc}")
+
+        gathered = await asyncio.gather(
+            asyncio.to_thread(_collect_root_facts, uid, home),
+            self._as_user("curl", "-sS", "-m", "12", "-4", "https://api.ipify.org"),
+            self._as_user("curl", "-sS", "-m", "12", "-6", "https://api6.ipify.org"),
+            self._as_user("getent", "ahostsv4", TEST_HOST, timeout=15),
+            self._as_user("getent", "ahostsv6", TEST_HOST, timeout=15),
+            self._as_user("gsettings", "get", "org.gnome.system.proxy", "mode", timeout=10),
+            self._as_user("gsettings", "get", "org.gnome.system.proxy.http", "host", timeout=10),
+            self._as_user("gsettings", "get", "org.gnome.system.proxy.http", "port", timeout=10),
+            *(site(n, u, f) for n, u in TEST_SITES for f in ("4", "6")),
+        )
+        facts, ip4, ip6, dns4, dns6, gs_mode, gs_host, gs_port = gathered[:8]
+        sites = gathered[8:]
+        config_lines, tun = _config_summary(RUN_CONFIG) if running else (["(не подключено)"], {})
+        procs, log_errors = _analyze_log(_session_log()) if running else ({}, [])
+        verbose = status["verbose"]
+
+        verdicts = []
+        if not running:
+            verdicts.append("Туннель не подключён. Подключитесь и повторите проверку.")
+
+        # IPv6 around the tunnel
+        tun_v6 = any(":" in str(a) for a in tun.get("address") or [])
+        if running and not tun_v6 and ip6[0] == 0 and ip6[1]:
+            verdicts.append(f"⚠ IPv6 идёт мимо туннеля (внешний IPv6 {ip6[1]}): приложения, которые "
+                            "предпочитают IPv6 (браузеры, Discord), ходят напрямую.")
+        elif running and facts["global_v6"]:
+            verdicts.append("IPv6 у сети есть, мимо туннеля не уходит ✓")
+
+        # A system proxy nobody listens on
+        leftovers = []
+        if gs_mode[0] == 0 and "manual" in gs_mode[1]:
+            leftovers.append(f"GNOME {gs_host[1].strip(chr(39))}:{gs_port[1]}")
+        if facts["kde_proxy_on"]:
+            leftovers.append("KDE " + facts["kde_proxy"].split("http=", 1)[-1])
+        proxy_leftover = bool(leftovers)
+        if leftovers:
+            verdicts.append("⚠ В системе включён прокси: " + "; ".join(leftovers) + ". Его ставит приложение "
+                            "в режиме рабочего стола. Браузеры и Electron-приложения идут на него, а в "
+                            "игровом режиме там никто не слушает — они висят. Нажмите «Сбросить системный прокси».")
+        for value, apps in facts["env_proxies"].items():
+            verdicts.append(f"⚠ Прокси в окружении программ ({', '.join(apps)}): {value}. "
+                            "Если он указывает на 127.0.0.1 — уберите его (Flatseal / overrides).")
+
+        # DNS and sites
+        if dns4[0] != 0:
+            verdicts.append(f"⚠ DNS не отвечает: {TEST_HOST} не разрешается ({dns4[2] or 'нет ответа'}).")
+        v4 = [s for s in sites if s[1] == "4"]
+        failed = [s[0] for s in v4 if not s[2]]
+        if running:
+            note = " (curl не в списке, в режиме «Только выбранные» он идёт напрямую)" if mode == "only" else ""
+            if failed:
+                verdicts.append(f"⚠ Не открываются{note}: " + ", ".join(failed) + ".")
+            else:
+                verdicts.append(f"Сайты открываются{note}: " + ", ".join(s[0] for s in v4) + " ✓")
+        if ip4[0] == 0 and ip4[1]:
+            verdicts.append(f"Внешний IPv4: {ip4[1]}")
+
+        # Where each program's connections went
+        if running and not verbose:
+            verdicts.append("Чтобы увидеть, куда идут соединения приложения: включите «Подробный журнал», "
+                            "запустите приложение, дождитесь зависания и нажмите «Проверить» ещё раз.")
+        elif running:
+            for app_id, exes in facts["flatpaks"].items():
+                mine = {path: p for path, p in procs.items() if path in exes}
+                if not mine:
+                    verdicts.append(f"⚠ {app_id}: в туннеле нет ни одного его соединения — приложение "
+                                    "ходит мимо (системный прокси, IPv6) или ещё не подключалось.")
+                for path, p in mine.items():
+                    verdicts.append(f"{app_id} — " + _describe_proc(os.path.basename(path), p))
+            if not facts["flatpaks"]:
+                verdicts.append("Flatpak-приложения сейчас не запущены — запустите нужное и повторите проверку.")
+
+        # The full report
+        r = [f"Secure Connect — проверка {time.strftime('%Y-%m-%d %H:%M:%S')}", ""]
+        r += ["== Итог"] + verdicts + [""]
+        r += ["== Плагин",
+              f"подключено: {running}, профиль: {status['profile_name']}, ошибка: {status['error'] or '-'}",
+              f"режим: {mode}, правила маршрутизации: {split.get('routing')}, подробный журнал: {verbose}",
+              "список: " + (", ".join(a["value"] for a in split.get("apps") or []) or "-"), ""]
+        r += ["== Конфиг sing-box (без ключей и адресов серверов)"] + config_lines + [""]
+        r += ["== Сеть", facts["addr"], "", "глобальные IPv6: " + (", ".join(facts["global_v6"]) or "нет"),
+              "", "ip rule:", facts["rules4"], "", "ip -6 rule:", facts["rules6"], "", "default:", facts["routes"], ""]
+        r += ["== DNS", f"/etc/resolv.conf -> {facts['resolv_link']}", facts["resolv"], "", facts["resolvectl"], "",
+              f"getent ahostsv4 {TEST_HOST}: " + (dns4[1].splitlines()[0] if dns4[1] else dns4[2]),
+              f"getent ahostsv6 {TEST_HOST}: " + (dns6[1].splitlines()[0] if dns6[1] else dns6[2] or "-"), ""]
+        r += ["== Проверка сайтов (curl от пользователя deck)"]
+        r += [f"{name} IPv{fam}: {'OK' if ok else 'FAIL'} {info}" for name, fam, ok, info in sites]
+        r += [f"внешний IPv4: {ip4[1] or ip4[2]}", f"внешний IPv6: {ip6[1] or ip6[2]}", ""]
+        r += ["== Прокси", f"GNOME: mode={gs_mode[1] or gs_mode[2]} host={gs_host[1]} port={gs_port[1]}",
+              f"KDE (kioslaverc): {facts['kde_proxy'] or '-'}",
+              "в окружении: " + (json.dumps(facts["env_proxies"], ensure_ascii=False) if facts["env_proxies"] else "-"), ""]
+        r += ["== Flatpak", "запущены: " + (json.dumps(facts["flatpaks"], ensure_ascii=False) or "-")]
+        for path, text in facts["overrides"].items():
+            r += [f"--- {path}", text]
+        r += [""]
+        r += ["== Соединения по программам (журнал текущей сессии)"]
+        for path, p in sorted(procs.items(), key=lambda kv: -kv[1]["count"])[:25]:
+            r.append(_describe_proc(path, p))
+            sites_seen = ", ".join(f"{d} {n}" for d, n in p["sites"].most_common(6))
+            if sites_seen:
+                r.append(f"    сайты: {sites_seen}")
+        if not procs:
+            r.append("(нет данных — включите «Подробный журнал»)" if not verbose else "(соединений нет)")
+        r += ["", "== Последние ошибки sing-box"] + (log_errors or ["-"])
+
+        desktop = os.path.join(home, "Desktop")
+        path = os.path.join(desktop if os.path.isdir(desktop) else home, DIAG_FILE)
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("\n".join(str(x) for x in r) + "\n")
+            os.chown(path, uid, gid)
+            shown = path.replace(home, "~", 1)
+        except OSError as e:
+            shown = f"не удалось сохранить: {e}"
+        decky.logger.info(f"check: {len(verdicts)} findings, report {path}")
+        return {"ok": True, "verdicts": verdicts, "report": shown, "proxy_leftover": proxy_leftover}
 
     # ----- Decky lifecycle ------------------------------------------------
 

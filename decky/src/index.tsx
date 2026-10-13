@@ -35,6 +35,7 @@ interface Status {
   profile_id: string;
   profile_name: string;
   error: string;
+  verbose?: boolean;
 }
 
 type Mode = "all" | "only" | "except";
@@ -81,6 +82,18 @@ interface Program {
   count: number;
 }
 
+interface DiagAnswer {
+  ok: boolean;
+  verdicts: string[];
+  report: string;
+  proxy_leftover: boolean;
+}
+
+interface ResetAnswer {
+  ok: boolean;
+  message: string;
+}
+
 interface ProgramsAnswer {
   ok: boolean;
   error?: string;
@@ -94,6 +107,9 @@ const disconnect = callable<[], Status>("disconnect");
 const getSplit = callable<[], Split>("get_split");
 const updateSplit = callable<[SplitChange], SplitAnswer>("update_split");
 const getPrograms = callable<[], ProgramsAnswer>("get_programs");
+const diagnose = callable<[], DiagAnswer>("diagnose");
+const setVerbose = callable<[boolean], Status>("set_verbose");
+const resetSystemProxy = callable<[], ResetAnswer>("reset_system_proxy");
 
 const MODES: { data: Mode; label: string }[] = [
   { data: "all", label: "Весь Deck" },
@@ -176,6 +192,9 @@ function Content() {
   const [programsError, setProgramsError] = useState<string>("");
   const [query, setQuery] = useState<string>("");
   const [chosen, setChosen] = useState<string[]>([]);
+
+  const [diag, setDiag] = useState<DiagAnswer | null>(null);
+  const [checking, setChecking] = useState<boolean>(false);
 
   const loadProfiles = async () => {
     setLoading(true);
@@ -299,6 +318,29 @@ function Content() {
     if (await changeSplit({ add, labels })) {
       setPicking(false);
       setChosen([]);
+    }
+  };
+
+  const runCheck = async () => {
+    setChecking(true);
+    try {
+      setDiag(await diagnose());
+    } catch (e) {
+      setDiag({ ok: false, verdicts: [String(e)], report: "", proxy_leftover: false });
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const onResetProxy = async () => {
+    try {
+      const answer = await resetSystemProxy();
+      showError(answer.message);
+      if (answer.ok) {
+        await runCheck();
+      }
+    } catch (e) {
+      showError(String(e));
     }
   };
 
@@ -555,6 +597,50 @@ function Content() {
             }
           />
         </PanelSectionRow>
+      </PanelSection>
+
+      <PanelSection title="Проверка">
+        <PanelSectionRow>
+          <ToggleField
+            label="Подробный журнал"
+            description="Записывать каждое соединение: какая программа, куда, через прокси или напрямую."
+            checked={status?.verbose ?? false}
+            disabled={busy}
+            onChange={(on) => void apply(() => setVerbose(on))}
+          />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem layout="below" disabled={checking} onClick={() => void runCheck()}>
+            {checking ? "Проверка… (до 30 секунд)" : "Проверить соединение"}
+          </ButtonItem>
+        </PanelSectionRow>
+        {!diag && !checking ? (
+          <PanelSectionRow>
+            <Field
+              description={
+                "Приложение висит? Подключитесь, включите «Подробный журнал», запустите приложение, " +
+                "дождитесь зависания и нажмите «Проверить соединение»."
+              }
+            />
+          </PanelSectionRow>
+        ) : null}
+        {diag?.verdicts.map((line, i) => (
+          <PanelSectionRow key={`v${i}`}>
+            <Field description={line} />
+          </PanelSectionRow>
+        ))}
+        {diag?.proxy_leftover ? (
+          <PanelSectionRow>
+            <ButtonItem layout="below" onClick={() => void onResetProxy()}>
+              Сбросить системный прокси
+            </ButtonItem>
+          </PanelSectionRow>
+        ) : null}
+        {diag?.report ? (
+          <PanelSectionRow>
+            <Field description={`Полный отчёт: ${diag.report}`} />
+          </PanelSectionRow>
+        ) : null}
       </PanelSection>
     </>
   );
