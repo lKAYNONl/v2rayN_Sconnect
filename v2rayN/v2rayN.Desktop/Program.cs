@@ -13,6 +13,13 @@ internal class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // Headless helper for the Steam Deck plugin: no window, no single-instance check.
+        if (args.Length > 0 && args[0] == DeckyCli.Flag)
+        {
+            Environment.Exit(DeckyCli.Run(args[1..]));
+            return;
+        }
+
         if (OnStartup(args) == false)
         {
             Environment.Exit(0);

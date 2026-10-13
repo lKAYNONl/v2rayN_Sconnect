@@ -1,0 +1,11 @@
+{
+  "name": "Secure Connect",
+  "author": "lKAYNONl",
+  "flags": ["root"],
+  "api_version": 1,
+  "publish": {
+    "tags": ["vpn", "network", "root"],
+    "description": "Run a v2rayN Secure Connect profile with sing-box in TUN mode right from Game Mode.",
+    "image": ""
+  }
+}
