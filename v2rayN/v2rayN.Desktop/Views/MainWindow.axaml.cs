@@ -377,6 +377,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 }
                 interaction.SetOutput(password);
             }).DisposeWith(disposables);
+            ViewModel.StatusBarViewModel.MarkUiReady();
 
             ViewModel.StatusBarViewModel.DispatcherRefreshIconInteraction.RegisterHandler(interaction =>
             {

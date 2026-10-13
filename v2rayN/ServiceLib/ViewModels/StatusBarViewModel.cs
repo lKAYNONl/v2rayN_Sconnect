@@ -11,8 +11,12 @@ public partial class StatusBarViewModel : MyReactiveObject
     private static readonly Lazy<StatusBarViewModel> _instance = new(() => new());
     public static StatusBarViewModel Instance => _instance.Value;
 
-    // TUN is saved as on, but this (non-elevated) session cannot run it yet.
+    // TUN is saved as on, but this session cannot run it yet: Windows needs an
+    // elevated restart, Linux/macOS the sudo password (asked at startup).
     private bool _tunAwaitingAdmin;
+
+    // Set by the main window once its dialogs (sudo password) are wired up.
+    private readonly TaskCompletionSource _uiReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public EventChannel<string> SetDefaultServerRequested { get; } = new();
     public EventChannel<RxVoid> ReloadRequested { get; } = new();
@@ -127,11 +131,12 @@ public partial class StatusBarViewModel : MyReactiveObject
         {
             EnableTun = true;
         }
-        else if (_config.TunModeItem.EnableTun && Utils.IsWindows()
-                 && !Environment.GetCommandLineArgs().Contains(Global.RebootAs))
+        else if (_config.TunModeItem.EnableTun
+                 && (Utils.IsNonWindows() || !Environment.GetCommandLineArgs().Contains(Global.RebootAs)))
         {
-            // Secure Connect: TUN is remembered. Without admin rights keep the saved
-            // choice; MainWindowViewModel restarts the app elevated before connecting.
+            // Secure Connect: TUN is remembered. Keep the saved choice until it can
+            // run: MainWindowViewModel restarts the app elevated (Windows) or asks
+            // for the sudo password (Linux/macOS) before connecting.
             _tunAwaitingAdmin = true;
         }
         else
@@ -456,8 +461,13 @@ public partial class StatusBarViewModel : MyReactiveObject
                 return;
             }
             _tunAwaitingAdmin = false;
-            await RestartAsAdminForTunAsync();
-            return;
+            if (Utils.IsWindows())
+            {
+                await RestartAsAdminForTunAsync();
+                return;
+            }
+            // Linux/macOS: go on below, which asks for the sudo password.
+            _config.TunModeItem.EnableTun = false;
         }
 
         if (_config.TunModeItem.EnableTun == EnableTun)
@@ -503,7 +513,43 @@ public partial class StatusBarViewModel : MyReactiveObject
             return false;
         }
         _tunAwaitingAdmin = false;
-        return await RestartAsAdminForTunAsync();
+        if (Utils.IsWindows())
+        {
+            return await RestartAsAdminForTunAsync();
+        }
+        await AskSudoForSavedTunAsync();
+        return false;
+    }
+
+    /// <summary>The main window has registered its dialogs (sudo password).</summary>
+    public void MarkUiReady() => _uiReady.TrySetResult();
+
+    /// <summary>
+    /// Linux/macOS startup with TUN saved as on: ask for the sudo password now, so
+    /// the first connect already runs in TUN mode. Cancelling turns TUN off.
+    /// </summary>
+    private async Task AskSudoForSavedTunAsync()
+    {
+        try
+        {
+            await _uiReady.Task.WaitAsync(TimeSpan.FromSeconds(30));
+        }
+        catch (TimeoutException)
+        {
+        }
+
+        var password = await PasswordInputInteraction.HandleSafe(RxVoid.Default);
+        if (password.IsNullOrEmpty())
+        {
+            _config.TunModeItem.EnableTun = false;
+            await ConfigHandler.SaveConfig(_config);
+            NoticeManager.Instance.Enqueue(ResUI.ScTunNeedsAdmin);
+            return;
+        }
+
+        // The password dialog stored it (AppManager.LinuxSudoPwd); the config
+        // already says TUN, so the connect that follows uses it.
+        RxSchedulers.MainThreadScheduler.Schedule(() => EnableTun = true);
     }
 
     /// <summary>
