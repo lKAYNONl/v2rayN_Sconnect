@@ -10,15 +10,20 @@ sing-box in TUN mode, so the whole Deck goes through the tunnel:
   2. this backend (root, see plugin.json) starts the plugin's own sing-box
      with that config and stops it on Disconnect / unload.
 
-Profiles, subscriptions, routes and split tunneling are managed in the app
-itself (Desktop Mode, menu entry "Secure Connect (v2rayN)").
+Profiles and subscriptions are managed in the app itself (Desktop Mode, menu
+entry "Secure Connect (v2rayN)"). Split tunneling and the routing rules switch
+can be changed in both places - they are the same settings ("--decky split" /
+"--decky split-set"); the plugin adds a "whole Deck" mode of its own and a
+picker of running programs (Proton/Wine games, Flatpak apps, AppImages).
 """
 
 import asyncio
 import json
 import os
 import pwd
+import re
 import shutil
+import time
 
 import decky
 
@@ -39,6 +44,51 @@ CORE_COPY = os.path.join(decky.DECKY_PLUGIN_RUNTIME_DIR, "sing-box")
 DATA_ENV = "V2RAYN_LOCAL_APPLICATION_DATA_V2"
 DESKTOP_FILE = "secure-connect-v2rayn.desktop"
 SYSTEM_PATH = "/usr/local/sbin:/usr/local/bin:/usr/bin:/bin"
+
+# ----- running programs (split tunneling picker) ------------------------------
+#
+# sing-box finds the program of a connection by /proc/<pid>/exe and matches it
+# against the list (exact path, file name, or a folder). The picker reads the
+# same link, so what it adds is exactly what sing-box will see:
+#   - Proton / Wine games: the exe is Wine's loader (wine64-preloader), not the
+#     game's .exe, and the sockets are also held by wineserver (sing-box may
+#     report either), so the whole Proton / Wine build is added (a folder
+#     entry): every game on that Proton version matches. A system-wide Wine
+#     gets its loader and wineserver paths instead;
+#   - Flatpak apps: the path inside the sandbox ("/app/..."), as the kernel
+#     reports it;
+#   - scripts (Python, Java...): the interpreter is what sing-box sees, so the
+#     entry covers every program on that interpreter - the panel says so;
+#   - AppImages: mounted at a new /tmp/.mount_* path on every start, so the
+#     file name is added instead.
+
+WINE_LOADERS = {"wine", "wine64", "wine-preloader", "wine64-preloader", "wineserver"}
+# Wine's own background processes: not shown as the game's name.
+WINE_SERVICES = {
+    "services.exe", "winedevice.exe", "plugplay.exe", "explorer.exe", "rpcss.exe",
+    "svchost.exe", "conhost.exe", "start.exe", "tabtip.exe", "rundll32.exe",
+    "wineboot.exe", "winemenubuilder.exe", "steam.exe", "cmd.exe", "xalia.exe",
+    "lsteamclient.exe", "regsvr32.exe", "wineserver",
+}
+# Session / desktop plumbing of the deck user: hidden unless it uses the network.
+SYSTEM_PROGRAMS = {
+    "systemd", "(sd-pam)", "dbus-daemon", "dbus-broker", "dbus-broker-launch",
+    "pipewire", "pipewire-pulse", "wireplumber", "gamescope", "gamescope-wl",
+    "gamescopereaper", "gamescope-session", "gamescope-session-plus", "Xwayland",
+    "mangoapp", "steam-launch-wrapper", "reaper", "bwrap", "sh", "bash", "dash",
+    "sleep", "cat", "tail", "tee", "sed", "grep", "flatpak", "flatpak-portal",
+    "flatpak-session-helper", "p11-kit-server", "ssh-agent", "gpg-agent",
+    "xdg-desktop-portal", "xdg-desktop-portal-gtk", "xdg-desktop-portal-kde",
+    "xdg-document-portal", "xdg-permission-store", "ibus-daemon", "kwalletd5",
+    "kwalletd6", "ksecretd", "kded5", "kded6", "kwin_x11", "kwin_wayland",
+    "plasmashell", "ksmserver", "kactivitymanagerd", "baloo_file", "obexd",
+    "steamos-manager", "sdgyrodsu", "srt-logger", "steam-runtime-launcher-service",
+    "pressure-vessel-adverb", "pressure-vessel-wrap", "pv-adverb", "pv-bwrap",
+    "xdg-dbus-proxy",
+}
+INTERPRETER = re.compile(r"^(python[0-9.]*|java|node|nodejs|mono|mono-sgen|perl[0-9.]*|ruby[0-9.]*|lua[0-9.]*|bash|sh|dash)$")
+SYSTEM_PREFIXES = ("/usr/lib/systemd/", "/usr/libexec/", "/usr/lib/at-spi")
+PROCESS_SCAN_LIMIT = 4000
 
 
 def _deck_user():
@@ -133,6 +183,199 @@ def _log_tail(lines=6):
         return ""
 
 
+def _read_text(path, limit=4096):
+    try:
+        with open(path, "rb") as f:
+            return f.read(limit).decode("utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def _socket_inodes():
+    """Inodes of the TCP/UDP sockets that are open right now."""
+    inodes = set()
+    for name in ("tcp", "tcp6", "udp", "udp6"):
+        try:
+            with open(f"/proc/net/{name}", "r", encoding="ascii", errors="replace") as f:
+                next(f, None)
+                for line in f:
+                    parts = line.split()
+                    if len(parts) > 9 and parts[9] != "0":
+                        inodes.add(f"socket:[{parts[9]}]")
+        except OSError:
+            pass
+    return inodes
+
+
+def _uses_network(pid, sockets):
+    try:
+        fds = os.listdir(f"/proc/{pid}/fd")
+    except OSError:
+        return False
+    for fd in fds:
+        try:
+            if os.readlink(f"/proc/{pid}/fd/{fd}") in sockets:
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def _flatpak_app(pid):
+    """Flatpak app id of a sandboxed process; "" for host programs. Steam's own
+    game containers also carry this file (com.steampowered.App<id>)."""
+    text = _read_text(f"/proc/{pid}/root/.flatpak-info")
+    section = ""
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("["):
+            section = line
+        elif section == "[Application]" and line.startswith("name="):
+            return line[5:].strip()
+    return ""
+
+
+def _windows_name(argv0):
+    """Game.exe from Wine's argv[0] ("C:\\Games\\Game.exe", "Z:\\home\\...")."""
+    name = argv0.replace("\\", "/").rsplit("/", 1)[-1].strip()
+    return name if name.lower().endswith(".exe") else ""
+
+
+def _wine_root(exe):
+    """Folder of the Proton / Wine build that runs a game: ".../Proton 9.0/" for
+    ".../Proton 9.0/files/bin/wine64-preloader". None for a system-wide Wine
+    (a folder entry would cover all of /usr)."""
+    folder = os.path.dirname(exe)
+    if os.path.basename(folder) == "bin":
+        folder = os.path.dirname(folder)
+        if os.path.basename(folder) in ("files", "dist"):
+            folder = os.path.dirname(folder)
+    if folder in ("", "/", "/usr", "/usr/local", "/app", "/opt"):
+        return None
+    return folder.rstrip("/") + "/"
+
+
+def _entry_kind(value):
+    """What a split tunneling entry is, for the panel."""
+    if value.endswith("/"):
+        low = value.lower()
+        if "proton" in low or "/compatibilitytools.d/" in low or "wine" in low:
+            return "proton"
+        return "folder"
+    if value.startswith("/app/"):
+        return "flatpak"
+    if "/" in value or "\\" in value:
+        return "path"
+    return "name"
+
+
+def _entry_label(value):
+    trimmed = value.rstrip("/\\")
+    return trimmed.replace("\\", "/").rsplit("/", 1)[-1] or value
+
+
+def _list_programs(uid, exclude_prefixes):
+    """Running programs of the deck user, grouped by the split tunneling entries
+    that would match them ("values"). Programs with open network connections
+    come first."""
+    sockets = _socket_inodes()
+    groups = {}
+    scanned = 0
+    for name in os.listdir("/proc"):
+        if not name.isdigit():
+            continue
+        scanned += 1
+        if scanned > PROCESS_SCAN_LIMIT:
+            break
+        pid = int(name)
+        try:
+            if os.stat(f"/proc/{pid}").st_uid != uid:
+                continue
+            exe = os.readlink(f"/proc/{pid}/exe")
+            exe.encode("utf-8")  # a non-UTF-8 path cannot go into the app's settings
+        except (OSError, UnicodeError):
+            continue  # exited, kernel thread, not ours, or an odd file name
+        if exe.endswith(" (deleted)"):
+            continue
+        if any(exe.startswith(prefix) for prefix in exclude_prefixes):
+            continue
+        base = os.path.basename(exe)
+        comm = _read_text(f"/proc/{pid}/comm", 64).strip()
+        argv = _read_text(f"/proc/{pid}/cmdline").split("\0")
+        network = _uses_network(pid, sockets)
+
+        game = ""
+        if base in WINE_LOADERS:
+            kind = "proton"
+            root = _wine_root(exe)
+            if root:
+                key, value, title = root, root, os.path.basename(root.rstrip("/"))
+            else:
+                # System-wide Wine: its loader and wineserver files (both run
+                # while a game does), not a folder like /usr/bin/.
+                key, value, title = "wine:" + os.path.dirname(exe), exe, "Wine"
+            game = _windows_name(argv[0] if argv else "") or (comm if comm.lower().endswith(".exe") else "")
+            if game.lower() in WINE_SERVICES:
+                game = ""
+        elif exe.startswith("/tmp/.mount_"):
+            kind = "appimage"
+            key = value = title = base
+        else:
+            key = value = exe
+            app_id = _flatpak_app(pid)
+            if exe.startswith("/app/") and app_id and not app_id.startswith("com.steampowered."):
+                # The app itself; its sandbox helpers (bwrap, D-Bus proxy, shells)
+                # see the same .flatpak-info but run host / runtime files.
+                kind = "flatpak"
+                title = app_id
+            elif "/ubuntu12_32/steam" in exe or base == "steamwebhelper":
+                kind = "steam"
+                title = "Steam" if base == "steam" else f"Steam ({base})"
+            else:
+                if not network and (base in SYSTEM_PROGRAMS or comm in SYSTEM_PROGRAMS
+                                    or exe.startswith(SYSTEM_PREFIXES)):
+                    continue
+                kind = "interpreter" if INTERPRETER.match(base) else "app"
+                # The file name is what matches; the process name (a script's
+                # name for interpreters, cut to 15 characters) is a hint.
+                title = base
+                if comm and not base.startswith(comm) and comm not in SYSTEM_PROGRAMS:
+                    title = f"{base} ({comm})"
+                if app_id and not app_id.startswith("com.steampowered."):
+                    title = f"{title} · {app_id}"
+
+        group = groups.get(key)
+        if group is None:
+            group = groups[key] = {
+                "value": key,
+                "values": [],
+                "title": title,
+                "kind": kind,
+                "detail": exe,
+                "games": [],
+                "network": False,
+                "count": 0,
+            }
+        if value not in group["values"]:
+            group["values"].append(value)
+        group["count"] += 1
+        group["network"] = group["network"] or network
+        if game and game not in group["games"]:
+            group["games"].append(game)
+
+    result = list(groups.values())
+    for group in result:
+        group["values"].sort()
+        group["detail"] = ", ".join(group["values"]) if group["kind"] == "proton" else group["detail"]
+        group["games"] = sorted(group["games"], key=str.lower)[:6]
+        if group["kind"] == "proton" and group["games"]:
+            group["label"] = f"{', '.join(group['games'][:3])} · {group['title']}"
+        else:
+            group["label"] = group["title"]
+    result.sort(key=lambda g: (not g["network"], g["label"].lower()))
+    return result
+
+
 def _parse_answer(stdout, stderr):
     """v2rayN prints one JSON line; anything else on stdout is ignored."""
     for line in reversed(stdout.decode("utf-8", errors="replace").splitlines()):
@@ -151,6 +394,9 @@ class Plugin:
         self.proc = None
         self.watch = None
         self.lock = asyncio.Lock()
+        # One "v2rayN --decky" at a time: parallel runs would race on the
+        # app's first-start setup (cores copy, database).
+        self.cli_lock = asyncio.Lock()
         self.busy = False
         self.profile_id = ""
         self.profile_name = ""
@@ -175,6 +421,10 @@ class Plugin:
     # ----- v2rayN (headless, as the deck user) ----------------------------
 
     async def _v2rayn(self, *args, timeout=120):
+        async with self.cli_lock:
+            return await self._v2rayn_run(args, timeout)
+
+    async def _v2rayn_run(self, args, timeout):
         uid, gid, home = _deck_user()
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -317,6 +567,125 @@ class Plugin:
 
     # ----- called by the frontend -----------------------------------------
 
+    # ----- split tunneling (shared with the app) ----------------------------
+
+    def _whole_deck(self):
+        """The plugin's own "whole Deck" mode: the app's lists stay saved but are
+        not used. Not set yet: whatever the app's settings say."""
+        return self._load_settings().get("whole") is True
+
+    def _split_view(self, answer):
+        if not answer.get("ok"):
+            return {"ok": False, "error": answer.get("error") or "v2rayN error"}
+        apps = [a for a in answer.get("apps") or [] if isinstance(a, str)]
+        subnets = [a for a in answer.get("subnets") or [] if isinstance(a, str)]
+        settings = self._load_settings()
+        whole = settings.get("whole")
+        if whole is None:
+            whole = not apps and not subnets
+        if whole:
+            mode = "all"
+        else:
+            mode = "only" if answer.get("whitelist", True) else "except"
+        labels = settings.get("labels") or {}
+        return {
+            "ok": True,
+            "mode": mode,
+            "routing": bool(answer.get("useRoutingRules", True)),
+            "apps": [
+                {"value": a, "label": labels.get(a) or _entry_label(a), "kind": _entry_kind(a)}
+                for a in apps
+            ],
+            "subnets": len(subnets),
+        }
+
+    async def get_split(self):
+        return self._split_view(await self._v2rayn("split"))
+
+    async def update_split(self, change):
+        """change: {"mode": "all"|"only"|"except", "routing": bool,
+        "add": [entry], "remove": [entry], "labels": {entry: label}}.
+        A running session is reconnected so the change applies at once."""
+        change = change if isinstance(change, dict) else {}
+        async with self.lock:
+            self.busy = True
+            self.error = ""
+            try:
+                split = await self._update_split(change)
+            except Exception as e:  # noqa: BLE001 - shown in the panel
+                self.error = str(e)
+                decky.logger.error(f"split settings: {e}")
+                split = {"ok": False, "error": str(e)}
+            finally:
+                self.busy = False
+        return {"split": split, "status": self._status()}
+
+    async def _update_split(self, change):
+        current = await self._v2rayn("split")
+        if not current.get("ok"):
+            return self._split_view(current)
+        payload = {}
+        whole = None
+
+        mode = change.get("mode")
+        if mode in ("all", "only", "except"):
+            whole = mode == "all"
+            if not whole and bool(current.get("whitelist", True)) != (mode == "only"):
+                payload["whitelist"] = mode == "only"
+
+        if "routing" in change and bool(change["routing"]) != bool(current.get("useRoutingRules", True)):
+            payload["useRoutingRules"] = bool(change["routing"])
+
+        apps = [a for a in current.get("apps") or [] if isinstance(a, str)]
+        add = [a.strip() for a in change.get("add") or [] if isinstance(a, str) and a.strip()]
+        remove = {a for a in change.get("remove") or [] if isinstance(a, str)}
+        new_apps = [a for a in apps if a not in remove]
+        new_apps += [a for a in dict.fromkeys(add) if a not in new_apps]
+        if new_apps != apps:
+            payload["apps"] = new_apps
+
+        answer = current
+        if payload:
+            answer = await self._v2rayn("split-set", json.dumps(payload))
+            if not answer.get("ok"):
+                # Nothing changed: the panel keeps the current settings and says why.
+                view = self._split_view(current)
+                view["applied"] = False
+                view["error"] = answer.get("error") or "v2rayN error"
+                return view
+        changed = bool(payload)
+        # The plugin's own "whole Deck" mode, saved once the app took the rest.
+        if whole is not None and self._load_settings().get("whole") is not whole:
+            self._save_settings(whole=whole)
+            changed = True
+
+        # Names the picker showed for the entries (the entries themselves are
+        # paths); kept only for entries that are still in the list.
+        labels = dict(self._load_settings().get("labels") or {})
+        given = change.get("labels")
+        if isinstance(given, dict):
+            labels.update({k: str(v)[:120] for k, v in given.items() if isinstance(k, str)})
+        saved = [a for a in answer.get("apps") or [] if isinstance(a, str)]
+        labels = {k: v for k, v in labels.items() if k in saved}
+        if labels != (self._load_settings().get("labels") or {}):
+            self._save_settings(labels=labels)
+
+        if changed and self._running() and self.profile_id:
+            try:
+                await self._connect(self.profile_id)
+            except Exception as e:  # noqa: BLE001 - shown in the panel
+                self.error = str(e)
+                decky.logger.error(f"reconnect failed: {e}")
+        return self._split_view(answer)
+
+    async def get_programs(self):
+        """Running programs for the picker (see _list_programs)."""
+        uid, _, _ = _deck_user()
+        started = time.monotonic()
+        programs = await asyncio.to_thread(_list_programs, uid, (APP_DIR, CORE_COPY))
+        decky.logger.info(f"programs: {len(programs)} in {time.monotonic() - started:.2f}s")
+        return {"ok": True, "programs": programs}
+
     async def get_profiles(self):
         answer = await self._v2rayn("list")
         if answer.get("ok"):
@@ -330,7 +699,8 @@ class Plugin:
 
     async def _connect(self, profile_id):
         # Config first: a profile that cannot be built leaves the current session up.
-        answer = await self._v2rayn("config", profile_id)
+        extra = ["--all"] if self._whole_deck() else []
+        answer = await self._v2rayn("config", profile_id, *extra)
         if not answer.get("ok"):
             self.error = answer.get("error") or "v2rayN error"
             return
