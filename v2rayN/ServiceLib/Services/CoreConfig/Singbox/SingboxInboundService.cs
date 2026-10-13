@@ -71,7 +71,13 @@ public partial class CoreConfigSingboxService
 
                 var address = _config.TunModeItem.IPv4Address.NullIfEmpty() ?? Global.TunIPv4Address.First();
                 tunInbound.address = [address];
-                if (_config.TunModeItem.EnableIPv6Address == true)
+                // The TUN always gets an IPv6 address: without one the OS sends IPv6
+                // (and DNS to an IPv6 resolver) straight out of the physical interface,
+                // around the tunnel - macOS ignores strict_route, Windows only uses it
+                // against DNS leaks. With "IPv6" off in the settings, IPv6 is rejected
+                // in routing (GenRoutingTunIPv6Block), so apps fall back to IPv4 through
+                // the tunnel at once.
+                if (_config.TunModeItem.EnableIPv6Address == true || CanAddTunIPv6())
                 {
                     var address6 = _config.TunModeItem.IPv6Address.NullIfEmpty() ?? Global.TunIPv6Address.First();
                     tunInbound.address.Add(address6);
@@ -84,6 +90,27 @@ public partial class CoreConfigSingboxService
         catch (Exception ex)
         {
             Logging.SaveLog(_tag, ex);
+        }
+    }
+
+    /// <summary>
+    /// False only on Linux with IPv6 turned off for new interfaces: an IPv6
+    /// address could not be added there (and no IPv6 can leak either).
+    /// </summary>
+    private static bool CanAddTunIPv6()
+    {
+        if (!Utils.IsLinux())
+        {
+            return true;
+        }
+        try
+        {
+            const string path = "/proc/sys/net/ipv6/conf/default/disable_ipv6";
+            return File.Exists(path) && File.ReadAllText(path).Trim() != "1";
+        }
+        catch
+        {
+            return false;
         }
     }
 

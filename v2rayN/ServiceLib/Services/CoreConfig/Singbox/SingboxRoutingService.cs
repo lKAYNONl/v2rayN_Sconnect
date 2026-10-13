@@ -170,6 +170,7 @@ public partial class CoreConfigSingboxService
             if (context.IsTunEnabled)
             {
                 GenRoutingSplitTunnelWhitelist();
+                GenRoutingTunIPv6Block();
             }
 
             var hostsDomains = new List<string>();
@@ -428,6 +429,27 @@ public partial class CoreConfigSingboxService
                 new() { type = "logical", mode = "or", rules = matchers, invert = true },
             ],
             outbound = Global.DirectTag,
+        });
+    }
+
+    /// <summary>
+    /// IPv6 off in the TUN settings: internet IPv6 that enters the TUN is
+    /// rejected (TCP reset / ICMP unreachable), so browsers and apps fall back
+    /// to IPv4 through the tunnel right away instead of going around it. Placed
+    /// after the DNS hijack (DNS to an IPv6 resolver is still answered by the
+    /// core) and after split tunneling (programs outside the tunnel keep their
+    /// IPv6). Local IPv6 (fc00::/7, fe80::/10) is not touched.
+    /// </summary>
+    private void GenRoutingTunIPv6Block()
+    {
+        if (_config.TunModeItem.EnableIPv6Address)
+        {
+            return;
+        }
+        _coreConfig.route.rules.Add(new()
+        {
+            ip_cidr = ["2000::/3"],
+            action = "reject",
         });
     }
 
