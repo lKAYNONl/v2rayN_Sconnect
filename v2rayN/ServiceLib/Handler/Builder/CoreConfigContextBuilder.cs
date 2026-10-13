@@ -30,9 +30,9 @@ public class CoreConfigContextBuilder
     /// <summary>
     ///     The routing set the core config is built from. In Secure Connect's
     ///     "no routes" mode (<see cref="KillSwitchItem.UseRoutingRules" /> off) the
-    ///     set's rules are replaced by a single one that keeps the local network
-    ///     direct, so all other traffic goes through the tunnel. The stored set is
-    ///     not changed.
+    ///     set's rules are replaced by two: QUIC is refused (as in every built-in
+    ///     set) and the local network stays direct, so all other traffic goes
+    ///     through the tunnel. The stored set is not changed.
     /// </summary>
     private static async Task<RoutingItem?> GetEffectiveRoutingAsync(Config config)
     {
@@ -45,6 +45,18 @@ public class CoreConfigContextBuilder
         var noRules = JsonUtils.DeepCopy(routing) ?? routing;
         List<RulesItem> rules =
         [
+            // QUIC (UDP 443) through the proxy often breaks mid-connection -
+            // browsers then show ERR_QUIC_PROTOCOL_ERROR instead of falling back.
+            // Refused at once, they switch to TCP, which the tunnel carries fine.
+            new()
+            {
+                Id = Utils.GetGuid(false),
+                Remarks = "Block QUIC",
+                OutboundTag = Global.BlockTag,
+                Port = "443",
+                Network = "udp",
+                Enabled = true,
+            },
             new()
             {
                 Id = Utils.GetGuid(false),
