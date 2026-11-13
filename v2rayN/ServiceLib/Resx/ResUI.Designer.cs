@@ -6697,6 +6697,24 @@ namespace ServiceLib.Resx {
         }
         
         /// <summary>
+        ///   查找类似 Block QUIC 的本地化字符串。
+        /// </summary>
+        public static string ScBlockQuic {
+            get {
+                return ResourceManager.GetString("ScBlockQuic", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Browsers use TCP instead of QUIC (UDP 443), which is unreliable through a proxy. Fixes ERR_QUIC_PROTOCOL_ERROR. 的本地化字符串。
+        /// </summary>
+        public static string ScBlockQuicSub {
+            get {
+                return ResourceManager.GetString("ScBlockQuicSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Not applied — all traffic goes through the tunnel. 的本地化字符串。
         /// </summary>
         public static string ScRoutesOffSummary {

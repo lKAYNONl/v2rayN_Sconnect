@@ -116,6 +116,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             UpdateRoutesSummary();
             OnSettingToggled();
         };
+        tglBlockQuic.IsChecked = _config.KillSwitchItem?.BlockQuic != false;
+        tglBlockQuic.IsCheckedChanged += (_, _) => OnSettingToggled();
         rbSplitWhitelist.IsCheckedChanged += (_, _) =>
         {
             UpdateSplitTexts();
@@ -672,6 +674,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             rbSplitWhitelist.IsChecked = ks.SplitTunnelWhitelist;
             rbSplitBypass.IsChecked = !ks.SplitTunnelWhitelist;
             tglRoutingRules.IsChecked = ks.UseRoutingRules;
+            tglBlockQuic.IsChecked = ks.BlockQuic;
             UpdateSplitTexts();
             _bypassApps.Clear();
             foreach (var app in ks.BypassApps ?? [])
@@ -733,7 +736,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 rbSplitWhitelist.IsChecked == true,
                 _bypassApps.ToList(),
                 _bypassSubnets.ToList(),
-                tglRoutingRules.IsChecked == true);
+                tglRoutingRules.IsChecked == true,
+                tglBlockQuic.IsChecked == true);
             UpdateStage();
         }
         catch (Exception ex)

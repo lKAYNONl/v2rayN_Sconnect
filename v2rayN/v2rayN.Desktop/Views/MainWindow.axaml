@@ -1280,17 +1280,17 @@
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="sys:String">
+                                                    <!--
+                                                        The remove button is docked first, so it always fits;
+                                                        a long path is cut in the middle ("C:\Progr…\app.exe")
+                                                        and shown in full in the tooltip.
+                                                    -->
                                                     <Border Classes="tag">
-                                                        <StackPanel Orientation="Horizontal" Spacing="5">
-                                                            <TextBlock
-                                                                VerticalAlignment="Center"
-                                                                FontFamily="{StaticResource ScMono}"
-                                                                FontSize="11.5"
-                                                                FontWeight="SemiBold"
-                                                                Foreground="#E8EBF6"
-                                                                Text="{Binding}" />
+                                                        <DockPanel>
                                                             <Button
+                                                                Margin="5,0,0,0"
                                                                 Classes="sc tagx"
+                                                                DockPanel.Dock="Right"
                                                                 Tag="{Binding}"
                                                                 ToolTip.Tip="{x:Static resx:ResUI.ScRemove}">
                                                                 <TextBlock
@@ -1298,7 +1298,16 @@
                                                                     Foreground="#8B95B4"
                                                                     Text="×" />
                                                             </Button>
-                                                        </StackPanel>
+                                                            <TextBlock
+                                                                VerticalAlignment="Center"
+                                                                FontFamily="{StaticResource ScMono}"
+                                                                FontSize="11.5"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="#E8EBF6"
+                                                                Text="{Binding}"
+                                                                TextTrimming="PrefixCharacterEllipsis"
+                                                                ToolTip.Tip="{Binding}" />
+                                                        </DockPanel>
                                                     </Border>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
@@ -1325,17 +1334,17 @@
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="sys:String">
+                                                    <!--
+                                                        The remove button is docked first, so it always fits;
+                                                        a long path is cut in the middle ("C:\Progr…\app.exe")
+                                                        and shown in full in the tooltip.
+                                                    -->
                                                     <Border Classes="tag">
-                                                        <StackPanel Orientation="Horizontal" Spacing="5">
-                                                            <TextBlock
-                                                                VerticalAlignment="Center"
-                                                                FontFamily="{StaticResource ScMono}"
-                                                                FontSize="11.5"
-                                                                FontWeight="SemiBold"
-                                                                Foreground="#4F8CFF"
-                                                                Text="{Binding}" />
+                                                        <DockPanel>
                                                             <Button
+                                                                Margin="5,0,0,0"
                                                                 Classes="sc tagx"
+                                                                DockPanel.Dock="Right"
                                                                 Tag="{Binding}"
                                                                 ToolTip.Tip="{x:Static resx:ResUI.ScRemove}">
                                                                 <TextBlock
@@ -1343,7 +1352,16 @@
                                                                     Foreground="#8B95B4"
                                                                     Text="×" />
                                                             </Button>
-                                                        </StackPanel>
+                                                            <TextBlock
+                                                                VerticalAlignment="Center"
+                                                                FontFamily="{StaticResource ScMono}"
+                                                                FontSize="11.5"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="#4F8CFF"
+                                                                Text="{Binding}"
+                                                                TextTrimming="PrefixCharacterEllipsis"
+                                                                ToolTip.Tip="{Binding}" />
+                                                        </DockPanel>
                                                     </Border>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
@@ -1370,6 +1388,16 @@
                                             </StackPanel>
                                             <ToggleButton
                                                 x:Name="tglRoutingRules"
+                                                Grid.Column="1"
+                                                Classes="sct" />
+                                        </Grid>
+                                        <Grid Margin="0,7" ColumnDefinitions="*,Auto">
+                                            <StackPanel Margin="0,0,12,0">
+                                                <TextBlock Classes="label" Text="{x:Static resx:ResUI.ScBlockQuic}" />
+                                                <TextBlock Classes="sub" Text="{x:Static resx:ResUI.ScBlockQuicSub}" />
+                                            </StackPanel>
+                                            <ToggleButton
+                                                x:Name="tglBlockQuic"
                                                 Grid.Column="1"
                                                 Classes="sct" />
                                         </Grid>

@@ -28,27 +28,58 @@ public record CoreConfigContextBuilderAllResult(
 public class CoreConfigContextBuilder
 {
     /// <summary>
-    ///     The routing set the core config is built from. In Secure Connect's
-    ///     "no routes" mode (<see cref="KillSwitchItem.UseRoutingRules" /> off) the
-    ///     set's rules are replaced by two: QUIC is refused (as in every built-in
-    ///     set) and the local network stays direct, so all other traffic goes
-    ///     through the tunnel. The stored set is not changed.
+    ///     The routing set the core config is built from - the stored set is not
+    ///     changed, two Secure Connect settings are applied to a copy:
+    ///     <list type="bullet">
+    ///         <item>"no routes" mode (<see cref="KillSwitchItem.UseRoutingRules" /> off):
+    ///         the set's rules are replaced by one that keeps the local network
+    ///         direct, so all other traffic goes through the tunnel;</item>
+    ///         <item><see cref="KillSwitchItem.BlockQuic" />: QUIC is refused first,
+    ///         whatever the set says (the regional sets, e.g. the Russian ones, do
+    ///         not block it).</item>
+    ///     </list>
     /// </summary>
     private static async Task<RoutingItem?> GetEffectiveRoutingAsync(Config config)
     {
         var routing = await ConfigHandler.GetDefaultRouting(config);
-        if (routing is null || config.KillSwitchItem?.UseRoutingRules != false)
+        if (routing is null)
         {
             return routing;
         }
+        var useRules = config.KillSwitchItem?.UseRoutingRules != false;
+        var blockQuic = config.KillSwitchItem?.BlockQuic != false;
 
-        var noRules = JsonUtils.DeepCopy(routing) ?? routing;
-        List<RulesItem> rules =
-        [
+        List<RulesItem> rules;
+        if (useRules)
+        {
+            rules = JsonUtils.Deserialize<List<RulesItem>>(routing.RuleSet) ?? [];
+            // Nothing to add when the set itself starts with the QUIC rule.
+            var first = rules.FirstOrDefault(t => t.Enabled && t.RuleType != ERuleType.DNS);
+            if (!blockQuic || (first is not null && IsQuicBlockRule(first)))
+            {
+                return routing;
+            }
+        }
+        else
+        {
+            rules =
+            [
+                new()
+                {
+                    Id = Utils.GetGuid(false),
+                    Remarks = "LAN direct",
+                    OutboundTag = Global.DirectTag,
+                    Ip = [$"{Global.GeoIPPrefix}private"],
+                    Enabled = true,
+                },
+            ];
+        }
+        if (blockQuic)
+        {
             // QUIC (UDP 443) through the proxy often breaks mid-connection -
             // browsers then show ERR_QUIC_PROTOCOL_ERROR instead of falling back.
             // Refused at once, they switch to TCP, which the tunnel carries fine.
-            new()
+            rules.Insert(0, new()
             {
                 Id = Utils.GetGuid(false),
                 Remarks = "Block QUIC",
@@ -56,19 +87,30 @@ public class CoreConfigContextBuilder
                 Port = "443",
                 Network = "udp",
                 Enabled = true,
-            },
-            new()
-            {
-                Id = Utils.GetGuid(false),
-                Remarks = "LAN direct",
-                OutboundTag = Global.DirectTag,
-                Ip = [$"{Global.GeoIPPrefix}private"],
-                Enabled = true,
-            },
-        ];
+            });
+        }
+
+        var noRules = JsonUtils.DeepCopy(routing);
+        if (noRules is null)
+        {
+            return routing;
+        }
         noRules.RuleSet = JsonUtils.Serialize(rules, false);
         noRules.RuleNum = rules.Count;
         return noRules;
+    }
+
+    /// <summary>A rule that refuses all QUIC (UDP 443), whatever the destination.</summary>
+    private static bool IsQuicBlockRule(RulesItem rule)
+    {
+        return rule.OutboundTag == Global.BlockTag
+               && rule.Port?.Trim() == "443"
+               && rule.Network?.Trim().Equals("udp", StringComparison.OrdinalIgnoreCase) == true
+               && (rule.Domain?.Count ?? 0) == 0
+               && (rule.Ip?.Count ?? 0) == 0
+               && (rule.Process?.Count ?? 0) == 0
+               && (rule.InboundTag?.Count ?? 0) == 0
+               && (rule.Protocol?.Count ?? 0) == 0;
     }
 
     /// <summary>

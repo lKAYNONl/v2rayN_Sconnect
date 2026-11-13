@@ -189,6 +189,13 @@ public class KillSwitchItem
     public bool UseRoutingRules { get; set; } = true;
 
     /// <summary>
+    /// Refuse QUIC (UDP 443) before any routing rule, so browsers use TCP.
+    /// QUIC through the proxy is unreliable (ERR_QUIC_PROTOCOL_ERROR), and the
+    /// regional routing sets do not block it themselves.
+    /// </summary>
+    public bool BlockQuic { get; set; } = true;
+
+    /// <summary>
     /// Secure Connect UI defaults version, for one-time migrations of settings
     /// the dashboard depends on (e.g. live speed in the status strip).
     /// </summary>

@@ -166,6 +166,23 @@ public partial class CoreConfigSingboxService
             });
         }
 
+        // TUN without IPv6: no AAAA answers, so programs do not even try IPv6
+        // (it is refused in routing - see GenRoutingTunIPv6Block - and a program
+        // that only uses the first address it gets would fail instead of using
+        // IPv4). After the hosts and the proxy server's own domains, before
+        // everything else. Not applied with a custom DNS config (GenDnsCustom):
+        // there the refusal in routing alone makes programs fall back to IPv4.
+        var tunWithoutIPv6 = context.IsTunEnabled && !_config.TunModeItem.EnableIPv6Address;
+        if (tunWithoutIPv6)
+        {
+            _coreConfig.dns.rules.Add(new()
+            {
+                query_type = [28],
+                action = "predefined",
+                rcode = "NOERROR",
+            });
+        }
+
         _coreConfig.dns.rules.AddRange([
             new Rule4Sbox
             {
@@ -277,7 +294,7 @@ public partial class CoreConfigSingboxService
             _coreConfig.dns.rules.Add(rule4Fake);
         }
 
-        if (simpleDnsItem.BlockAAAAQuery == true)
+        if (simpleDnsItem.BlockAAAAQuery == true && !tunWithoutIPv6)
         {
             _coreConfig.dns.rules.Add(new()
             {

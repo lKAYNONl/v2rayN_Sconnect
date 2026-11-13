@@ -962,10 +962,12 @@ public partial class MainWindowViewModel : MyReactiveObject
     /// Saves the in-window Secure Connect settings (kill switch, LAN access,
     /// split tunneling) and re-applies them to a running session.
     /// </summary>
-    public async Task SaveSecureConnectSettings(bool killSwitch, bool allowLan, bool splitWhitelist, List<string> bypassApps, List<string> bypassSubnets, bool useRoutingRules)
+    public async Task SaveSecureConnectSettings(bool killSwitch, bool allowLan, bool splitWhitelist, List<string> bypassApps, List<string> bypassSubnets, bool useRoutingRules, bool? blockQuic = null)
     {
         var ks = _config.KillSwitchItem ??= new();
+        var quic = blockQuic ?? ks.BlockQuic;
         var changed = ks.EnableKillSwitch != killSwitch
+                      || ks.BlockQuic != quic
                       || ks.AllowLan != allowLan
                       || ks.SplitTunnelWhitelist != splitWhitelist
                       || ks.UseRoutingRules != useRoutingRules
@@ -980,6 +982,7 @@ public partial class MainWindowViewModel : MyReactiveObject
         ks.AllowLan = allowLan;
         ks.SplitTunnelWhitelist = splitWhitelist;
         ks.UseRoutingRules = useRoutingRules;
+        ks.BlockQuic = quic;
         ks.BypassApps = bypassApps;
         ks.BypassSubnets = bypassSubnets;
         await ConfigHandler.SaveConfig(_config);

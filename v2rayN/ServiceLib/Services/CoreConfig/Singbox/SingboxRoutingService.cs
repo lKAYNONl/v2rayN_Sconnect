@@ -119,6 +119,9 @@ public partial class CoreConfigSingboxService
                         method = rejectMethod,
                     });
                 }
+
+                // Must stay above "sniff": see the method.
+                GenRoutingTunIPv6Block();
             }
 
             if (_config.Inbound.First().SniffingEnabled)
@@ -170,7 +173,6 @@ public partial class CoreConfigSingboxService
             if (context.IsTunEnabled)
             {
                 GenRoutingSplitTunnelWhitelist();
-                GenRoutingTunIPv6Block();
             }
 
             var hostsDomains = new List<string>();
@@ -433,12 +435,25 @@ public partial class CoreConfigSingboxService
     }
 
     /// <summary>
-    /// IPv6 off in the TUN settings: internet IPv6 that enters the TUN is
-    /// rejected (TCP reset / ICMP unreachable), so browsers and apps fall back
-    /// to IPv4 through the tunnel right away instead of going around it. Placed
-    /// after the DNS hijack (DNS to an IPv6 resolver is still answered by the
-    /// core) and after split tunneling (programs outside the tunnel keep their
-    /// IPv6). Local IPv6 (fc00::/7, fe80::/10) is not touched.
+    /// IPv6 off in the TUN settings: internet IPv6 that enters the TUN is refused,
+    /// so programs use IPv4 through the tunnel instead of going around it (the TUN
+    /// has an IPv6 address for that reason - see GenInbounds).
+    /// <para>
+    /// The rule has to come BEFORE the "sniff" rule. sing-box refuses a TUN
+    /// connection for real (TCP reset / ICMP unreachable) only while it has not
+    /// been accepted yet, and sniffing accepts it: after "sniff" a reject is
+    /// "connected, then closed", which programs do not treat as "try IPv4" - sites
+    /// with IPv6 addresses just fail to load.
+    /// </para>
+    /// <para>
+    /// Port 53 is left to the DNS hijack below (DNS to an IPv6 resolver is still
+    /// answered by the core). Only tunneled traffic is refused: programs kept
+    /// outside the tunnel are either routed direct above ("all but listed" mode)
+    /// or excluded here by the same matchers as the split tunneling rule ("only
+    /// listed" mode), so their IPv6 still goes direct. Local IPv6 (fc00::/7,
+    /// fe80::/10) is not touched. AAAA answers are also suppressed (GenDnsRules),
+    /// so programs that use the system resolver never try IPv6 at all.
+    /// </para>
     /// </summary>
     private void GenRoutingTunIPv6Block()
     {
@@ -446,10 +461,31 @@ public partial class CoreConfigSingboxService
         {
             return;
         }
+        List<Rule4Sbox> conditions =
+        [
+            new() { ip_cidr = ["2000::/3"] },
+            new() { port = [53], invert = true },
+        ];
+        if (_config.KillSwitchItem is { SplitTunnelWhitelist: true })
+        {
+            // "Only listed" mode: what is not listed goes direct further down
+            // (GenRoutingSplitTunnelWhitelist) and must not be refused here.
+            var tunneled = BuildSplitTunnelMatchers();
+            if (tunneled.Count > 0)
+            {
+                conditions.Add(new() { type = "logical", mode = "or", rules = tunneled });
+            }
+        }
         _coreConfig.route.rules.Add(new()
         {
-            ip_cidr = ["2000::/3"],
+            type = "logical",
+            mode = "and",
+            rules = conditions,
             action = "reject",
+            // Always answer. By default sing-box starts dropping silently after
+            // 50 rejects in 30 s - a browser gets there in seconds - and then
+            // every IPv6 attempt waits for a timeout instead of failing at once.
+            no_drop = true,
         });
     }
 
