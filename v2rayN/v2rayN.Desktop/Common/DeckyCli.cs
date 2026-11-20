@@ -7,15 +7,16 @@ namespace v2rayN.Desktop.Common;
 /// profiles, routing and split tunneling as the app, without a window:
 /// <code>
 ///   v2rayN --decky list                 profiles and the active one
-///   v2rayN --decky config &lt;id&gt; [--all]  sing-box TUN config for that profile
+///   v2rayN --decky config &lt;id&gt; [--all]  configs to run that profile in TUN mode:
+///                                       sing-box TUN + the profile's own core
 ///                                       (--all: the whole Deck, split lists ignored)
 ///   v2rayN --decky split                split tunneling and routing settings
 ///   v2rayN --decky split-set &lt;json&gt;     change them: {"whitelist":true,
 ///                                       "apps":[...],"useRoutingRules":true}
 /// </code>
 /// The answer is one JSON line on stdout: <c>{"ok":true,...}</c> or
-/// <c>{"ok":false,"error":"..."}</c>. The plugin runs sing-box itself (as root),
-/// so this mode never starts a core.
+/// <c>{"ok":false,"error":"..."}</c>. The plugin starts the cores itself
+/// (sing-box as root for the TUN), so this mode never starts one.
 /// </summary>
 internal static class DeckyCli
 {
@@ -156,12 +157,12 @@ internal static class DeckyCli
         }
         if (node.ConfigType == EConfigType.Custom)
         {
-            return (Fail("Custom configs cannot be run with sing-box here."), 1);
+            return (Fail("Custom configs cannot be run from the plugin."), 1);
         }
 
-        // The plugin always runs sing-box in TUN mode; split tunneling decides
+        // The plugin always runs the profile in TUN mode; split tunneling decides
         // which programs use the tunnel. A copy of the settings, so the app's own
-        // TUN switch and the profile's core type stay as they are.
+        // TUN switch stays as it is.
         var appConfig = JsonUtils.DeepCopy(config);
         if (appConfig is null)
         {
@@ -169,7 +170,14 @@ internal static class DeckyCli
             return (Fail("Cannot copy the v2rayN settings."), 1);
         }
         appConfig.TunModeItem.EnableTun = true;
-        node.CoreType = ECoreType.sing_box;
+        // The TUN is always sing-box's (process-based split tunneling, DNS
+        // hijack); the profile itself runs on the core the app would use for it -
+        // Xray for VLESS / VMess / Trojan... - behind sing-box, exactly as in the
+        // desktop app. Running everything on sing-box does not work with current
+        // servers: Xray 26.9.9+ refuses REALITY clients without the post-quantum
+        // key share, which sing-box (up to 1.14.4 / 1.15 alpha) does not send
+        // ("reality verification failed").
+        appConfig.TunModeItem.EnableLegacyProtect = true;
         if (wholeDeck && appConfig.KillSwitchItem is { } ks)
         {
             // "The whole Deck" in the plugin: no split tunneling for this run; the
@@ -179,14 +187,59 @@ internal static class DeckyCli
             ks.BypassSubnets = [];
         }
 
-        var built = await CoreConfigContextBuilder.Build(appConfig, node);
+        var built = await CoreConfigContextBuilder.BuildAll(appConfig, node);
         if (!built.Success)
         {
-            return (Fail(string.Join("; ", built.ValidatorResult.Errors)), 1);
+            return (Fail(string.Join("; ", built.CombinedValidatorResult.Errors)), 1);
         }
 
-        var file = Utils.GetBinConfigPath("decky.json");
-        var result = await CoreConfigHandler.GenerateClientConfig(built.Context, file);
+        // "config" is always the sing-box TUN config. When the profile runs on
+        // another core, that core gets "decky-main.json" and the plugin starts it
+        // first ("main" in the answer); sing-box then sends everything to its
+        // local SOCKS port.
+        var tunFile = Utils.GetBinConfigPath("decky.json");
+        var tunContext = built.PreSocksResult?.Context ?? built.MainResult.Context;
+        object? main = null;
+        if (built.PreSocksResult is not null)
+        {
+            var mainContext = built.MainResult.Context;
+            var mainFile = Utils.GetBinConfigPath("decky-main.json");
+            var mainResult = await CoreConfigHandler.GenerateClientConfig(mainContext, mainFile);
+            if (mainResult.Success != true)
+            {
+                return (Fail(mainResult.Msg ?? "The core config could not be generated."), 1);
+            }
+            var coreInfo = CoreInfoManager.Instance.GetCoreInfo(mainContext.RunCoreType);
+            var exe = CoreInfoManager.Instance.GetCoreExecFile(coreInfo, out var exeMsg);
+            if (coreInfo is null || exe.IsNullOrEmpty())
+            {
+                return (Fail(exeMsg.IsNullOrEmpty() ? $"Core not found: {mainContext.RunCoreType}" : exeMsg), 1);
+            }
+            main = new
+            {
+                core = mainContext.RunCoreType.ToString(),
+                exe,
+                // e.g. "run -c {0}"
+                args = (coreInfo.Arguments ?? string.Empty)
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(t => t == "{0}" ? mainFile : t)
+                    .ToList(),
+                env = coreInfo.Environment?
+                    .Where(t => t.Value is not null)
+                    .ToDictionary(t => t.Key, t => string.Format(t.Value!, mainFile))
+                    ?? new Dictionary<string, string>(),
+                config = mainFile,
+                // sing-box connects here: started only once the core listens.
+                port = AppManager.Instance.GetLocalPort(EInboundProtocol.socks),
+            };
+        }
+        else if (tunContext.RunCoreType != ECoreType.sing_box)
+        {
+            // No sing-box TUN came out (should not happen with the settings above).
+            return (Fail($"TUN is not available for the core {tunContext.RunCoreType}."), 1);
+        }
+
+        var result = await CoreConfigHandler.GenerateClientConfig(tunContext, tunFile);
         if (result.Success != true)
         {
             return (Fail(result.Msg ?? "sing-box config could not be generated."), 1);
@@ -200,9 +253,10 @@ internal static class DeckyCli
             ok = true,
             id = node.IndexId,
             name = node.Remarks,
-            config = file,
+            config = tunFile,
+            main,
             cwd = Utils.GetBinConfigPath(),
-            warnings = built.ValidatorResult.Warnings,
+            warnings = built.CombinedValidatorResult.Warnings,
         }, 0);
     }
 }

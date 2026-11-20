@@ -36,7 +36,10 @@ SING_BOX = os.path.join(APP_DIR, "bin", "sing_box", "sing-box")
 SETTINGS_FILE = os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "settings.json")
 RUN_CONFIG = os.path.join(decky.DECKY_PLUGIN_RUNTIME_DIR, "sing-box.json")
 CORE_LOG = os.path.join(decky.DECKY_PLUGIN_LOG_DIR, "sing-box.log")
+# The profile's own core (Xray), when the profile does not run on sing-box.
+MAIN_LOG = os.path.join(decky.DECKY_PLUGIN_LOG_DIR, "core.log")
 PID_FILE = os.path.join(decky.DECKY_PLUGIN_RUNTIME_DIR, "sing-box.pid")
+MAIN_PID_FILE = os.path.join(decky.DECKY_PLUGIN_RUNTIME_DIR, "core.pid")
 # sing-box runs from a copy: a plugin update unpacks over the plugin folder,
 # and a running binary cannot be overwritten ("Text file busy").
 CORE_COPY = os.path.join(decky.DECKY_PLUGIN_RUNTIME_DIR, "sing-box")
@@ -156,7 +159,8 @@ def _write_desktop_entry():
 
 
 def _kill_stale_core():
-    """A sing-box left running by a crashed Decky would keep the TUN busy."""
+    """Cores left running by a crashed Decky: sing-box would keep the TUN busy,
+    the profile's core its local port."""
     try:
         with open(PID_FILE, "r", encoding="utf-8") as f:
             pid = int(f.read().strip())
@@ -169,20 +173,41 @@ def _kill_stale_core():
     except (OSError, ValueError):
         pass
     try:
-        os.remove(PID_FILE)
-    except OSError:
+        # "<pid> <exe>": only a process that still is that program is stopped.
+        with open(MAIN_PID_FILE, "r", encoding="utf-8") as f:
+            pid_text, _, exe = f.read().strip().partition(" ")
+        pid = int(pid_text)
+        if exe and os.readlink(f"/proc/{pid}/exe") == exe:
+            os.kill(pid, 15)
+            decky.logger.info(f"stopped a stale core (pid {pid})")
+    except (OSError, ValueError):
         pass
+    for path in (PID_FILE, MAIN_PID_FILE):
+        try:
+            os.remove(path)
+        except OSError:
+            pass
 
 
-def _log_tail(lines=6):
+LOG_NOISE = ("Xray, Penetrates Everything", "A unified platform for anti-censorship", "Reading config:")
+
+
+def _log_tail(lines=6, path=None):
+    """The last lines a core wrote in the current session (after the last
+    "===== profile =====" marker), without the start-up banner."""
     try:
-        with open(CORE_LOG, "rb") as f:
+        with open(path or CORE_LOG, "rb") as f:
             f.seek(0, os.SEEK_END)
             f.seek(max(0, f.tell() - 4096))
             text = f.read().decode("utf-8", errors="replace")
-        return "\n".join(line for line in text.splitlines()[-lines:] if line.strip())
     except OSError:
         return ""
+    mark = text.rfind("\n===== ")
+    if mark >= 0:
+        text = text[mark + 1:].split("\n", 1)[-1]
+    kept = [line for line in text.splitlines()
+            if line.strip() and not any(noise in line for noise in LOG_NOISE)]
+    return "\n".join(kept[-lines:])
 
 
 def _read_text(path, limit=4096):
@@ -394,12 +419,29 @@ LOG_LINE = re.compile(r"\b(TRACE|DEBUG|INFO|WARN|ERROR|FATAL|PANIC)\b.*?\[(\d+) 
 
 
 def _rotate_core_log():
-    """The log grows with every session (a lot with the detailed log on)."""
-    try:
-        if os.path.getsize(CORE_LOG) > LOG_ROTATE_BYTES:
-            os.replace(CORE_LOG, CORE_LOG + ".old")
-    except OSError:
-        pass
+    """The logs grow with every session (a lot with the detailed log on)."""
+    for path in (CORE_LOG, MAIN_LOG):
+        try:
+            if os.path.getsize(path) > LOG_ROTATE_BYTES:
+                os.replace(path, path + ".old")
+        except OSError:
+            pass
+
+
+async def _wait_for_port(port, proc, timeout=8.0):
+    """True once something accepts connections on 127.0.0.1:port; False when
+    the process exits first or the time runs out."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if proc.returncode is not None:
+            return False
+        try:
+            _, writer = await asyncio.wait_for(asyncio.open_connection("127.0.0.1", port), 0.5)
+            writer.close()
+            return True
+        except (OSError, asyncio.TimeoutError):
+            await asyncio.sleep(0.15)
+    return False
 
 
 def _run(argv, timeout=10):
@@ -632,6 +674,9 @@ class Plugin:
     def __init__(self):
         self.proc = None
         self.watch = None
+        # The profile's own core (Xray) behind the sing-box TUN, if any.
+        self.main_proc = None
+        self.main_watch = None
         self.lock = asyncio.Lock()
         # One "v2rayN --decky" at a time: parallel runs would race on the
         # app's first-start setup (cores copy, database).
@@ -689,7 +734,7 @@ class Plugin:
             decky.logger.warning(f"v2rayN --decky {' '.join(args)}: {answer.get('error')}")
         return answer
 
-    # ----- sing-box (root) ------------------------------------------------
+    # ----- the cores: sing-box TUN (root) + the profile's own core ---------
 
     def _running(self):
         return self.proc is not None and self.proc.returncode is None
@@ -746,15 +791,8 @@ class Plugin:
             json.dump(config, f)
         return RUN_CONFIG
 
-    async def _stop_core(self):
-        if self.watch is not None:
-            self.watch.cancel()
-            self.watch = None
-        proc, self.proc = self.proc, None
-        try:
-            os.remove(PID_FILE)
-        except OSError:
-            pass
+    @staticmethod
+    async def _terminate(proc):
         if proc is None or proc.returncode is not None:
             return
         proc.terminate()
@@ -764,6 +802,23 @@ class Plugin:
             proc.kill()
             await proc.wait()
 
+    async def _stop_core(self):
+        for name in ("watch", "main_watch"):
+            task = getattr(self, name)
+            if task is not None:
+                task.cancel()
+                setattr(self, name, None)
+        proc, self.proc = self.proc, None
+        main, self.main_proc = self.main_proc, None
+        for path in (PID_FILE, MAIN_PID_FILE):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+        # The TUN first: with it gone the system is back on its own routes.
+        await self._terminate(proc)
+        await self._terminate(main)
+
     async def _watch_core(self, proc):
         code = await proc.wait()
         if self.proc is proc:
@@ -771,6 +826,71 @@ class Plugin:
             tail = _log_tail(3)
             self.error = f"sing-box stopped (code {code})" + (f": {tail}" if tail else "")
             decky.logger.warning(self.error)
+            # Nothing listens on the tunnel any more: stop the profile's core too.
+            main, self.main_proc = self.main_proc, None
+            await self._terminate(main)
+
+    async def _watch_main(self, proc, name):
+        code = await proc.wait()
+        if self.main_proc is proc:
+            self.main_proc = None
+            tail = _log_tail(3, MAIN_LOG)
+            self.error = f"{name} stopped (code {code})" + (f": {tail}" if tail else "")
+            decky.logger.warning(self.error)
+            # Without it the tunnel leads nowhere - a dead TUN would only cut
+            # the Deck off the network. Back to the direct connection.
+            tun, self.proc = self.proc, None
+            await self._terminate(tun)
+
+    @staticmethod
+    def _quiet_access_log(path, verbose):
+        """Xray prints a line per connection (its access log) unless told not to:
+        kept only with the detailed log on. The file stays the deck user's."""
+        if verbose or not path:
+            return
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                config = json.load(f)
+            log = config.get("log")
+            if isinstance(log, dict) and "loglevel" in log and not log.get("access"):
+                log["access"] = "none"
+                with open(path, "w", encoding="utf-8") as f:  # same file: owner unchanged
+                    json.dump(config, f)
+        except (OSError, ValueError) as e:
+            decky.logger.warning(f"access log: {e}")
+
+    async def _start_main(self, main):
+        """The profile's own core (Xray) as the deck user: sing-box sends the
+        tunnel's traffic to its local port. It must run from the path the app
+        reported - the TUN config lets that program's own connections out."""
+        uid, gid, home = _deck_user()
+        exe = main["exe"]
+        name = main.get("core") or os.path.basename(exe)
+        env = _user_env(home)
+        env.update({k: str(v) for k, v in (main.get("env") or {}).items()})
+        self._quiet_access_log(main.get("config"), self._load_settings().get("verbose") is True)
+        with open(MAIN_LOG, "ab") as log:
+            log.write(f"\n===== {self.profile_name} =====\n".encode("utf-8"))
+            log.flush()
+            self.main_proc = await asyncio.create_subprocess_exec(
+                exe, *[str(a) for a in main.get("args") or []],
+                cwd=os.path.dirname(main.get("config") or exe),
+                env=env, user=uid, group=gid, extra_groups=[],
+                stdout=log, stderr=asyncio.subprocess.STDOUT,
+                start_new_session=True,
+            )
+        with open(MAIN_PID_FILE, "w", encoding="utf-8") as f:
+            f.write(f"{self.main_proc.pid} {exe}")
+        port = int(main.get("port") or 0)
+        ready = await _wait_for_port(port, self.main_proc) if port else True
+        if not ready:
+            code = self.main_proc.returncode
+            tail = _log_tail(6, MAIN_LOG)
+            proc, self.main_proc = self.main_proc, None
+            await self._terminate(proc)
+            reason = f"exited (code {code})" if code is not None else f"does not listen on port {port}"
+            raise RuntimeError(f"{name} {reason}" + (f":\n{tail}" if tail else ""))
+        self.main_watch = asyncio.create_task(self._watch_main(self.main_proc, name))
 
     @staticmethod
     def _core_copy():
@@ -794,6 +914,8 @@ class Plugin:
         core = self._core_copy()
         os.makedirs(os.path.dirname(CORE_LOG), exist_ok=True)
         _rotate_core_log()
+        if isinstance(answer.get("main"), dict):
+            await self._start_main(answer["main"])
         with open(CORE_LOG, "ab") as log:
             log.write(f"\n===== {self.profile_name} =====\n".encode("utf-8"))
             log.flush()
@@ -813,6 +935,7 @@ class Plugin:
             code = self.proc.returncode
             self.proc = None
             tail = _log_tail()
+            await self._stop_core()  # the profile's core, if it was started
             raise RuntimeError(f"sing-box exited (code {code})" + (f":\n{tail}" if tail else ""))
         self.watch = asyncio.create_task(self._watch_core(self.proc))
 
@@ -1085,6 +1208,7 @@ class Plugin:
         sites = gathered[8:]
         config_lines, tun = _config_summary(RUN_CONFIG) if running else (["(не подключено)"], {})
         procs, log_errors = _analyze_log(_session_log()) if running else ({}, [])
+        main_tail = _log_tail(25, MAIN_LOG) if running and self.main_proc is not None else ""
         verbose = status["verbose"]
 
         verdicts = []
@@ -1113,6 +1237,15 @@ class Plugin:
         for value, apps in facts["env_proxies"].items():
             verdicts.append(f"⚠ Прокси в окружении программ ({', '.join(apps)}): {value}. "
                             "Если он указывает на 127.0.0.1 — уберите его (Flatseal / overrides).")
+
+        # The server refusing the handshake: nothing else can work then.
+        refused = [e for e in log_errors if "reality verification failed" in e]
+        if refused or "REALITY" in main_tail and "failed" in main_tail:
+            verdicts.append("⚠ Сервер отклоняет подключение (REALITY): ключ, short id или SNI профиля не подходят, "
+                            "либо сервер не принимает это ядро. Весь туннель не работает, включая DNS.")
+        if running:
+            cores = "sing-box (TUN)" + (" + ядро профиля" if self.main_proc is not None else "")
+            verdicts.append(f"Ядра: {cores}")
 
         # DNS and sites
         if dns4[0] != 0:
@@ -1175,6 +1308,7 @@ class Plugin:
         if not procs:
             r.append("(нет данных — включите «Подробный журнал»)" if not verbose else "(соединений нет)")
         r += ["", "== Последние ошибки sing-box"] + (log_errors or ["-"])
+        r += ["", "== Журнал ядра профиля (core.log)", main_tail or "-"]
 
         desktop = os.path.join(home, "Desktop")
         path = os.path.join(desktop if os.path.isdir(desktop) else home, DIAG_FILE)

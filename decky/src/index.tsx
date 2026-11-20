@@ -592,7 +592,7 @@ function Content() {
         <PanelSectionRow>
           <Field
             description={
-              "Ядро — sing-box в режиме TUN. Режим и список общие с приложением «Secure Connect (v2rayN)» " +
+              "Туннель — sing-box (TUN), профиль — на ядре приложения. Режим и список общие с приложением «Secure Connect (v2rayN)» " +
               "в режиме рабочего стола (кроме «Весь Deck» — он только для игрового режима)."
             }
           />
