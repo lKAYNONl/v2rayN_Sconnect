@@ -2337,6 +2337,30 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="ScBlockQuicSub" xml:space="preserve">
     <value>Browsers use TCP instead of QUIC (UDP 443), which is unreliable through a proxy. Fixes ERR_QUIC_PROTOCOL_ERROR.</value>
   </data>
+  <data name="ScSubUpdated" xml:space="preserve">
+    <value>Subscription updated: {0}</value>
+  </data>
+  <data name="ScSubNoChanges" xml:space="preserve">
+    <value>Subscriptions: no changes</value>
+  </data>
+  <data name="ScSubFailed" xml:space="preserve">
+    <value>Subscription "{0}" was not updated: {1}</value>
+  </data>
+  <data name="ScSubHtml" xml:space="preserve">
+    <value>the server returned a web page instead of profiles ({0}). Check the link, or whether the server accepts this app.</value>
+  </data>
+  <data name="ScSubNoProfiles" xml:space="preserve">
+    <value>no profiles found in the server's answer</value>
+  </data>
+  <data name="ScSubBadAnswer" xml:space="preserve">
+    <value>the server sent an answer that cannot be read ({0})</value>
+  </data>
+  <data name="ScSubEmpty" xml:space="preserve">
+    <value>the server returned nothing</value>
+  </data>
+  <data name="ScSubTimeout" xml:space="preserve">
+    <value>the server did not respond in time</value>
+  </data>
   <data name="ScRoutesOffSummary" xml:space="preserve">
     <value>Not applied — all traffic goes through the tunnel.</value>
   </data>

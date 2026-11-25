@@ -434,22 +434,15 @@ public partial class MainWindowViewModel : MyReactiveObject
         NoticeManager.Instance.SendMessageEx(msg);
         if (success)
         {
-            var indexIdOld = _config.IndexId;
             await RefreshServersDispatcherAsync();
 
-            // If indexId changed or subIndexId is empty, directly reload.
-            if (indexIdOld != _config.IndexId || _config.SubIndexId.IsNullOrEmpty())
+            // Reconnect only a running session, and only when the server it uses
+            // changed (or is gone). An update that touched other profiles or names
+            // must not drop the connection - updates also run on a schedule - and
+            // must not connect when the user has disconnected.
+            if (IsRunning && SubscriptionHandler.ActiveProfileChanged)
             {
                 await Reload();
-            }
-            else
-            {
-                // The activity config belongs to the current group.
-                var profile = await AppManager.Instance.GetProfileItem(_config.IndexId);
-                if (profile != null && profile.Subid == _config.SubIndexId)
-                {
-                    await Reload();
-                }
             }
 
             if (_config.UiItem.EnableAutoAdjustMainLvColWidth)
@@ -646,7 +639,9 @@ public partial class MainWindowViewModel : MyReactiveObject
 
     public async Task UpdateSubscriptionProcess(string subId, bool blProxy)
     {
-        await Task.Run(async () => await SubscriptionHandler.UpdateProcess(_config, subId, blProxy, UpdateTaskHandler));
+        // The window has no log panel: say what happened, or why nothing did.
+        var summary = await Task.Run(async () => await SubscriptionHandler.UpdateProcess(_config, subId, blProxy, UpdateTaskHandler));
+        SubscriptionHandler.Notify(summary, true);
     }
 
     #endregion Subscription

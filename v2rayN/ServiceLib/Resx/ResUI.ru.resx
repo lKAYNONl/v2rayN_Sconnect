@@ -2337,6 +2337,30 @@
   <data name="ScBlockQuicSub" xml:space="preserve">
     <value>Браузеры идут по TCP вместо QUIC (UDP 443), который через прокси работает нестабильно. Убирает ERR_QUIC_PROTOCOL_ERROR.</value>
   </data>
+  <data name="ScSubUpdated" xml:space="preserve">
+    <value>Подписка обновлена: {0}</value>
+  </data>
+  <data name="ScSubNoChanges" xml:space="preserve">
+    <value>Подписки: изменений нет</value>
+  </data>
+  <data name="ScSubFailed" xml:space="preserve">
+    <value>Подписка «{0}» не обновлена: {1}</value>
+  </data>
+  <data name="ScSubHtml" xml:space="preserve">
+    <value>сервер вернул веб-страницу вместо списка профилей ({0}). Проверьте ссылку или то, принимает ли сервер это приложение.</value>
+  </data>
+  <data name="ScSubNoProfiles" xml:space="preserve">
+    <value>в ответе сервера нет профилей</value>
+  </data>
+  <data name="ScSubBadAnswer" xml:space="preserve">
+    <value>сервер прислал ответ, который не удаётся прочитать ({0})</value>
+  </data>
+  <data name="ScSubEmpty" xml:space="preserve">
+    <value>сервер ничего не вернул</value>
+  </data>
+  <data name="ScSubTimeout" xml:space="preserve">
+    <value>сервер не ответил вовремя</value>
+  </data>
   <data name="ScRoutesOffSummary" xml:space="preserve">
     <value>Не применяются — весь трафик идёт через туннель.</value>
   </data>

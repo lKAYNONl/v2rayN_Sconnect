@@ -196,6 +196,13 @@ public class KillSwitchItem
     public bool BlockQuic { get; set; } = true;
 
     /// <summary>
+    /// Subscriptions are checked for changes this often (minutes) unless a
+    /// subscription has its own interval; also soon after the app starts.
+    /// 0 turns the automatic check off.
+    /// </summary>
+    public int SubAutoUpdateMinutes { get; set; } = 60;
+
+    /// <summary>
     /// Secure Connect UI defaults version, for one-time migrations of settings
     /// the dashboard depends on (e.g. live speed in the status strip).
     /// </summary>

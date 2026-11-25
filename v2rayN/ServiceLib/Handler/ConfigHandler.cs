@@ -1290,6 +1290,16 @@ public static class ConfigHandler
     }
 
     /// <summary>
+    /// True when both profiles connect to the same server in the same way - the
+    /// name does not matter. Used after a subscription update to tell whether a
+    /// running session has to be restarted.
+    /// </summary>
+    public static bool IsSameServer(ProfileItem? a, ProfileItem? b)
+    {
+        return CompareProfileItem(a, b, false);
+    }
+
+    /// <summary>
     /// Compare two profile items to determine if they represent the same server
     /// Used for deduplication and server matching
     /// </summary>

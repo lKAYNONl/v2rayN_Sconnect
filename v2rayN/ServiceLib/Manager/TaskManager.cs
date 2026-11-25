@@ -77,10 +77,15 @@ public class TaskManager
 
     private async Task UpdateTaskRunSubscription()
     {
+        // A subscription's own interval wins; the others use the app-wide one
+        // (Secure Connect: on by default, so server-side changes arrive by themselves).
+        var defaultInterval = Math.Max(0, _config.KillSwitchItem?.SubAutoUpdateMinutes ?? 0);
         var updateTime = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
         var lstSubs = (await AppManager.Instance.SubItems())?
-            .Where(t => t.AutoUpdateInterval > 0)
-            .Where(t => updateTime - t.UpdateTime >= t.AutoUpdateInterval * 60)
+            .Where(t => t.Enabled && t.Url.IsNotEmpty())
+            .Select(t => (Item: t, Interval: t.AutoUpdateInterval > 0 ? t.AutoUpdateInterval : defaultInterval))
+            .Where(t => t.Interval > 0 && updateTime - t.Item.UpdateTime >= t.Interval * 60)
+            .Select(t => t.Item)
             .ToList();
 
         if (lstSubs is not { Count: > 0 })
@@ -92,7 +97,7 @@ public class TaskManager
 
         foreach (var item in lstSubs)
         {
-            await SubscriptionHandler.UpdateProcess(_config, item.Id, true, async (success, msg) =>
+            var summary = await SubscriptionHandler.UpdateProcess(_config, item.Id, true, async (success, msg) =>
             {
                 await _updateFunc?.Invoke(success, msg);
                 if (success)
@@ -100,8 +105,18 @@ public class TaskManager
                     Logging.SaveLog($"Update subscription end. {msg}");
                 }
             });
-            item.UpdateTime = updateTime;
-            await ConfigHandler.AddSubItem(_config, item);
+            SubscriptionHandler.Notify(summary, false);
+            foreach (var (name, reason) in summary.Failed)
+            {
+                Logging.SaveLog($"Update subscription failed. {name}: {reason}");
+            }
+            // The time of the attempt, in the stored item.
+            var stored = await AppManager.Instance.GetSubItem(item.Id);
+            if (stored is not null)
+            {
+                stored.UpdateTime = updateTime;
+                await ConfigHandler.AddSubItem(_config, stored);
+            }
             await Task.Delay(1000);
         }
     }

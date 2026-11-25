@@ -6715,6 +6715,78 @@ namespace ServiceLib.Resx {
         }
         
         /// <summary>
+        ///   查找类似 Subscription updated: {0} 的本地化字符串。
+        /// </summary>
+        public static string ScSubUpdated {
+            get {
+                return ResourceManager.GetString("ScSubUpdated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Subscriptions: no changes 的本地化字符串。
+        /// </summary>
+        public static string ScSubNoChanges {
+            get {
+                return ResourceManager.GetString("ScSubNoChanges", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Subscription "{0}" was not updated: {1} 的本地化字符串。
+        /// </summary>
+        public static string ScSubFailed {
+            get {
+                return ResourceManager.GetString("ScSubFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 the server returned a web page instead of profiles ({0}). Check the link, or whether the server accepts this app. 的本地化字符串。
+        /// </summary>
+        public static string ScSubHtml {
+            get {
+                return ResourceManager.GetString("ScSubHtml", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 no profiles found in the server's answer 的本地化字符串。
+        /// </summary>
+        public static string ScSubNoProfiles {
+            get {
+                return ResourceManager.GetString("ScSubNoProfiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 the server sent an answer that cannot be read ({0}) 的本地化字符串。
+        /// </summary>
+        public static string ScSubBadAnswer {
+            get {
+                return ResourceManager.GetString("ScSubBadAnswer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 the server returned nothing 的本地化字符串。
+        /// </summary>
+        public static string ScSubEmpty {
+            get {
+                return ResourceManager.GetString("ScSubEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 the server did not respond in time 的本地化字符串。
+        /// </summary>
+        public static string ScSubTimeout {
+            get {
+                return ResourceManager.GetString("ScSubTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Not applied — all traffic goes through the tunnel. 的本地化字符串。
         /// </summary>
         public static string ScRoutesOffSummary {
