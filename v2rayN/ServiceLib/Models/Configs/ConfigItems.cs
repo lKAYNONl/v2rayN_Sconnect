@@ -202,6 +202,12 @@ public class KillSwitchItem
     /// </summary>
     public int SubAutoUpdateMinutes { get; set; } = 60;
 
+    /// <summary>Width of the profiles rail in the main window; 0 - the default.</summary>
+    public int ProfilesWidth { get; set; }
+
+    /// <summary>Subscription folders collapsed in the profiles rail (subscription ids).</summary>
+    public List<string>? CollapsedGroups { get; set; }
+
     /// <summary>
     /// Secure Connect UI defaults version, for one-time migrations of settings
     /// the dashboard depends on (e.g. live speed in the status strip).

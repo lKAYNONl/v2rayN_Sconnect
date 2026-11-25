@@ -135,6 +135,31 @@
             <Setter Property="BorderBrush" Value="#3D63B3" />
         </Style>
 
+        <!-- Subscription folder row and the cards inside a folder -->
+        <Style Selector="ListBox#lstCards ListBoxItem.grp">
+            <Setter Property="Padding" Value="8,7" />
+            <Setter Property="Margin" Value="0,2,0,6" />
+        </Style>
+        <Style Selector="ListBox#lstCards ListBoxItem.sub">
+            <Setter Property="Margin" Value="12,0,0,6" />
+        </Style>
+
+        <!-- Rail splitter: the divider line itself, highlighted while resizing -->
+        <Style Selector="GridSplitter#railSplitter">
+            <Setter Property="Background" Value="#273055" />
+            <Setter Property="Padding" Value="3,0" />
+            <Setter Property="Cursor" Value="SizeWestEast" />
+        </Style>
+        <Style Selector="GridSplitter#railSplitter:pointerover">
+            <Setter Property="Background" Value="#4F8CFF" />
+        </Style>
+        <Style Selector="GridSplitter#railSplitter:pressed">
+            <Setter Property="Background" Value="#4F8CFF" />
+        </Style>
+        <Style Selector="GridSplitter#railSplitter:focus-visible">
+            <Setter Property="Background" Value="#4F8CFF" />
+        </Style>
+
         <!-- Import: dashed outline -->
         <Style Selector="Button.import Rectangle">
             <Setter Property="Stroke" Value="#273055" />
@@ -802,12 +827,14 @@
                 </Border>
 
                 <!-- ===== Body: profile rail + connect stage ===== -->
-                <Grid ColumnDefinitions="248,*">
-                    <Border
-                        Grid.Column="0"
-                        Background="#0F1426"
-                        BorderBrush="#273055"
-                        BorderThickness="0,0,1,0">
+                <!-- The rail is resizable: drag the divider (double click = default width). -->
+                <Grid x:Name="bodyGrid">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="248" MinWidth="200" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" MinWidth="360" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Background="#0F1426">
                         <Grid RowDefinitions="Auto,*,Auto">
                             <TextBlock
                                 Grid.Row="0"
@@ -833,9 +860,74 @@
                                         <MenuItem x:Name="menuCtxDelete" Header="{x:Static resx:ResUI.ScDelete}" />
                                     </ContextMenu>
                                 </ListBox.ContextMenu>
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                <!--
+                                    Rows are subscription folders (ProfileGroupModel) and
+                                    profiles; a profile without a subscription has no folder.
+                                -->
+                                <ListBox.DataTemplates>
+                                    <DataTemplate DataType="dto:ProfileGroupModel">
+                                        <Grid
+                                            Background="Transparent"
+                                            ColumnDefinitions="14,Auto,*,Auto,Auto"
+                                            ToolTip.Tip="{ReflectionBinding Remarks}">
+                                            <Path
+                                                Grid.Column="0"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                Data="M 1 1 L 5 5 L 9 1"
+                                                IsVisible="{ReflectionBinding Expanded}"
+                                                Stroke="#8B95B4"
+                                                StrokeJoin="Round"
+                                                StrokeLineCap="Round"
+                                                StrokeThickness="1.6" />
+                                            <Path
+                                                Grid.Column="0"
+                                                Margin="2,0,0,0"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                Data="M 1 1 L 5 5 L 1 9"
+                                                IsVisible="{ReflectionBinding !Expanded}"
+                                                Stroke="#8B95B4"
+                                                StrokeJoin="Round"
+                                                StrokeLineCap="Round"
+                                                StrokeThickness="1.6" />
+                                            <Path
+                                                Grid.Column="1"
+                                                Margin="2,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Data="M 1 2.5 A 1.5 1.5 0 0 1 2.5 1 H 5.5 L 7 2.8 H 12.5 A 1.5 1.5 0 0 1 14 4.3 V 10.5 A 1.5 1.5 0 0 1 12.5 12 H 2.5 A 1.5 1.5 0 0 1 1 10.5 Z"
+                                                Stroke="#4F8CFF"
+                                                StrokeJoin="Round"
+                                                StrokeThickness="1.3" />
+                                            <TextBlock
+                                                Grid.Column="2"
+                                                Margin="8,0,8,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="12.5"
+                                                FontWeight="SemiBold"
+                                                Foreground="#C9CFE4"
+                                                Text="{ReflectionBinding Remarks}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <!-- the active profile is inside a collapsed folder -->
+                                            <Ellipse
+                                                Grid.Column="3"
+                                                Width="6"
+                                                Height="6"
+                                                Margin="0,0,7,0"
+                                                VerticalAlignment="Center"
+                                                Fill="#37D3C2"
+                                                IsVisible="{ReflectionBinding ActiveHidden}" />
+                                            <TextBlock
+                                                Grid.Column="4"
+                                                VerticalAlignment="Center"
+                                                FontFamily="{StaticResource ScMono}"
+                                                FontSize="11"
+                                                Foreground="#5B648A"
+                                                Text="{ReflectionBinding Count}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                    <DataTemplate DataType="dto:ProfileItemModel">
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ToolTip.Tip="{ReflectionBinding Remarks}">
                                             <Border
                                                 Grid.Column="0"
                                                 Width="30"
@@ -891,7 +983,7 @@
                                             </StackPanel>
                                         </Grid>
                                     </DataTemplate>
-                                </ListBox.ItemTemplate>
+                                </ListBox.DataTemplates>
                             </ListBox>
                             <Button
                                 x:Name="btnImport"
@@ -917,7 +1009,14 @@
                         </Grid>
                     </Border>
 
-                    <Grid Grid.Column="1" Background="#11162A">
+                    <GridSplitter
+                        x:Name="railSplitter"
+                        Grid.Column="1"
+                        Width="7"
+                        ResizeBehavior="PreviousAndNext"
+                        ResizeDirection="Columns" />
+
+                    <Grid Grid.Column="2" Background="#11162A">
                         <StackPanel
                             Margin="20"
                             HorizontalAlignment="Center"

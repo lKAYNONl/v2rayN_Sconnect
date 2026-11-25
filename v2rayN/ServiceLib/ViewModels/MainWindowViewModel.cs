@@ -997,6 +997,23 @@ public partial class MainWindowViewModel : MyReactiveObject
         }
     }
 
+    /// <summary>
+    /// Remembers the layout of the profiles rail: its width and which
+    /// subscription folders are collapsed.
+    /// </summary>
+    public async Task SaveProfilesRail(int width, List<string> collapsedGroups)
+    {
+        var ks = _config.KillSwitchItem ??= new();
+        if (ks.ProfilesWidth == width && (ks.CollapsedGroups ?? []).SequenceEqual(collapsedGroups))
+        {
+            return;
+        }
+
+        ks.ProfilesWidth = width;
+        ks.CollapsedGroups = collapsedGroups;
+        await ConfigHandler.SaveConfig(_config);
+    }
+
     private async Task LoadCore(CoreConfigContext? mainContext, CoreConfigContext? preContext)
     {
         await CoreManager.Instance.LoadCore(mainContext, preContext);

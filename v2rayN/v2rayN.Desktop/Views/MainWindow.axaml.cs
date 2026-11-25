@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Net;
+using Avalonia.Collections;
 using Avalonia.Controls.Notifications;
 using Avalonia.Controls.Primitives;
 using Avalonia.Platform.Storage;
@@ -24,6 +25,18 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private readonly ObservableCollection<string> _bypassApps = [];
     private readonly ObservableCollection<string> _bypassSubnets = [];
     private bool _loadingSettings;
+
+    // Profiles rail: the rows of the list - loose profiles, then every subscription
+    // as a folder row followed (while expanded) by its profiles.
+    private const double RailDefaultWidth = 248;
+    private const double RailMinWidth = 200;
+    private const double StageMinWidth = 360;
+    private readonly AvaloniaList<object> _railRows = new();
+    private readonly Dictionary<string, ProfileGroupModel> _railGroups = new();
+    private readonly Dictionary<string, List<ProfileItemModel>> _railMembers = new();
+    private readonly HashSet<string> _collapsedGroups = new();
+    private int _railWidth;
+    private bool _syncingSelection;
 
     // Settings sub-pages, running-programs picker and the rule being edited
     private enum SettingsPage
@@ -75,9 +88,27 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnClose.Click += (_, _) => Close();
 
         // Profiles rail: single click activates, double click also connects.
+        lstCards.ItemsSource = _railRows;
+        lstCards.ContainerPrepared += LstCards_ContainerPrepared;
         lstCards.Tapped += LstCards_Tapped;
         lstCards.DoubleTapped += LstCards_DoubleTapped;
         lstCards.SelectionChanged += LstCards_SelectionChanged;
+        // A folder row is not a profile: a click on it only folds/unfolds it. The
+        // press is taken before the list sees it, so it neither selects the row
+        // nor opens the profile menu.
+        lstCards.AddHandler(PointerPressedEvent, (_, e) => SwallowOnFolder(e), RoutingStrategies.Tunnel);
+        lstCards.AddHandler(PointerReleasedEvent, (_, e) => SwallowOnFolder(e), RoutingStrategies.Tunnel);
+        lstCards.AddHandler(ContextRequestedEvent, (_, e) =>
+        {
+            // The menu acts on the selected profile: not on a folder, and not on a
+            // profile hidden in a collapsed folder.
+            if (FolderFromEvent(e) != null || lstCards.SelectedItem is not ProfileItemModel)
+            {
+                e.Handled = true;
+            }
+        }, RoutingStrategies.Tunnel);
+        lstCards.AddHandler(KeyDownEvent, (_, e) => OnRailKey(e), RoutingStrategies.Tunnel);
+        InitProfilesRail();
 
         // Stage
         btnDial.Click += BtnDial_Click;
@@ -254,14 +285,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.OneWayBind(ViewModel, vm => vm.BlReloadEnabled, v => v.menuStopCore.IsEnabled).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.BlNewUpdate, v => v.btnNewUpdate.IsVisible).DisposeWith(disposables);
 
-            // Profiles rail
-            this.OneWayBind(ViewModel, vm => vm.ProfilesViewModel.ProfileItems, v => v.lstCards.ItemsSource).DisposeWith(disposables);
-            this.Bind(ViewModel, vm => vm.ProfilesViewModel.SelectedProfile, v => v.lstCards.SelectedItem).DisposeWith(disposables);
+            // Profiles rail: the list shows _railRows, built from the profiles.
             if (ViewModel?.ProfilesViewModel?.ProfileItems != null)
             {
                 ViewModel.ProfilesViewModel.ProfileItems.CollectionChanged += OnProfileItemsChanged;
+                RebuildRail();
                 FillCountryCodes();
             }
+            this.WhenAnyValue(v => v.ViewModel.ProfilesViewModel.SelectedProfile).Subscribe(_ => SyncRailSelection()).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.AddServerViaClipboardCmd, v => v.btnImport).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.EditServerCmd, v => v.menuCtxEdit).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.ProfilesViewModel.RealPingServerCmd, v => v.menuCtxPing).DisposeWith(disposables);
@@ -567,11 +598,262 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private static bool IsOnCard(RoutedEventArgs e)
         => (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true) != null;
 
+    /// <summary>The profile card an event came from, if any.</summary>
+    private static ProfileItemModel? CardFromEvent(RoutedEventArgs e)
+        => (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as ProfileItemModel;
+
+    /// <summary>The folder row an event came from, if any.</summary>
+    private static ProfileGroupModel? FolderFromEvent(RoutedEventArgs e)
+        => (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as ProfileGroupModel;
+
+    private static void SwallowOnFolder(RoutedEventArgs e)
+    {
+        if (FolderFromEvent(e) != null)
+        {
+            e.Handled = true;
+        }
+    }
+
+    #region Profiles rail: width and subscription folders
+
+    private void InitProfilesRail()
+    {
+        var ks = _config.KillSwitchItem;
+        foreach (var id in ks?.CollapsedGroups ?? [])
+        {
+            _collapsedGroups.Add(id);
+        }
+
+        // Width: the saved one; never so wide that the stage has no room.
+        var rail = bodyGrid.ColumnDefinitions[0];
+        _railWidth = ks?.ProfilesWidth ?? 0;
+        if (_railWidth >= RailMinWidth)
+        {
+            rail.Width = new GridLength(_railWidth);
+        }
+        bodyGrid.SizeChanged += (_, e) =>
+            rail.MaxWidth = Math.Max(RailMinWidth, e.NewSize.Width - StageMinWidth - railSplitter.Width);
+
+        railSplitter.DragCompleted += (_, _) => RememberRailWidth();
+        railSplitter.KeyUp += (_, e) =>
+        {
+            // The divider is also moved with the arrow keys.
+            if (e.Key is Key.Left or Key.Right)
+            {
+                RememberRailWidth();
+            }
+        };
+        railSplitter.DoubleTapped += (_, _) =>
+        {
+            rail.Width = new GridLength(RailDefaultWidth);
+            _railWidth = 0;
+            SaveProfilesRail();
+        };
+    }
+
+    private void RememberRailWidth()
+    {
+        var width = (int)Math.Round(bodyGrid.ColumnDefinitions[0].ActualWidth);
+        if (width >= RailMinWidth && width != _railWidth)
+        {
+            _railWidth = width;
+            SaveProfilesRail();
+        }
+    }
+
+    private void SaveProfilesRail()
+    {
+        if (ViewModel is { } vm)
+        {
+            _ = vm.SaveProfilesRail(_railWidth, _collapsedGroups.OrderBy(t => t).ToList());
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds the rows from the profiles: profiles without a subscription first,
+    /// on their own, then each subscription as a folder with its profiles.
+    /// </summary>
+    private void RebuildRail()
+    {
+        var vm = ViewModel?.ProfilesViewModel;
+        if (vm == null)
+        {
+            return;
+        }
+        var profiles = vm.ProfileItems.ToList();
+        if (profiles.Count == 0 && vm.SelectedProfile != null)
+        {
+            // No profiles left: nothing is selected, the stage shows no server name.
+            vm.SelectedProfile = null;
+        }
+
+        // Subscriptions that have profiles, in the order of the subscriptions
+        // list. A profile whose subscription no longer exists is shown on its own.
+        var names = new Dictionary<string, string>();
+        List<string> order = [];
+        foreach (var profile in profiles)
+        {
+            if (profile.Subid.IsNullOrEmpty() || profile.SubRemarks == null || names.ContainsKey(profile.Subid))
+            {
+                continue;
+            }
+            names[profile.Subid] = profile.SubRemarks.IsNullOrEmpty() ? ResUI.menuSubscription : profile.SubRemarks;
+            order.Add(profile.Subid);
+        }
+        var subOrder = vm.SubItems.Select(t => t.Id).ToList();
+        order = order.OrderBy(id =>
+        {
+            var position = subOrder.IndexOf(id);
+            return position >= 0 ? position : int.MaxValue;
+        }).ToList();
+
+        _railGroups.Clear();
+        _railMembers.Clear();
+        List<object> rows = [];
+        rows.AddRange(profiles.Where(t => t.Subid.IsNullOrEmpty() || !names.ContainsKey(t.Subid)));
+        foreach (var id in order)
+        {
+            var members = profiles.Where(t => t.Subid == id).ToList();
+            var expanded = !_collapsedGroups.Contains(id);
+            var group = new ProfileGroupModel
+            {
+                Id = id,
+                Remarks = names[id],
+                Count = members.Count,
+                Expanded = expanded,
+                ActiveHidden = !expanded && members.Any(t => t.IndexId == _config.IndexId),
+            };
+            _railGroups[id] = group;
+            _railMembers[id] = members;
+            rows.Add(group);
+            if (expanded)
+            {
+                rows.AddRange(members);
+            }
+        }
+
+        _syncingSelection = true;
+        try
+        {
+            _railRows.Clear();
+            _railRows.AddRange(rows);
+        }
+        finally
+        {
+            _syncingSelection = false;
+        }
+        SyncRailSelection();
+    }
+
+    private void ToggleFolder(ProfileGroupModel group, bool? expand = null)
+    {
+        var expanded = expand ?? !group.Expanded;
+        var index = _railRows.IndexOf(group);
+        if (expanded == group.Expanded || index < 0 || !_railMembers.TryGetValue(group.Id, out var members))
+        {
+            return;
+        }
+
+        _syncingSelection = true;
+        try
+        {
+            if (expanded)
+            {
+                _railRows.InsertRange(index + 1, members);
+                _collapsedGroups.Remove(group.Id);
+            }
+            else
+            {
+                _railRows.RemoveRange(index + 1, Math.Min(members.Count, _railRows.Count - index - 1));
+                _collapsedGroups.Add(group.Id);
+            }
+        }
+        finally
+        {
+            _syncingSelection = false;
+        }
+        group.Expanded = expanded;
+        group.ActiveHidden = !expanded && members.Any(t => t.IndexId == _config.IndexId);
+
+        // Keep the keyboard cursor on the folder; otherwise show the selected
+        // profile again if it has just become visible.
+        if (!ReferenceEquals(lstCards.SelectedItem, group))
+        {
+            SyncRailSelection();
+        }
+        SaveProfilesRail();
+    }
+
+    /// <summary>Marks the selected profile in the list (none while its folder is collapsed).</summary>
+    private void SyncRailSelection()
+    {
+        var selected = ViewModel?.ProfilesViewModel?.SelectedProfile;
+        object? row = selected != null && _railRows.Contains(selected) ? selected : null;
+        if (ReferenceEquals(lstCards.SelectedItem, row) || (row == null && lstCards.SelectedItem is ProfileGroupModel))
+        {
+            return;
+        }
+
+        _syncingSelection = true;
+        try
+        {
+            lstCards.SelectedItem = row;
+        }
+        finally
+        {
+            _syncingSelection = false;
+        }
+    }
+
+    private void LstCards_ContainerPrepared(object? sender, ContainerPreparedEventArgs e)
+    {
+        // Folder rows and the cards inside a folder are styled by class.
+        var row = e.Index >= 0 && e.Index < _railRows.Count ? _railRows[e.Index] : null;
+        e.Container.Classes.Set("grp", row is ProfileGroupModel);
+        e.Container.Classes.Set("sub", row is ProfileItemModel profile && !profile.Subid.IsNullOrEmpty() && _railGroups.ContainsKey(profile.Subid));
+    }
+
+    private void OnRailKey(KeyEventArgs e)
+    {
+        // Keyboard: with the cursor on a folder, Enter/Space toggles it, Left folds, Right unfolds.
+        if (lstCards.SelectedItem is not ProfileGroupModel group)
+        {
+            return;
+        }
+        switch (e.Key)
+        {
+            case Key.Enter or Key.Space:
+                ToggleFolder(group);
+                e.Handled = true;
+                break;
+
+            case Key.Left:
+                ToggleFolder(group, false);
+                e.Handled = true;
+                break;
+
+            case Key.Right:
+                ToggleFolder(group, true);
+                e.Handled = true;
+                break;
+        }
+    }
+
+    #endregion Profiles rail: width and subscription folders
+
     private async void LstCards_Tapped(object? sender, TappedEventArgs e)
     {
+        if (FolderFromEvent(e) is { } folder)
+        {
+            ToggleFolder(folder);
+            return;
+        }
+
         // Single click on a card makes it the active server (prototype behaviour):
         // reconnects to it while connected, otherwise it is used by the next Connect.
-        if (!IsOnCard(e) || ViewModel is not { } vm || lstCards.SelectedItem is not ProfileItemModel item)
+        // The card is taken from the click itself: with touch the list selects it
+        // only after this event.
+        if (CardFromEvent(e) is not { } item || ViewModel is not { } vm)
         {
             return;
         }
@@ -588,7 +870,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private async void LstCards_DoubleTapped(object? sender, TappedEventArgs e)
     {
         // Double click on a card while disconnected: activate it and connect.
-        if (!IsOnCard(e) || ViewModel is not { } vm || lstCards.SelectedItem is not ProfileItemModel item)
+        if (CardFromEvent(e) is not { } item || ViewModel is not { } vm)
         {
             return;
         }
@@ -608,14 +890,31 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private void LstCards_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (ViewModel?.ProfilesViewModel != null)
+        if (ViewModel?.ProfilesViewModel is not { } vm)
         {
-            ViewModel.ProfilesViewModel.SelectedProfiles = lstCards.SelectedItems?.Cast<ProfileItemModel>().ToList() ?? new List<ProfileItemModel>();
+            return;
+        }
+        // A folder row, or nothing (the selected profile is in a collapsed folder),
+        // leaves the selected profile as it is.
+        vm.SelectedProfiles = lstCards.SelectedItems?.OfType<ProfileItemModel>().ToList() ?? new List<ProfileItemModel>();
+        if (!_syncingSelection && lstCards.SelectedItem is ProfileItemModel item && !ReferenceEquals(vm.SelectedProfile, item))
+        {
+            vm.SelectedProfile = item;
         }
     }
 
     private void OnProfileItemsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        => Dispatcher.UIThread.Post(FillCountryCodes);
+    {
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            RebuildRail();
+        }
+        else
+        {
+            Dispatcher.UIThread.Post(RebuildRail);
+        }
+        Dispatcher.UIThread.Post(FillCountryCodes);
+    }
 
     private void FillCountryCodes()
     {

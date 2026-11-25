@@ -360,6 +360,13 @@ public partial class ProfilesViewModel : MyReactiveObject
 
     public async Task RefreshServersBiz()
     {
+        // Secure Connect: the rail shows every profile, with subscriptions as
+        // folders, and has no group selector - a group filter left in the settings
+        // (by upstream v2rayN, or after a subscription was deleted) must not hide
+        // the rest. It also keeps pasted profiles out of a subscription, whose
+        // next update would delete them.
+        _config.SubIndexId = null;
+
         var lstModel = await GetProfileItemsEx(_config.SubIndexId, _serverFilter);
 
         ProfileItems.ReplaceRange(lstModel ?? []);
