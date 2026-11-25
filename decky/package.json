@@ -1,6 +1,6 @@
 {
   "name": "secure-connect-decky",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Secure Connect (v2rayN) for Steam Deck: pick a profile, run it with sing-box in TUN mode",
   "type": "module",
   "scripts": {

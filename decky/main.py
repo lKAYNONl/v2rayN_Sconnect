@@ -1060,13 +1060,30 @@ class Plugin:
         decky.logger.info(f"programs: {len(programs)} in {time.monotonic() - started:.2f}s")
         return {"ok": True, "programs": programs}
 
-    async def get_profiles(self):
-        answer = await self._v2rayn("list")
+    def _with_selected(self, answer):
+        """Adds the profile the panel should show as chosen to a "list" answer."""
         if answer.get("ok"):
             last = self._load_settings().get("profile_id", "")
             ids = {p.get("id") for p in answer.get("profiles", [])}
             answer["selected"] = self.profile_id or (last if last in ids else answer.get("active", ""))
         return answer
+
+    async def get_profiles(self):
+        return self._with_selected(await self._v2rayn("list"))
+
+    async def select_profile(self, profile_id):
+        """A profile chosen in the panel while disconnected: remembered, so the
+        panel shows it the next time (connecting does that by itself)."""
+        if not self._running() and not self.busy and profile_id:
+            self.profile_id = str(profile_id)
+            self.profile_name = ""
+            self._save_settings(profile_id=self.profile_id)
+        return self._status()
+
+    async def set_favorite(self, profile_id, on):
+        """Stars / unstars a profile (the favourites are shared with the app);
+        answers with the new list of profiles."""
+        return self._with_selected(await self._v2rayn("favorite", str(profile_id), "on" if on else "off"))
 
     async def get_status(self):
         return self._status()

@@ -6,7 +6,9 @@ namespace v2rayN.Desktop.Common;
 /// Headless mode for the Steam Deck (Decky Loader) plugin. It uses the same
 /// profiles, routing and split tunneling as the app, without a window:
 /// <code>
-///   v2rayN --decky list                 profiles and the active one
+///   v2rayN --decky list                 profiles (with their subscription and the
+///                                       favourite mark) and the active one
+///   v2rayN --decky favorite &lt;id&gt; on|off  star / unstar a profile; answers as "list"
 ///   v2rayN --decky config &lt;id&gt; [--all]  configs to run that profile in TUN mode:
 ///                                       sing-box TUN + the profile's own core
 ///                                       (--all: the whole Deck, split lists ignored)
@@ -63,10 +65,11 @@ internal static class DeckyCli
         return command switch
         {
             "list" => await ListAsync(config),
+            "favorite" when args.Length > 2 => await FavoriteAsync(config, args[1], args[2] == "on"),
             "config" when args.Length > 1 => await ConfigAsync(config, args[1], args.Skip(2).Contains("--all")),
             "split" => (SplitAnswer(config), 0),
             "split-set" when args.Length > 1 => await SplitSetAsync(config, args[1]),
-            _ => (Fail($"Usage: {Flag} list | config <profile id> [--all] | split | split-set <json>"), 2),
+            _ => (Fail($"Usage: {Flag} list | favorite <profile id> on|off | config <profile id> [--all] | split | split-set <json>"), 2),
         };
     }
 
@@ -74,25 +77,74 @@ internal static class DeckyCli
     {
         // Plain entities (no UI models): this mode runs without the app's UI setup.
         var items = await AppManager.Instance.ProfileItems(string.Empty) ?? [];
-        var groups = (await AppManager.Instance.SubItems() ?? [])
+        // Subscriptions in the order of the app's list: the plugin shows them as
+        // folders, as the app's profiles rail does.
+        var subs = (await AppManager.Instance.SubItems() ?? [])
             .Where(t => !t.Id.IsNullOrEmpty())
             .GroupBy(t => t.Id)
-            .ToDictionary(g => g.Key, g => g.First().Remarks ?? string.Empty);
+            .Select(g => g.First())
+            .ToList();
+        var groupNames = subs.ToDictionary(t => t.Id, t => t.Remarks ?? string.Empty);
+        // Favourites (shared with the app), in the order they were starred.
+        var favorites = (config.KillSwitchItem?.FavoriteProfiles ?? [])
+            .Where(id => items.Any(t => t.IndexId == id))
+            .Distinct()
+            .ToList();
         var profiles = items
             .Where(t => t.ConfigType != EConfigType.Custom)   // custom configs are for a specific core
-            .Select(t => new
+            .Select(t =>
             {
-                id = t.IndexId,
-                name = t.Remarks,
-                type = t.ConfigType.ToString(),
-                address = t.Address,
-                port = t.Port,
-                group = !t.Subid.IsNullOrEmpty() && groups.TryGetValue(t.Subid, out var group) ? group : string.Empty,
-                sort = ProfileExManager.Instance.GetSort(t.IndexId),
+                var inGroup = !t.Subid.IsNullOrEmpty() && groupNames.ContainsKey(t.Subid);
+                return new
+                {
+                    id = t.IndexId,
+                    name = t.Remarks,
+                    type = t.ConfigType.ToString(),
+                    address = t.Address,
+                    port = t.Port,
+                    group = inGroup ? groupNames[t.Subid] : string.Empty,
+                    groupId = inGroup ? t.Subid : string.Empty,
+                    favorite = favorites.Contains(t.IndexId),
+                    sort = ProfileExManager.Instance.GetSort(t.IndexId),
+                };
             })
             .OrderBy(t => t.sort)
             .ToList();
-        return (new { ok = true, active = config.IndexId ?? string.Empty, profiles }, 0);
+        var groups = subs
+            .Where(t => profiles.Any(p => p.groupId == t.Id))
+            .Select(t => new { id = t.Id, name = t.Remarks ?? string.Empty })
+            .ToList();
+        return (new { ok = true, active = config.IndexId ?? string.Empty, profiles, groups, favorites }, 0);
+    }
+
+    /// <summary>
+    /// Stars or unstars a profile. The favourites are the app's
+    /// (KillSwitchItem.FavoriteProfiles): starred in the plugin, a profile is also
+    /// first in the app's list, and the other way round.
+    /// </summary>
+    private static async Task<(object, int)> FavoriteAsync(Config config, string indexId, bool favorite)
+    {
+        var items = await AppManager.Instance.ProfileItems(string.Empty) ?? [];
+        if (items.All(t => t.IndexId != indexId))
+        {
+            return (Fail($"Profile not found: {indexId}"), 1);
+        }
+        var ks = config.KillSwitchItem ??= new();
+        // Stars of profiles that no longer exist are dropped on the way.
+        var ids = (ks.FavoriteProfiles ?? [])
+            .Where(id => id != indexId && items.Any(t => t.IndexId == id))
+            .Distinct()
+            .ToList();
+        if (favorite)
+        {
+            ids.Add(indexId);
+        }
+        ks.FavoriteProfiles = ids;
+        if (await ConfigHandler.SaveConfig(config) != 0)
+        {
+            return (Fail("Cannot save the v2rayN settings (guiConfigs)."), 1);
+        }
+        return await ListAsync(config);
     }
 
     /// <summary>Split tunneling and routing settings (shared with the app).</summary>
