@@ -2373,4 +2373,7 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="ScTunNeedsAdmin" xml:space="preserve">
     <value>TUN mode is off: it needs administrator rights.</value>
   </data>
+  <data name="ScFavorite" xml:space="preserve">
+    <value>Favourite - keep at the top of the list</value>
+  </data>
 </root>

@@ -143,6 +143,27 @@
         <Style Selector="ListBox#lstCards ListBoxItem.sub">
             <Setter Property="Margin" Value="12,0,0,6" />
         </Style>
+        <!-- A gap after the favourites, which are listed first -->
+        <Style Selector="ListBox#lstCards ListBoxItem.favlast">
+            <Setter Property="Margin" Value="0,0,0,14" />
+        </Style>
+
+        <!-- The star on a card: dim outline, brighter under the pointer, gold when set -->
+        <Style Selector="Button.star">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Focusable" Value="False" />
+        </Style>
+        <Style Selector="Button.star Path.off">
+            <Setter Property="Stroke" Value="#3A4468" />
+        </Style>
+        <Style Selector="ListBoxItem:pointerover Button.star Path.off">
+            <Setter Property="Stroke" Value="#8B95B4" />
+        </Style>
+        <Style Selector="Button.star:pointerover Path.off">
+            <Setter Property="Stroke" Value="#F5C451" />
+        </Style>
 
         <!-- Rail splitter: the divider line itself, highlighted while resizing -->
         <Style Selector="GridSplitter#railSplitter">
@@ -963,23 +984,48 @@
                                                     Text="{ReflectionBinding ProtocolInfo}"
                                                     TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
+                                            <!-- delay, and under it the favourite star -->
                                             <StackPanel
                                                 Grid.Column="2"
                                                 VerticalAlignment="Center"
-                                                Orientation="Horizontal">
-                                                <TextBlock
-                                                    FontFamily="{StaticResource ScMono}"
-                                                    FontSize="11"
-                                                    FontWeight="SemiBold"
-                                                    Foreground="#37D3C2"
-                                                    Text="{ReflectionBinding DelayVal}" />
-                                                <TextBlock
-                                                    FontFamily="{StaticResource ScMono}"
-                                                    FontSize="11"
-                                                    FontWeight="SemiBold"
-                                                    Foreground="#8B95B4"
-                                                    IsVisible="{ReflectionBinding DelayVal, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                                    Text="{x:Static resx:ResUI.ScMs}" />
+                                                Spacing="2">
+                                                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                                                    <TextBlock
+                                                        FontFamily="{StaticResource ScMono}"
+                                                        FontSize="11"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="#37D3C2"
+                                                        Text="{ReflectionBinding DelayVal}" />
+                                                    <TextBlock
+                                                        FontFamily="{StaticResource ScMono}"
+                                                        FontSize="11"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="#8B95B4"
+                                                        IsVisible="{ReflectionBinding DelayVal, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                                        Text="{x:Static resx:ResUI.ScMs}" />
+                                                </StackPanel>
+                                                <Button
+                                                    Margin="0,0,-4,0"
+                                                    HorizontalAlignment="Right"
+                                                    Classes="sc star"
+                                                    Tag="{Binding}"
+                                                    ToolTip.Tip="{x:Static resx:ResUI.ScFavorite}">
+                                                    <Panel>
+                                                        <Path
+                                                            Classes="off"
+                                                            Data="M 7 0.8 L 8.9 4.9 L 13.4 5.4 L 10.1 8.5 L 11 12.9 L 7 10.7 L 3 12.9 L 3.9 8.5 L 0.6 5.4 L 5.1 4.9 Z"
+                                                            IsVisible="{ReflectionBinding !IsFavorite}"
+                                                            StrokeJoin="Round"
+                                                            StrokeThickness="1.2" />
+                                                        <Path
+                                                            Data="M 7 0.8 L 8.9 4.9 L 13.4 5.4 L 10.1 8.5 L 11 12.9 L 7 10.7 L 3 12.9 L 3.9 8.5 L 0.6 5.4 L 5.1 4.9 Z"
+                                                            Fill="#F5C451"
+                                                            IsVisible="{ReflectionBinding IsFavorite}"
+                                                            Stroke="#F5C451"
+                                                            StrokeJoin="Round"
+                                                            StrokeThickness="1.2" />
+                                                    </Panel>
+                                                </Button>
                                             </StackPanel>
                                         </Grid>
                                     </DataTemplate>

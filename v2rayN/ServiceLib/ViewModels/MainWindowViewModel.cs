@@ -1014,6 +1014,17 @@ public partial class MainWindowViewModel : MyReactiveObject
         await ConfigHandler.SaveConfig(_config);
     }
 
+    /// <summary>
+    /// Stores the favourite profiles of the profiles rail, in the order they
+    /// were starred. The list is replaced at once, before the file is written.
+    /// </summary>
+    public async Task SaveFavoriteProfiles(List<string> profileIds)
+    {
+        var ks = _config.KillSwitchItem ??= new();
+        ks.FavoriteProfiles = profileIds;
+        await ConfigHandler.SaveConfig(_config);
+    }
+
     private async Task LoadCore(CoreConfigContext? mainContext, CoreConfigContext? preContext)
     {
         await CoreManager.Instance.LoadCore(mainContext, preContext);

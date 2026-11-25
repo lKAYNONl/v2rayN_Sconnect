@@ -2172,6 +2172,27 @@ public static class ConfigHandler
             }
         }
 
+        //Keep the favourites: the profiles of a subscription get new ids on every
+        //update, so a starred profile is found again the same way as the active one
+        if (lstOriSub != null && config.KillSwitchItem?.FavoriteProfiles is { Count: > 0 } favorites
+            && favorites.Any(f => lstOriSub.Any(t => t.IndexId == f)))
+        {
+            var lstSub = await AppManager.Instance.ProfileItems(subid);
+            List<string> kept = [];
+            foreach (var id in favorites)
+            {
+                var oldItem = lstOriSub.FirstOrDefault(t => t.IndexId == id);
+                // a profile of this subscription that is gone from it loses its star
+                var newId = oldItem == null ? id : FindMatchedProfileItem(lstSub, oldItem)?.IndexId;
+                if (newId != null && !kept.Contains(newId))
+                {
+                    kept.Add(newId);
+                }
+            }
+            config.KillSwitchItem.FavoriteProfiles = kept;
+            await SaveConfig(config);
+        }
+
         //Keep the last traffic statistics
         if (lstOriSub != null)
         {

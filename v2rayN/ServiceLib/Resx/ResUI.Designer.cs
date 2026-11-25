@@ -5824,6 +5824,15 @@ namespace ServiceLib.Resx {
         }
         
         /// <summary>
+        ///   查找类似 Favourite - keep at the top of the list 的本地化字符串。
+        /// </summary>
+        public static string ScFavorite {
+            get {
+                return ResourceManager.GetString("ScFavorite", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Remove 的本地化字符串。
         /// </summary>
         public static string ScRemove {

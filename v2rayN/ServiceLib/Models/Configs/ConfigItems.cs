@@ -209,6 +209,12 @@ public class KillSwitchItem
     public List<string>? CollapsedGroups { get; set; }
 
     /// <summary>
+    /// Favourite profiles (profile ids), in the order they were starred: shown
+    /// first in the profiles rail, whatever subscription they belong to.
+    /// </summary>
+    public List<string>? FavoriteProfiles { get; set; }
+
+    /// <summary>
     /// Secure Connect UI defaults version, for one-time migrations of settings
     /// the dashboard depends on (e.g. live speed in the status strip).
     /// </summary>

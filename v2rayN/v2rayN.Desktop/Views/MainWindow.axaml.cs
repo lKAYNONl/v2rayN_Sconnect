@@ -26,8 +26,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private readonly ObservableCollection<string> _bypassSubnets = [];
     private bool _loadingSettings;
 
-    // Profiles rail: the rows of the list - loose profiles, then every subscription
-    // as a folder row followed (while expanded) by its profiles.
+    // Profiles rail: the rows of the list - favourites, loose profiles, then every
+    // subscription as a folder row followed (while expanded) by its profiles.
     private const double RailDefaultWidth = 248;
     private const double RailMinWidth = 200;
     private const double StageMinWidth = 360;
@@ -35,6 +35,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private readonly Dictionary<string, ProfileGroupModel> _railGroups = new();
     private readonly Dictionary<string, List<ProfileItemModel>> _railMembers = new();
     private readonly HashSet<string> _collapsedGroups = new();
+    private ProfileItemModel? _lastFavorite;
     private int _railWidth;
     private bool _syncingSelection;
 
@@ -108,6 +109,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             }
         }, RoutingStrategies.Tunnel);
         lstCards.AddHandler(KeyDownEvent, (_, e) => OnRailKey(e), RoutingStrategies.Tunnel);
+        // The star on a card: favourites are listed first.
+        lstCards.AddHandler(Button.ClickEvent, (_, e) => OnCardStarClick(e));
         InitProfilesRail();
 
         // Stage
@@ -670,8 +673,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     }
 
     /// <summary>
-    /// Rebuilds the rows from the profiles: profiles without a subscription first,
-    /// on their own, then each subscription as a folder with its profiles.
+    /// Rebuilds the rows from the profiles: the favourites first, then the profiles
+    /// without a subscription, on their own, then each subscription as a folder
+    /// with its profiles. A favourite is taken out of its place (and folder); it
+    /// is back there as soon as the star is removed.
     /// </summary>
     private void RebuildRail()
     {
@@ -707,13 +712,36 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             return position >= 0 ? position : int.MaxValue;
         }).ToList();
 
+        // Favourites, in the order they were starred.
+        List<string> favoriteIds = _config.KillSwitchItem?.FavoriteProfiles ?? [];
+        List<ProfileItemModel> favorites = [];
+        foreach (var id in favoriteIds)
+        {
+            var profile = profiles.FirstOrDefault(t => t.IndexId == id);
+            if (profile != null && !favorites.Contains(profile))
+            {
+                favorites.Add(profile);
+            }
+        }
+        foreach (var profile in profiles)
+        {
+            profile.IsFavorite = favorites.Contains(profile);
+        }
+        _lastFavorite = favorites.LastOrDefault();
+
         _railGroups.Clear();
         _railMembers.Clear();
         List<object> rows = [];
-        rows.AddRange(profiles.Where(t => t.Subid.IsNullOrEmpty() || !names.ContainsKey(t.Subid)));
+        rows.AddRange(favorites);
+        rows.AddRange(profiles.Where(t => !t.IsFavorite && (t.Subid.IsNullOrEmpty() || !names.ContainsKey(t.Subid))));
         foreach (var id in order)
         {
-            var members = profiles.Where(t => t.Subid == id).ToList();
+            var members = profiles.Where(t => !t.IsFavorite && t.Subid == id).ToList();
+            if (members.Count == 0)
+            {
+                // every profile of the subscription is a favourite
+                continue;
+            }
             var expanded = !_collapsedGroups.Contains(id);
             var group = new ProfileGroupModel
             {
@@ -807,11 +835,44 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private void LstCards_ContainerPrepared(object? sender, ContainerPreparedEventArgs e)
     {
-        // Folder rows and the cards inside a folder are styled by class.
+        // Folder rows, the cards inside a folder and the last favourite (a gap
+        // after the favourites) are styled by class.
         var row = e.Index >= 0 && e.Index < _railRows.Count ? _railRows[e.Index] : null;
         e.Container.Classes.Set("grp", row is ProfileGroupModel);
-        e.Container.Classes.Set("sub", row is ProfileItemModel profile && !profile.Subid.IsNullOrEmpty() && _railGroups.ContainsKey(profile.Subid));
+        e.Container.Classes.Set("sub", row is ProfileItemModel profile && !profile.IsFavorite && !profile.Subid.IsNullOrEmpty() && _railGroups.ContainsKey(profile.Subid));
+        e.Container.Classes.Set("favlast", row != null && ReferenceEquals(row, _lastFavorite));
     }
+
+    private void OnCardStarClick(RoutedEventArgs e)
+    {
+        if (e.Source is not Button { Tag: ProfileItemModel profile } || ViewModel is not { } vm)
+        {
+            return;
+        }
+        e.Handled = true;
+
+        // Stars of profiles that no longer exist are dropped on the way.
+        var existing = vm.ProfilesViewModel.ProfileItems.Select(t => t.IndexId).ToHashSet();
+        var ids = (_config.KillSwitchItem?.FavoriteProfiles ?? []).Where(existing.Contains).Distinct().ToList();
+        if (!ids.Remove(profile.IndexId))
+        {
+            ids.Add(profile.IndexId);
+        }
+        _ = vm.SaveFavoriteProfiles(ids);
+
+        // The rows move; the list stays where it was scrolled to.
+        var scroll = lstCards.FindDescendantOfType<ScrollViewer>();
+        var offset = scroll?.Offset ?? default;
+        RebuildRail();
+        if (scroll != null)
+        {
+            Dispatcher.UIThread.Post(() => { scroll.Offset = offset; }, DispatcherPriority.Background);
+        }
+    }
+
+    /// <summary>A click on a button inside a card (the star) is not a click on the card.</summary>
+    private static bool IsOnButton(RoutedEventArgs e)
+        => (e.Source as Visual)?.FindAncestorOfType<Button>(includeSelf: true) != null;
 
     private void OnRailKey(KeyEventArgs e)
     {
@@ -853,7 +914,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         // reconnects to it while connected, otherwise it is used by the next Connect.
         // The card is taken from the click itself: with touch the list selects it
         // only after this event.
-        if (CardFromEvent(e) is not { } item || ViewModel is not { } vm)
+        if (IsOnButton(e) || CardFromEvent(e) is not { } item || ViewModel is not { } vm)
         {
             return;
         }
@@ -870,7 +931,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private async void LstCards_DoubleTapped(object? sender, TappedEventArgs e)
     {
         // Double click on a card while disconnected: activate it and connect.
-        if (CardFromEvent(e) is not { } item || ViewModel is not { } vm)
+        if (IsOnButton(e) || CardFromEvent(e) is not { } item || ViewModel is not { } vm)
         {
             return;
         }

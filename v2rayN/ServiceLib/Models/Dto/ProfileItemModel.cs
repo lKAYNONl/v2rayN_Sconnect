@@ -27,6 +27,10 @@ public partial class ProfileItemModel : ReactiveObject
     [Reactive]
     public partial string CountryCode { get; set; }
 
+    /// <summary>Starred: listed first in the profiles rail (set by the window).</summary>
+    [Reactive]
+    public partial bool IsFavorite { get; set; }
+
     [Reactive]
     public partial string SpeedVal { get; set; }
 

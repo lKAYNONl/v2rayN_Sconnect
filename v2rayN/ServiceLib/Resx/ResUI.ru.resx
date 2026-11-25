@@ -2373,4 +2373,7 @@
   <data name="ScTunNeedsAdmin" xml:space="preserve">
     <value>Режим TUN выключен: для него нужны права администратора.</value>
   </data>
+  <data name="ScFavorite" xml:space="preserve">
+    <value>Избранное — держать в начале списка</value>
+  </data>
 </root>
